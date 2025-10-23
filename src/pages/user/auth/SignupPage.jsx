@@ -1,16 +1,25 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import styles from './MainHomePage.module.css';
+import styles from './SignupPage.module.css';
 
-const MainHomePage = () => {
+const SignupPage = () => {
   return (
     <div className={styles.container}>
-      <h1>홈 페이지</h1>
-      <p>여기에 홈 페이지 내용이 들어갑니다.</p>
+      <h1>회원가입</h1>
+      <p>회원가입 페이지입니다.</p>
       
       <div className={styles.navigation}>
-        <h2>페이지 이동 테스트</h2>
+        <h2>회원가입 완료 후</h2>
         <div className={styles.linkGrid}>
+          <Link to="/signup/welcome" className={styles.link}>회원가입 축하</Link>
+        </div>
+      </div>
+      
+      <div className={styles.navigation}>
+        <h2>다른 페이지로 이동</h2>
+        <div className={styles.linkGrid}>
+          <Link to="/login" className={styles.link}>로그인</Link>
+          <Link to="/" className={styles.link}>홈</Link>
           <Link to="/my" className={styles.link}>마이페이지</Link>
           <Link to="/culture" className={styles.link}>공연</Link>
           <Link to="/place" className={styles.link}>공연장</Link>
@@ -18,14 +27,8 @@ const MainHomePage = () => {
           <Link to="/recommend" className={styles.link}>추천</Link>
         </div>
       </div>
-      
-      <div style={{ height: '200vh' }}>
-        <p>스크롤 테스트용 긴 콘텐츠입니다.</p>
-        <p>본문 영역만 스크롤되어야 합니다.</p>
-        <p>Header와 Footer는 고정되어 있어야 합니다.</p>
-      </div>
     </div>
   );
 };
 
-export default MainHomePage;
+export default SignupPage;
