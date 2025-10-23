@@ -1,7 +1,7 @@
-import LaunchingPage from './pages/exception/LaunchingPage'
+import AppRouter from './routes/AppRouter'
 
 function App() {
-  return <LaunchingPage />
+  return <AppRouter />
 }
 
 export default App
