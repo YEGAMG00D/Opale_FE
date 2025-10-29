@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from './MainCulturePage.module.css';
 
 const MainCulturePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
+  const searchRef = useRef(null);
+  const navigate = useNavigate();
 
   const performances = [
     {
@@ -88,12 +93,79 @@ const MainCulturePage = () => {
     }
   ];
 
+  // 검색 제안 데이터 - 실제 공연 + 추가 제안
+  const allSearchSuggestions = useMemo(() => {
+    const iconColors = ["#FFC0CB", "#FFFACD", "#90EE90", "#ADD8E6"];
+    
+    const performanceSuggestions = performances.map((perf, index) => ({
+      id: perf.id,
+      title: perf.title,
+      subtitle: perf.subtitle,
+      iconColor: iconColors[index % iconColors.length]
+    }));
+
+    const additionalSuggestions = [
+      { id: 100, title: "위아이", iconColor: "#FFFACD" },
+      { id: 101, title: "위대한쇼맨", iconColor: "#90EE90" },
+      { id: 102, title: "위대한개츠비", iconColor: "#ADD8E6" },
+      { id: 103, title: "위플래시", iconColor: "#FFC0CB" },
+      { id: 104, title: "위스퍼", iconColor: "#FFFACD" }
+    ];
+
+    return [...performanceSuggestions, ...additionalSuggestions];
+  }, [performances]);
+
   const categories = [
     { id: 'all', label: '전체' },
     { id: 'musical', label: '뮤지컬' },
     { id: 'play', label: '연극' },
     { id: 'concert', label: '콘서트' }
   ];
+
+  // 검색어 변경 시 제안 필터링
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const filtered = allSearchSuggestions.filter(suggestion =>
+      suggestion.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (suggestion.subtitle && suggestion.subtitle.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+    setFilteredSuggestions(filtered);
+    setShowSuggestions(true);
+  }, [searchQuery, allSearchSuggestions]);
+
+  // 외부 클릭 시 제안 닫기
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // 검색 페이지로 이동
+      navigate(`/culture/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setSearchQuery(suggestion.title);
+    setShowSuggestions(false);
+    // 검색 페이지로 이동
+    navigate(`/culture/search?q=${encodeURIComponent(suggestion.title)}`);
+  };
 
   const filteredPerformances = selectedCategory === 'all' 
     ? performances 
@@ -104,11 +176,64 @@ const MainCulturePage = () => {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <div className={styles.backButton}>←</div>
-          <div className={styles.headerTitle}>공연</div>
-          <div className={styles.searchButton}>🔍</div>
+          <Link to="/" className={styles.logo}>로고</Link>
+          <Link to="/login" className={styles.loginLink}>로그인</Link>
         </div>
       </header>
+
+      {/* Search Bar */}
+      <div className={styles.searchSection} ref={searchRef}>
+        <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder=""
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => searchQuery && setShowSuggestions(true)}
+          />
+          <button type="submit" className={styles.searchIcon}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="#FFC0CB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M21 21L16.65 16.65" stroke="#FFC0CB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </form>
+
+        {/* Search Suggestions */}
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <div className={styles.suggestionsContainer}>
+            <div className={styles.suggestionsDivider}></div>
+            <div className={styles.suggestionsList}>
+              {filteredSuggestions.slice(0, 4).map((suggestion) => (
+                <div
+                  key={suggestion.id}
+                  className={styles.suggestionItem}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: suggestion.iconColor }}>
+                    <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span className={styles.suggestionText}>{suggestion.title}</span>
+                </div>
+              ))}
+              {filteredSuggestions.length > 4 && (
+                <div 
+                  className={styles.viewAllResults}
+                  onClick={() => navigate(`/culture/search?q=${encodeURIComponent(searchQuery)}`)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: "#FFC0CB" }}>
+                    <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span className={styles.viewAllText}>"{searchQuery}"에 대한 모든 결과 보기</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Category Filter */}
       <div className={styles.categorySection}>
@@ -128,7 +253,7 @@ const MainCulturePage = () => {
       {/* Performance Grid */}
       <div className={styles.performanceGrid}>
         {filteredPerformances.map((performance) => (
-          <Link key={performance.id} to="/culture/detail" className={styles.performanceCard}>
+          <Link key={performance.id} to={`/culture/${performance.id}`} className={styles.performanceCard}>
             <div className={`${styles.posterCard} ${styles[performance.image]}`}>
               <div className={styles.posterContent}>
                 <div className={styles.posterTagline}>{performance.tagline}</div>
@@ -158,11 +283,11 @@ const MainCulturePage = () => {
 
       {/* Bottom Navigation */}
       <nav className={styles.bottomNav}>
-        <div className={styles.navItem}>공연장</div>
-        <div className={`${styles.navItem} ${styles.active}`}>공연</div>
-        <div className={styles.navItem}>홈</div>
-        <div className={styles.navItem}>채팅</div>
-        <div className={styles.navItem}>추천</div>
+        <Link to="/place" className={styles.navItem}>공연장</Link>
+        <Link to="/culture" className={`${styles.navItem} ${styles.active}`}>공연</Link>
+        <Link to="/" className={styles.navItem}>홈</Link>
+        <Link to="/chat" className={styles.navItem}>채팅</Link>
+        <Link to="/recommend" className={styles.navItem}>추천</Link>
       </nav>
     </div>
   );
