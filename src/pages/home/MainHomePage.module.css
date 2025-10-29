@@ -8,39 +8,6 @@
   padding-bottom: 80px; /* 하단 네비게이션 공간 */
 }
 
-/* Header */
-.header {
-  width: 100%;
-  background-color: #FFFFFF;
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 430px;
-  z-index: 100;
-}
-
-.headerContent {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-}
-
-.logo {
-  font-size: 16px;
-  font-weight: 500;
-  color: #000000;
-  font-family: 'Pretendard Variable', sans-serif;
-}
-
-.login {
-  font-size: 16px;
-  font-weight: 500;
-  color: #000000;
-  font-family: 'Pretendard Variable', sans-serif;
-  cursor: pointer;
-}
 
 /* Carousel Section */
 .carouselSection {
@@ -74,54 +41,51 @@
   height: 100%;
   text-decoration: none;
   color: inherit;
+  cursor: pointer;
 }
 
 .poster {
   width: 100%;
   height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
-.wicked {
-  background: linear-gradient(135deg, #2d5016 0%, #4a7c59 50%, #6b8e23 100%);
-  color: white;
+.posterImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.kinky-boots {
-  background: linear-gradient(135deg, #dc143c 0%, #ff6b6b 50%, #ffa500 100%);
-  color: white;
+/* 포스터 오버레이 (그라데이션 효과) */
+.posterOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0) 30%,
+    rgba(0, 0, 0, 0) 70%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
 }
 
-.moulin-rouge {
-  background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2d2d2d 100%);
-  color: white;
-}
-
-.hanbok-man {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  color: white;
-}
-
-.death-note {
-  background: linear-gradient(135deg, #000000 0%, #2d2d2d 50%, #4a4a4a 100%);
-  color: white;
-}
-
-.rent {
-  background: linear-gradient(135deg, #8B0000 0%, #DC143C 50%, #FF6347 100%);
-  color: white;
-}
 
 .posterContent {
   text-align: center;
   padding: 20px;
   max-width: 90%;
+  position: relative;
+  z-index: 2;
 }
 
 .posterTagline {
@@ -251,9 +215,6 @@
 .featuredPoster {
   width: 100%;
   height: 200px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   border-radius: 8px;
   position: relative;
   display: flex;
@@ -262,46 +223,14 @@
   margin-bottom: 12px;
 }
 
-.death-note {
-  background: linear-gradient(135deg, #000000 0%, #2d2d2d 50%, #4a4a4a 100%);
-  color: white;
+.featuredPosterImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 8px;
 }
 
-.rent {
-  background: linear-gradient(135deg, #8B0000 0%, #DC143C 50%, #FF6347 100%);
-  color: white;
-}
-
-.featuredContent {
-  text-align: center;
-  padding: 16px;
-  max-width: 90%;
-}
-
-.featuredAward {
-  font-size: 10px;
-  margin-bottom: 8px;
-  opacity: 0.9;
-  font-weight: 500;
-}
-
-.featuredTitle {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 4px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-}
-
-.featuredSubtitle {
-  font-size: 12px;
-  margin-bottom: 8px;
-  opacity: 0.9;
-}
-
-.featuredTagline {
-  font-size: 10px;
-  opacity: 0.8;
-}
 
 .featuredInfo {
   padding: 0 4px;
@@ -367,6 +296,8 @@
   cursor: pointer;
   padding: 8px 4px;
   transition: opacity 0.2s ease;
+  text-decoration: none;
+  display: block;
 }
 
 .navItem:hover {

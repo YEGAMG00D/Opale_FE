@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from './MainHomePage.module.css';
+import Header from '../../layouts/Header';
 
 const MainHomePage = () => {
+  const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const performances = [
@@ -120,34 +122,40 @@ const MainHomePage = () => {
     }
   ];
 
+  // 포스터 확장자 매핑
+  const posterExt = {
+    'wicked': 'gif',
+    'moulin-rouge': 'gif',
+    'kinky-boots': 'gif',
+    'hanbok-man': 'jpg',
+    'death-note': 'gif',
+    'rent': 'gif'
+  };
+
   return (
     <div className={styles.container}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <div className={styles.logo}>로고</div>
-          <div className={styles.login}>로그인</div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Carousel Section */}
       <section className={styles.carouselSection}>
         <div className={styles.carouselContainer}>
           <div className={styles.carouselTrack} style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
             {performances.map((performance) => (
-              <div key={performance.id} className={styles.carouselSlide}>
-                <Link to="/culture/detail" className={styles.slideLink}>
-                  <div className={`${styles.poster} ${styles[performance.image]}`}>
-                    <div className={styles.posterContent}>
-                      <div className={styles.posterTagline}>{performance.tagline}</div>
-                      <div className={styles.posterTitle}>{performance.title}</div>
-                      <div className={styles.posterSubtitle}>{performance.subtitle}</div>
-                      <div className={styles.posterDescription}>{performance.description}</div>
-                      <div className={styles.posterDate}>{performance.date}</div>
-                      <div className={styles.posterVenue}>{performance.venue}</div>
-                    </div>
+              <div 
+                key={performance.id} 
+                className={styles.carouselSlide}
+                onClick={() => navigate(`/culture/${performance.id + 1}`)}
+              >
+                <div className={styles.slideLink}>
+                  <div className={styles.poster}>
+                    <img
+                      className={styles.posterImg}
+                      src={`/poster/${performance.image}.${posterExt[performance.image] || 'jpg'}`}
+                      alt={`${performance.title} 포스터`}
+                    />
+                    <div className={styles.posterOverlay}></div>
                   </div>
-                </Link>
+                </div>
               </div>
             ))}
           </div>
@@ -182,13 +190,12 @@ const MainHomePage = () => {
         <div className={styles.featuredGrid}>
           {featuredPerformances.map((performance) => (
             <Link key={performance.id} to="/culture/detail" className={styles.featuredCard}>
-              <div className={`${styles.featuredPoster} ${styles[performance.image]}`}>
-                <div className={styles.featuredContent}>
-                  <div className={styles.featuredAward}>WINNER! 10 TONY AWARDS BEST MUSICAL!</div>
-                  <div className={styles.featuredTitle}>{performance.subtitle}</div>
-                  <div className={styles.featuredSubtitle}>THE MUSICAL</div>
-                  <div className={styles.featuredTagline}>TRUTH BEAUTY FREEDOM LOVE</div>
-                </div>
+              <div className={styles.featuredPoster}>
+                <img
+                  className={styles.featuredPosterImg}
+                  src={`/poster/${performance.image}.${posterExt[performance.image] || 'jpg'}`}
+                  alt={`${performance.title} 포스터`}
+                />
               </div>
               <div className={styles.featuredInfo}>
                 <div className={styles.featuredGenre}>{performance.genre}</div>
@@ -206,11 +213,11 @@ const MainHomePage = () => {
 
       {/* Bottom Navigation */}
       <nav className={styles.bottomNav}>
-        <div className={styles.navItem}>공연장</div>
-        <div className={styles.navItem}>공연</div>
-        <div className={`${styles.navItem} ${styles.active}`}>홈</div>
-        <div className={styles.navItem}>채팅</div>
-        <div className={styles.navItem}>추천</div>
+        <Link to="/place" className={styles.navItem}>공연장</Link>
+        <Link to="/culture" className={styles.navItem}>공연</Link>
+        <Link to="/" className={`${styles.navItem} ${styles.active}`}>홈</Link>
+        <Link to="/chat" className={styles.navItem}>채팅</Link>
+        <Link to="/recommend" className={styles.navItem}>추천</Link>
       </nav>
     </div>
   );

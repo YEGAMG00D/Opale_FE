@@ -1,11 +1,123 @@
-import React from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import styles from './RoomPage.module.css';
+import { getRoomById } from './mockChatRooms';
 
 const RoomPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const room = useMemo(() => getRoomById(id), [id]);
+  const messagesEndRef = useRef(null);
+
+  const [messages, setMessages] = useState([
+    { id: 1, text: '오팔에 어서 오세요 👋', sender: 'system', time: '14:30' },
+    { id: 2, text: '안녕하세요! 공연 얘기 나눠요', sender: 'user1', time: '14:31' },
+    { id: 3, text: '오늘 위키드 보신 분 있나요?', sender: 'user2', time: '14:32' },
+    { id: 4, text: '저요! 1막 넘버가 정말 좋았어요', sender: 'user3', time: '14:33' },
+  ]);
+  const [newMessage, setNewMessage] = useState('');
+  const [currentUser] = useState('me'); // 현재 사용자 ID
+
+  const goToPerformance = () => {
+    // 공연 ID를 매핑하는 로직 (실제로는 room 데이터에 performanceId가 있어야 함)
+    const performanceIdMap = {
+      '1': '1', // 위키드
+      '2': '2', // 렌트
+      '3': '3', // 물랑루즈
+      '4': '4', // 한복입은 남자
+      '5': '5', // 킹키부츠
+      '6': '6', // 데스노트
+    };
+    const performanceId = performanceIdMap[id] || '1';
+    navigate(`/culture/${performanceId}`);
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    const message = {
+      id: Date.now(),
+      text: newMessage,
+      sender: currentUser,
+      time: new Date().toLocaleTimeString('ko-KR', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      })
+    };
+
+    setMessages(prev => [...prev, message]);
+    setNewMessage('');
+  };
+
+  if (!room) {
+    return (
+      <div className={styles.container}>존재하지 않는 채팅방입니다.</div>
+    );
+  }
+
   return (
     <div className={styles.container}>
-      <h1>채팅방</h1>
-      <p>특정 공연에 대한 채팅방 페이지입니다.</p>
+      <header className={styles.header}> 
+        <button 
+          onClick={goToPerformance}
+          className={styles.thumbButton}
+          aria-label={`${room.performanceName} 공연 상세 페이지로 이동`}
+        >
+          <img src={room.image} alt={room.performanceName} className={styles.thumb} />
+        </button>
+        <div className={styles.headerMeta}>
+          <div className={styles.headerTop}>
+            <strong className={styles.roomTitle}>{room.title}</strong>
+            <span className={room.active ? styles.badgeOn : styles.badgeOff}>
+              {room.active ? '활성' : '비활성'}
+            </span>
+          </div>
+          <div className={styles.headerSub}>
+            <span>{room.performanceName}</span>
+            <span className={styles.dot}>·</span>
+            <span>{room.participants}명 참여</span>
+            <span className={styles.dot}>·</span>
+            <span>개설자 {room.creatorNickname}</span>
+          </div>
+        </div>
+      </header>
+
+      <main className={styles.chatArea}>
+        <div className={styles.dayDivider}>오늘</div>
+        {messages.map((message) => (
+          <div 
+            key={message.id} 
+            className={`${styles.message} ${
+              message.sender === currentUser ? styles.messageSelf : styles.messageOther
+            }`}
+          >
+            <div className={styles.messageContent}>
+              <span className={styles.messageText}>{message.text}</span>
+              <span className={styles.messageTime}>{message.time}</span>
+            </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </main>
+
+      <form className={styles.inputBar} onSubmit={handleSendMessage}>
+        <input 
+          className={styles.input} 
+          placeholder="메시지를 입력하세요" 
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+        />
+        <button type="submit" className={styles.sendBtn}>전송</button>
+      </form>
     </div>
   );
 };

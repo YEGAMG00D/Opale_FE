@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './MainCulturePage.module.css';
+import Header from '../../layouts/Header';
 
 const MainCulturePage = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const searchRef = useRef(null);
-  const navigate = useNavigate();
 
   const performances = [
     {
@@ -113,7 +114,7 @@ const MainCulturePage = () => {
     ];
 
     return [...performanceSuggestions, ...additionalSuggestions];
-  }, [performances]);
+  }, []); // 빈 배열로 변경 - performances는 정적 데이터이므로 의존성에서 제거
 
   const categories = [
     { id: 'all', label: '전체' },
@@ -136,7 +137,7 @@ const MainCulturePage = () => {
     );
     setFilteredSuggestions(filtered);
     setShowSuggestions(true);
-  }, [searchQuery, allSearchSuggestions]);
+  }, [searchQuery]); // allSearchSuggestions 의존성 제거 - 무한 랜더링 방지
 
   // 외부 클릭 시 제안 닫기
   useEffect(() => {
@@ -171,15 +172,19 @@ const MainCulturePage = () => {
     ? performances 
     : performances.filter(performance => performance.category === selectedCategory);
 
+  // 포스터 확장자 매핑
+  const posterExt = {
+    'wicked': 'gif',
+    'moulin-rouge': 'gif',
+    'kinky-boots': 'gif',
+    'hanbok-man': 'jpg',
+    'death-note': 'gif',
+    'rent': 'gif'
+  };
+
   return (
     <div className={styles.container}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <Link to="/" className={styles.logo}>로고</Link>
-          <Link to="/login" className={styles.loginLink}>로그인</Link>
-        </div>
-      </header>
+      <Header />
 
       {/* Search Bar */}
       <div className={styles.searchSection} ref={searchRef}>
@@ -252,38 +257,65 @@ const MainCulturePage = () => {
 
       {/* Performance Grid */}
       <div className={styles.performanceGrid}>
-        {filteredPerformances.map((performance) => (
-          <Link key={performance.id} to={`/culture/${performance.id}`} className={styles.performanceCard}>
-            <div className={`${styles.posterCard} ${styles[performance.image]}`}>
-              <div className={styles.posterContent}>
-                <div className={styles.posterTagline}>{performance.tagline}</div>
-                <div className={styles.posterTitle}>{performance.title}</div>
-                <div className={styles.posterSubtitle}>{performance.subtitle}</div>
-                <div className={styles.posterDescription}>{performance.description}</div>
-                <div className={styles.posterDate}>{performance.date}</div>
-                <div className={styles.posterVenue}>{performance.venue}</div>
+        {filteredPerformances.map((performance) => {
+          const handleCardClick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // 즉시 네비게이션 실행
+            const targetPath = `/culture/${performance.id}`;
+            console.log('Navigating to:', targetPath, 'Performance ID:', performance.id);
+            
+            // React Router navigate로 이동
+            try {
+              navigate(targetPath, { replace: false });
+            } catch (error) {
+              console.error('Navigation error:', error);
+            }
+          };
+
+          return (
+            <div 
+              key={performance.id} 
+              className={styles.performanceCard}
+              onClick={handleCardClick}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleCardClick(e);
+                }
+              }}
+            >
+              <div className={styles.posterCard}>
+                <img
+                  className={styles.posterImg}
+                  src={`/poster/${performance.image}.${posterExt[performance.image] || 'jpg'}`}
+                  alt={`${performance.title} 포스터`}
+                />
+              </div>
+              <div className={styles.cardInfo}>
+                <div className={styles.cardTitle}>{performance.title}</div>
+                <div className={styles.cardSubtitle}>{performance.date}</div>
+                <div className={styles.cardRating}>
+                  <span className={styles.star}>★</span>
+                  <span className={styles.ratingText}>{performance.rating} ({performance.reviewCount})</span>
+                </div>
+                <div className={styles.cardKeywords}>
+                  {performance.keywords.map((keyword, index) => (
+                    <span key={index} className={styles.keyword}>#{keyword}</span>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className={styles.cardInfo}>
-              <div className={styles.cardTitle}>{performance.title}</div>
-              <div className={styles.cardSubtitle}>{performance.subtitle}</div>
-              <div className={styles.cardRating}>
-                <span className={styles.star}>★</span>
-                <span className={styles.ratingText}>{performance.rating} ({performance.reviewCount})</span>
-              </div>
-              <div className={styles.cardKeywords}>
-                {performance.keywords.map((keyword, index) => (
-                  <span key={index} className={styles.keyword}>#{keyword}</span>
-                ))}
-              </div>
-            </div>
-          </Link>
-        ))}
+          );
+        })}
       </div>
 
       {/* Bottom Navigation */}
       <nav className={styles.bottomNav}>
-        <Link to="/place" className={styles.navItem}>공연장</Link>
+        <Link to="/place" className={styles.navItem}>공연장!!!</Link>
         <Link to="/culture" className={`${styles.navItem} ${styles.active}`}>공연</Link>
         <Link to="/" className={styles.navItem}>홈</Link>
         <Link to="/chat" className={styles.navItem}>채팅</Link>

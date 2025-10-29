@@ -1,30 +1,105 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './MainChatPage.module.css';
+import { chatRooms } from './mockChatRooms';
 
 const MainChatPage = () => {
+  const navigate = useNavigate();
+  const [keyword, setKeyword] = useState('');
+
+  const top3 = useMemo(() => {
+    return [...chatRooms]
+      .sort((a, b) => b.popularity - a.popularity)
+      .slice(0, 3);
+  }, []);
+
+  const others = useMemo(() => {
+    const topIds = new Set(top3.map((r) => r.id));
+    return chatRooms
+      .filter((r) => !topIds.has(r.id))
+      .filter((r) => {
+        if (!keyword.trim()) return true;
+        const k = keyword.toLowerCase();
+        return (
+          r.title.toLowerCase().includes(k) ||
+          r.performanceName.toLowerCase().includes(k)
+        );
+      });
+  }, [keyword, top3]);
+
+  const enterRoom = (id) => {
+    navigate(`/chat/${id}`);
+  };
+
   return (
     <div className={styles.container}>
-      <h1>채팅</h1>
-      <p>다양한 오픈 채팅방을 탐색할 수 있는 페이지입니다.</p>
-      
-      <div className={styles.navigation}>
-        <h2>채팅 관련 메뉴</h2>
-        <div className={styles.linkGrid}>
-          <Link to="/chat/search" className={styles.link}>채팅방 검색</Link>
-          <Link to="/chat/1" className={styles.link}>채팅방 (예시)</Link>
-        </div>
+      <div className={styles.searchBar}> 
+        <input
+          className={styles.searchInput}
+          placeholder="채팅방 또는 공연명을 검색"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+        />
+        <button className={styles.searchBtn} onClick={() => {}} aria-label="검색">
+          🔍
+        </button>
       </div>
-      
-      <div className={styles.navigation}>
-        <h2>다른 페이지로 이동</h2>
-        <div className={styles.linkGrid}>
-          <Link to="/" className={styles.link}>홈</Link>
-          <Link to="/my" className={styles.link}>마이페이지</Link>
-          <Link to="/culture" className={styles.link}>공연</Link>
-          <Link to="/place" className={styles.link}>공연장</Link>
-          <Link to="/recommend" className={styles.link}>추천</Link>
-        </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>실시간 인기 채팅 상위 3개</h2>
+        <ul className={styles.liveList}>
+          {top3.map((room) => (
+            <li key={room.id} className={styles.liveItem}>
+              <img src={room.image} alt={room.performanceName} className={styles.avatar} />
+              <div className={styles.liveMeta}>
+                <div className={styles.titleRow}>
+                  <strong className={styles.roomTitle}>{room.title}</strong>
+                  <span className={room.active ? styles.badgeOn : styles.badgeOff}>
+                    {room.active ? '활성' : '비활성'}
+                  </span>
+                </div>
+                <div className={styles.subMeta}>
+                  <span className={styles.performance}>{room.performanceName}</span>
+                  <span className={styles.dot}>·</span>
+                  <span className={styles.participants}>{room.participants}명 참여</span>
+                </div>
+                <div className={styles.preview}>
+                  <span className={styles.lastMessage}>{room.lastMessage}</span>
+                  <span className={styles.lastTime}>{room.lastTime}</span>
+                </div>
+              </div>
+              <button className={styles.enterBtn} onClick={() => enterRoom(room.id)} aria-label="입장">
+                ›
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>모든 채팅방</h2>
+        <ul className={styles.compactList}>
+          {others.map((room) => (
+            <li key={room.id} className={styles.compactItem}>
+              <img src={room.image} alt={room.performanceName} className={styles.avatarSmall} />
+              <div className={styles.compactMeta}>
+                <div className={styles.compactTitle}>{room.title}</div>
+                <div className={styles.compactSub}>
+                  <span>{room.performanceName}</span>
+                  <span className={styles.dot}>·</span>
+                  <span>{room.participants}명</span>
+                  <span className={styles.dot}>·</span>
+                  <span className={room.active ? styles.textOn : styles.textOff}>
+                    {room.active ? '활성' : '비활성'}
+                  </span>
+                </div>
+              </div>
+              <button className={styles.enterBtn} onClick={() => enterRoom(room.id)} aria-label="입장">
+                ›
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
