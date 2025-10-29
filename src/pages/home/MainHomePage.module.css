@@ -1,54 +1,423 @@
 .container {
-  padding: 20px;
-  background-color: #ffffff;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: #FFFFFF;
+  min-height: 100vh;
+  position: relative;
+  padding-bottom: 80px; /* 하단 네비게이션 공간 */
 }
 
-h1 {
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 15px;
+/* Header */
+.header {
+  width: 100%;
+  background-color: #FFFFFF;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 430px;
+  z-index: 100;
 }
 
-p {
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+}
+
+.logo {
   font-size: 16px;
-  color: #666;
-  line-height: 1.5;
-}
-
-.navigation {
-  margin: 30px 0;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-}
-
-.navigation h2 {
-  font-size: 18px;
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.linkGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px;
-}
-
-.link {
-  display: block;
-  padding: 10px 15px;
-  background-color: #ffffff;
-  color: #333;
-  text-decoration: none;
-  border-radius: 6px;
-  text-align: center;
   font-weight: 500;
-  border: 1px solid #e9ecef;
-  transition: all 0.2s;
+  color: #000000;
+  font-family: 'Pretendard Variable', sans-serif;
 }
 
-.link:hover {
-  background-color: #007bff;
-  color: #ffffff;
-  border-color: #007bff;
+.login {
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000;
+  font-family: 'Pretendard Variable', sans-serif;
+  cursor: pointer;
+}
+
+/* Carousel Section */
+.carouselSection {
+  margin-top: 80px; /* 헤더 높이만큼 */
+  padding: 0;
+  position: relative;
+}
+
+.carouselContainer {
+  overflow: hidden;
+  width: 100%;
+  height: 300px;
+}
+
+.carouselTrack {
+  display: flex;
+  width: 600%;
+  height: 100%;
+  transition: transform 0.5s ease;
+}
+
+.carouselSlide {
+  width: 16.666%;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.slideLink {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.poster {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wicked {
+  background: linear-gradient(135deg, #2d5016 0%, #4a7c59 50%, #6b8e23 100%);
+  color: white;
+}
+
+.kinky-boots {
+  background: linear-gradient(135deg, #dc143c 0%, #ff6b6b 50%, #ffa500 100%);
+  color: white;
+}
+
+.moulin-rouge {
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2d2d2d 100%);
+  color: white;
+}
+
+.hanbok-man {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: white;
+}
+
+.death-note {
+  background: linear-gradient(135deg, #000000 0%, #2d2d2d 50%, #4a4a4a 100%);
+  color: white;
+}
+
+.rent {
+  background: linear-gradient(135deg, #8B0000 0%, #DC143C 50%, #FF6347 100%);
+  color: white;
+}
+
+.posterContent {
+  text-align: center;
+  padding: 20px;
+  max-width: 90%;
+}
+
+.posterTagline {
+  font-size: 12px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.posterTitle {
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.posterSubtitle {
+  font-size: 14px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.posterDescription {
+  font-size: 12px;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+.posterDate {
+  font-size: 12px;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.posterVenue {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.carouselIndicators {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #D9D9D9;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.indicator:hover {
+  background-color: #A6A6A6;
+  transform: scale(1.1);
+}
+
+.indicator.active {
+  background-color: #000000;
+  transform: scale(1.2);
+}
+
+/* CTA Section */
+.ctaSection {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ctaButton {
+  padding: 16px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.ctaButton:hover {
+  opacity: 0.8;
+}
+
+.ctaText {
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000;
+  text-align: center;
+}
+
+.ctaTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 4px;
+}
+
+.ctaSubtitle {
+  font-size: 14px;
+  color: #000000;
+  opacity: 0.8;
+}
+
+/* Featured Section */
+.featuredSection {
+  padding: 0 24px 20px;
+}
+
+.featuredGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.featuredCard {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease;
+}
+
+.featuredCard:hover {
+  transform: translateY(-2px);
+}
+
+.featuredPoster {
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.death-note {
+  background: linear-gradient(135deg, #000000 0%, #2d2d2d 50%, #4a4a4a 100%);
+  color: white;
+}
+
+.rent {
+  background: linear-gradient(135deg, #8B0000 0%, #DC143C 50%, #FF6347 100%);
+  color: white;
+}
+
+.featuredContent {
+  text-align: center;
+  padding: 16px;
+  max-width: 90%;
+}
+
+.featuredAward {
+  font-size: 10px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.featuredTitle {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.featuredSubtitle {
+  font-size: 12px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.featuredTagline {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.featuredInfo {
+  padding: 0 4px;
+}
+
+.featuredGenre {
+  font-size: 12px;
+  color: #000000;
+  margin-bottom: 4px;
+}
+
+.featuredTitleText {
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 4px;
+}
+
+.featuredDescription {
+  font-size: 12px;
+  color: #000000;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+.featuredRating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.star {
+  color: #FF69B4;
+  font-size: 12px;
+}
+
+.ratingText {
+  font-size: 12px;
+  color: #000000;
+}
+
+/* Bottom Navigation */
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #FFC0CB;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  z-index: 100;
+}
+
+.navItem {
+  font-size: 12px;
+  color: #000000;
+  text-align: center;
+  cursor: pointer;
+  padding: 8px 4px;
+  transition: opacity 0.2s ease;
+}
+
+.navItem:hover {
+  opacity: 0.7;
+}
+
+.navItem.active {
+  font-weight: 600;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 375px) {
+  .container {
+    max-width: 375px;
+  }
+  
+  .headerContent {
+    padding: 16px 20px;
+  }
+  
+  .carouselSection {
+    margin-top: 70px;
+  }
+  
+  .carouselContainer {
+    height: 280px;
+  }
+  
+  .posterTitle {
+    font-size: 28px;
+  }
+  
+  .posterContent {
+    padding: 16px;
+  }
+  
+  .ctaSection {
+    padding: 16px 20px;
+  }
+  
+  .featuredSection {
+    padding: 0 20px 16px;
+  }
+  
+  .featuredPoster {
+    height: 180px;
+  }
+}
+
+@media (min-width: 430px) {
+  .container {
+    max-width: 430px;
+  }
 }

@@ -1,54 +1,315 @@
 .container {
-  padding: 20px;
-  background-color: #ffffff;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: #FFFFFF;
+  min-height: 100vh;
+  position: relative;
+  padding-bottom: 80px;
 }
 
-h1 {
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 15px;
+/* Header */
+.header {
+  width: 100%;
+  background-color: #FFFFFF;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 430px;
+  z-index: 100;
+  border-bottom: 1px solid #E5E5E5;
 }
 
-p {
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+}
+
+.backButton {
+  font-size: 20px;
+  color: #000000;
+  cursor: pointer;
+}
+
+.headerTitle {
   font-size: 16px;
-  color: #666;
-  line-height: 1.5;
-}
-
-.navigation {
-  margin: 30px 0;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-}
-
-.navigation h2 {
-  font-size: 18px;
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.linkGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px;
-}
-
-.link {
-  display: block;
-  padding: 10px 15px;
-  background-color: #ffffff;
-  color: #333;
-  text-decoration: none;
-  border-radius: 6px;
-  text-align: center;
   font-weight: 500;
-  border: 1px solid #e9ecef;
-  transition: all 0.2s;
+  color: #000000;
+  font-family: 'Pretendard Variable', sans-serif;
 }
 
-.link:hover {
-  background-color: #007bff;
-  color: #ffffff;
-  border-color: #007bff;
+.searchButton {
+  font-size: 18px;
+  color: #000000;
+  cursor: pointer;
+}
+
+/* Category Section */
+.categorySection {
+  margin-top: 80px;
+  padding: 20px 24px 16px;
+  background-color: #FFFFFF;
+}
+
+.categoryTabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.categoryTab {
+  padding: 8px 16px;
+  background-color: #F5F5F5;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #666666;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.categoryTab:hover {
+  background-color: #E5E5E5;
+}
+
+.activeCategory {
+  background-color: #000000;
+  color: #FFFFFF;
+}
+
+/* Performance Grid */
+.performanceGrid {
+  padding: 0 24px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.performanceCard {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease;
+}
+
+.performanceCard:hover {
+  transform: translateY(-2px);
+}
+
+.posterCard {
+  width: 100%;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+/* Poster Styles for each performance */
+.wicked {
+  background: linear-gradient(135deg, #2d5016 0%, #4a7c59 50%, #6b8e23 100%);
+  color: white;
+}
+
+.moulin-rouge {
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2d2d2d 100%);
+  color: white;
+}
+
+.kinky-boots {
+  background: linear-gradient(135deg, #dc143c 0%, #ff6b6b 50%, #ffa500 100%);
+  color: white;
+}
+
+.hanbok-man {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: white;
+}
+
+.death-note {
+  background: linear-gradient(135deg, #000000 0%, #2d2d2d 50%, #4a4a4a 100%);
+  color: white;
+}
+
+.rent {
+  background: linear-gradient(135deg, #8B0000 0%, #DC143C 50%, #FF6347 100%);
+  color: white;
+}
+
+.posterContent {
+  text-align: center;
+  padding: 16px;
+  max-width: 90%;
+}
+
+.posterTagline {
+  font-size: 10px;
+  margin-bottom: 6px;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.posterTitle {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.posterSubtitle {
+  font-size: 10px;
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+
+.posterDescription {
+  font-size: 8px;
+  margin-bottom: 6px;
+  opacity: 0.8;
+  line-height: 1.2;
+}
+
+.posterDate {
+  font-size: 8px;
+  margin-bottom: 2px;
+  font-weight: 500;
+}
+
+.posterVenue {
+  font-size: 7px;
+  opacity: 0.8;
+}
+
+/* Card Info */
+.cardInfo {
+  padding: 0 4px;
+}
+
+.cardTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+
+.cardSubtitle {
+  font-size: 12px;
+  color: #666666;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.cardRating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.star {
+  color: #FF69B4;
+  font-size: 12px;
+}
+
+.ratingText {
+  font-size: 11px;
+  color: #000000;
+  font-weight: 500;
+}
+
+.cardKeywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.keyword {
+  font-size: 10px;
+  color: #666666;
+  background-color: #F5F5F5;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+/* Bottom Navigation */
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #FFC0CB;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  z-index: 100;
+}
+
+.navItem {
+  font-size: 12px;
+  color: #000000;
+  text-align: center;
+  cursor: pointer;
+  padding: 8px 4px;
+  transition: opacity 0.2s ease;
+}
+
+.navItem:hover {
+  opacity: 0.7;
+}
+
+.navItem.active {
+  font-weight: 600;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 375px) {
+  .container {
+    max-width: 375px;
+  }
+  
+  .headerContent {
+    padding: 16px 20px;
+  }
+  
+  .categorySection {
+    margin-top: 70px;
+    padding: 16px 20px 12px;
+  }
+  
+  .performanceGrid {
+    padding: 0 20px 16px;
+    gap: 12px;
+  }
+  
+  .posterCard {
+    height: 180px;
+  }
+  
+  .posterTitle {
+    font-size: 16px;
+  }
+  
+  .posterContent {
+    padding: 12px;
+  }
+}
+
+@media (min-width: 430px) {
+  .container {
+    max-width: 430px;
+  }
 }
