@@ -49,7 +49,11 @@ const MainChatPage = () => {
         <h2 className={styles.sectionTitle}>실시간 인기 채팅 상위 3개</h2>
         <ul className={styles.liveList}>
           {top3.map((room) => (
-            <li key={room.id} className={styles.liveItem}>
+            <li
+              key={room.id}
+              className={styles.liveItem}
+              onClick={() => enterRoom(room.id)}
+            >
               <img src={room.image} alt={room.performanceName} className={styles.avatar} />
               <div className={styles.liveMeta}>
                 <div className={styles.titleRow}>
@@ -61,16 +65,13 @@ const MainChatPage = () => {
                 <div className={styles.subMeta}>
                   <span className={styles.performance}>{room.performanceName}</span>
                   <span className={styles.dot}>·</span>
-                  <span className={styles.participants}>{room.participants}명 참여</span>
+                  <span className={styles.participants}>{room.visitors ?? room.participants}명 방문</span>
                 </div>
                 <div className={styles.preview}>
                   <span className={styles.lastMessage}>{room.lastMessage}</span>
                   <span className={styles.lastTime}>{room.lastTime}</span>
                 </div>
               </div>
-              <button className={styles.enterBtn} onClick={() => enterRoom(room.id)} aria-label="입장">
-                ›
-              </button>
             </li>
           ))}
         </ul>
@@ -80,23 +81,24 @@ const MainChatPage = () => {
         <h2 className={styles.sectionTitle}>모든 채팅방</h2>
         <ul className={styles.compactList}>
           {others.map((room) => (
-            <li key={room.id} className={styles.compactItem}>
+            <li
+              key={room.id}
+              className={styles.compactItem}
+              onClick={() => enterRoom(room.id)}
+            >
               <img src={room.image} alt={room.performanceName} className={styles.avatarSmall} />
               <div className={styles.compactMeta}>
                 <div className={styles.compactTitle}>{room.title}</div>
                 <div className={styles.compactSub}>
                   <span>{room.performanceName}</span>
                   <span className={styles.dot}>·</span>
-                  <span>{room.participants}명</span>
+                  <span>{room.visitors ?? room.participants}명 방문</span>
                   <span className={styles.dot}>·</span>
                   <span className={room.active ? styles.textOn : styles.textOff}>
                     {room.active ? '활성' : '비활성'}
                   </span>
                 </div>
               </div>
-              <button className={styles.enterBtn} onClick={() => enterRoom(room.id)} aria-label="입장">
-                ›
-              </button>
             </li>
           ))}
         </ul>

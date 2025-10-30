@@ -53,6 +53,8 @@
   border-radius: 12px;
   border: 1px solid #eef2f4;
   background: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
 }
 
 .avatar {
@@ -132,7 +134,10 @@
   gap: 10px;
   padding: 10px;
   border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
 }
+
+.liveItem:active, .compactItem:active { background: #f8fafc; }
 
 .avatarSmall {
   width: 36px;

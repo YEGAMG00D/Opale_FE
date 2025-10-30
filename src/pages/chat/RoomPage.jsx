@@ -8,6 +8,7 @@ const RoomPage = () => {
   const navigate = useNavigate();
   const room = useMemo(() => getRoomById(id), [id]);
   const messagesEndRef = useRef(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const [messages, setMessages] = useState([
     { id: 1, text: '오팔에 어서 오세요 👋', sender: 'system', time: '14:30' },
@@ -40,6 +41,20 @@ const RoomPage = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    const key = 'chat_onboarding_dismissed_v1';
+    const dismissed = localStorage.getItem(key) === 'true';
+    if (!dismissed) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const closeOnboarding = () => setShowOnboarding(false);
+  const neverShowOnboarding = () => {
+    localStorage.setItem('chat_onboarding_dismissed_v1', 'true');
+    setShowOnboarding(false);
+  };
+
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -66,6 +81,22 @@ const RoomPage = () => {
 
   return (
     <div className={styles.container}>
+      {showOnboarding && (
+        <div className={styles.onboardingOverlay} role="dialog" aria-modal="true">
+          <div className={styles.onboardingModal}>
+            <div className={styles.onboardingBody}>
+              <div className={styles.onboardingTitle}>채팅방 안내</div>
+              <p className={styles.onboardingText}>
+                공연포스터 아이콘을 누르면 해당 공연 페이지로 갈 수 있어요
+              </p>
+            </div>
+            <div className={styles.onboardingFooter}>
+              <button className={styles.btnGhost} onClick={neverShowOnboarding}>다시 보지 않기</button>
+              <button className={styles.btnPrimary} onClick={closeOnboarding}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
       <header className={styles.header}> 
         <button 
           onClick={goToPerformance}
@@ -84,7 +115,7 @@ const RoomPage = () => {
           <div className={styles.headerSub}>
             <span>{room.performanceName}</span>
             <span className={styles.dot}>·</span>
-            <span>{room.participants}명 참여</span>
+            <span>{room.visitors ?? room.participants}명 방문</span>
             <span className={styles.dot}>·</span>
             <span>개설자 {room.creatorNickname}</span>
           </div>
