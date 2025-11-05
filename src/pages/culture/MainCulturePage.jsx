@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import PerformanceCard from '../../components/culture/PerformanceCard';
 import styles from './MainCulturePage.module.css';
 
 const MainCulturePage = () => {
@@ -171,16 +172,6 @@ const MainCulturePage = () => {
     ? performances 
     : performances.filter(performance => performance.category === selectedCategory);
 
-  // 포스터 확장자 매핑
-  const posterExt = {
-    'wicked': 'gif',
-    'moulin-rouge': 'gif',
-    'kinky-boots': 'gif',
-    'hanbok-man': 'jpg',
-    'death-note': 'gif',
-    'rent': 'gif'
-  };
-
   return (
     <div className={styles.container}>
       {/* Search Bar */}
@@ -254,60 +245,19 @@ const MainCulturePage = () => {
 
       {/* Performance Grid */}
       <div className={styles.performanceGrid}>
-        {filteredPerformances.map((performance) => {
-          const handleCardClick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // 즉시 네비게이션 실행
-            const targetPath = `/culture/${performance.id}`;
-            console.log('Navigating to:', targetPath, 'Performance ID:', performance.id);
-            
-            // React Router navigate로 이동
-            try {
-              navigate(targetPath, { replace: false });
-            } catch (error) {
-              console.error('Navigation error:', error);
-            }
-          };
-
-          return (
-            <div 
-              key={performance.id} 
-              className={styles.performanceCard}
-              onClick={handleCardClick}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleCardClick(e);
-                }
-              }}
-            >
-              <div className={styles.posterCard}>
-                <img
-                  className={styles.posterImg}
-                  src={`/poster/${performance.image}.${posterExt[performance.image] || 'jpg'}`}
-                  alt={`${performance.title} 포스터`}
-                />
-              </div>
-              <div className={styles.cardInfo}>
-                <div className={styles.cardTitle}>{performance.title}</div>
-                <div className={styles.cardSubtitle}>{performance.date}</div>
-                <div className={styles.cardRating}>
-                  <span className={styles.star}>★</span>
-                  <span className={styles.ratingText}>{performance.rating} ({performance.reviewCount})</span>
-                </div>
-                <div className={styles.cardKeywords}>
-                  {performance.keywords.map((keyword, index) => (
-                    <span key={index} className={styles.keyword}>#{keyword}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {filteredPerformances.map((performance) => (
+          <PerformanceCard
+            key={performance.id}
+            id={performance.id}
+            title={performance.title}
+            image={performance.image}
+            rating={performance.rating}
+            reviewCount={performance.reviewCount}
+            date={performance.date}
+            keywords={performance.keywords}
+            variant="default"
+          />
+        ))}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import PerformanceCard from '../../components/culture/PerformanceCard';
 import styles from './MainHomePage.module.css';
 
 const MainHomePage = () => {
@@ -105,8 +106,8 @@ const MainHomePage = () => {
       subtitle: "DEATH NOTE",
       genre: "뮤지컬",
       description: "누군가 이 세상을 바로잡아야 한다",
-      rating: "4.4",
-      reviewCount: "167",
+      rating: 4.4,
+      reviewCount: 167,
       image: "death-note"
     },
     {
@@ -115,8 +116,8 @@ const MainHomePage = () => {
       subtitle: "뮤지컬 렌트",
       genre: "뮤지컬", 
       description: "BOOK, MUSIC AND LYRICS BY JONATHAN LARSON",
-      rating: "4.9",
-      reviewCount: "234",
+      rating: 4.9,
+      reviewCount: 234,
       image: "rent"
     }
   ];
@@ -186,24 +187,17 @@ const MainHomePage = () => {
       <section className={styles.featuredSection}>
         <div className={styles.featuredGrid}>
           {featuredPerformances.map((performance) => (
-            <Link key={performance.id} to={`/culture/${performance.id}`} className={styles.featuredCard}>
-              <div className={styles.featuredPoster}>
-                <img
-                  className={styles.featuredPosterImg}
-                  src={`/poster/${performance.image}.${posterExt[performance.image] || 'jpg'}`}
-                  alt={`${performance.title} 포스터`}
-                />
-              </div>
-              <div className={styles.featuredInfo}>
-                <div className={styles.featuredGenre}>{performance.genre}</div>
-                <div className={styles.featuredTitleText}>{performance.title}</div>
-                <div className={styles.featuredDescription}>{performance.description}</div>
-                <div className={styles.featuredRating}>
-                  <span className={styles.star}>★</span>
-                  <span className={styles.ratingText}>{performance.rating} ({performance.reviewCount})</span>
-                </div>
-              </div>
-            </Link>
+            <PerformanceCard
+              key={performance.id}
+              id={performance.id}
+              title={performance.title}
+              image={performance.image}
+              rating={performance.rating}
+              reviewCount={performance.reviewCount}
+              description={performance.description}
+              genre={performance.genre}
+              variant="featured"
+            />
           ))}
         </div>
       </section>
