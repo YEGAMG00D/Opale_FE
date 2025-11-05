@@ -7,13 +7,13 @@ import PerformanceTrailer from '../../components/culture/PerformanceTrailer';
 import PerformanceDetails from '../../components/culture/PerformanceDetails';
 import BookingLinks from '../../components/culture/BookingLinks';
 import OpenChatSection from '../../components/culture/OpenChatSection';
+import ReviewCard from '../../components/culture/ReviewCard';
 
 const DetailPerformancePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('reservation');
   const [isFavorite, setIsFavorite] = useState(false);
-  const [expandedReviews, setExpandedReviews] = useState({});
   const [expandedExpectations, setExpandedExpectations] = useState({});
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [writeType, setWriteType] = useState('review'); // 'review' or 'expectation'
@@ -247,13 +247,6 @@ const DetailPerformancePage = () => {
     setIsFavorite(!isFavorite);
   };
 
-  const toggleReviewExpansion = (reviewId) => {
-    setExpandedReviews(prev => ({
-      ...prev,
-      [reviewId]: !prev[reviewId]
-    }));
-  };
-
   const toggleExpectationExpansion = (expectationId) => {
     setExpandedExpectations(prev => ({
       ...prev,
@@ -401,45 +394,17 @@ const DetailPerformancePage = () => {
                   </div>
                   
                   {sampleReviews.map(review => (
-                    <div key={review.id} className={styles.reviewItem}>
-                      <div className={styles.reviewHeader}>
-                        <h5 className={styles.reviewTitle}>{review.title}</h5>
-                        <div className={styles.reviewMeta}>
-                          <span className={styles.reviewDate}>{review.performanceDate} | {review.seat}</span>
-                          <div className={styles.reviewRating}>
-                            {[...Array(5)].map((_, i) => (
-                              <span key={i} className={`${styles.star} ${i < Math.floor(review.rating) ? styles.filled : ''} ${i === Math.floor(review.rating) && review.rating % 1 !== 0 ? styles.half : ''}`}>
-                                ★
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className={styles.reviewContentText}>
-                        <p className={styles.reviewText}>
-                          {expandedReviews[review.id] 
-                            ? review.content 
-                            : review.content.length > 100 
-                              ? review.content.substring(0, 100) + '...' 
-                              : review.content
-                          }
-                        </p>
-                        {review.content.length > 100 && (
-                          <button 
-                            className={styles.expandButton}
-                            onClick={() => toggleReviewExpansion(review.id)}
-                          >
-                            {expandedReviews[review.id] ? '닫기' : '더보기'}
-                          </button>
-                        )}
-                      </div>
-                      
-                      <div className={styles.reviewFooter}>
-                        <button className={styles.likeButton}>♡</button>
-                        <span className={styles.reviewAuthor}>{review.author} | {review.date}</span>
-                      </div>
-                    </div>
+                    <ReviewCard
+                      key={review.id}
+                      id={review.id}
+                      title={review.title}
+                      performanceDate={review.performanceDate}
+                      seat={review.seat}
+                      rating={review.rating}
+                      content={review.content}
+                      author={review.author}
+                      date={review.date}
+                    />
                   ))}
                 </div>
               )}
