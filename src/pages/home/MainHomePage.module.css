@@ -11,7 +11,7 @@
 
 /* Carousel Section */
 .carouselSection {
-  margin-top: 80px; /* 헤더 높이만큼 */
+  margin-top: 0;
   padding: 0;
   position: relative;
 }
