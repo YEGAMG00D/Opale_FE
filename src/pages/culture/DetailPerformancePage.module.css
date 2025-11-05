@@ -7,51 +7,6 @@
   position: relative;
   padding-bottom: 80px;
 }
-
-/* Header */
-.header {
-  width: 100%;
-  background-color: #FFFFFF;
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 430px;
-  z-index: 100;
-}
-
-.headerContent {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-}
-
-.backButton {
-  font-size: 20px;
-  color: #000000;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.headerTitle {
-  font-size: 16px;
-  font-weight: 500;
-  color: #000000;
-}
-
-.loginLink {
-  font-size: 16px;
-  font-weight: 500;
-  color: #000000;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.loginLink:hover {
-  opacity: 0.7;
-}
-
 /* Main Poster */
 .mainPoster {
   width: 100%;

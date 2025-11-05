@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './MainHomePage.module.css';
-import Header from '../../layouts/Header';
 
 const MainHomePage = () => {
   const navigate = useNavigate();
@@ -134,8 +133,6 @@ const MainHomePage = () => {
 
   return (
     <div className={styles.container}>
-      <Header />
-
       {/* Main Carousel Section */}
       <section className={styles.carouselSection}>
         <div className={styles.carouselContainer}>
@@ -189,7 +186,7 @@ const MainHomePage = () => {
       <section className={styles.featuredSection}>
         <div className={styles.featuredGrid}>
           {featuredPerformances.map((performance) => (
-            <Link key={performance.id} to="/culture/detail" className={styles.featuredCard}>
+            <Link key={performance.id} to={`/culture/${performance.id}`} className={styles.featuredCard}>
               <div className={styles.featuredPoster}>
                 <img
                   className={styles.featuredPosterImg}

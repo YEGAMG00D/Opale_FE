@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './MainCulturePage.module.css';
-import Header from '../../layouts/Header';
 
 const MainCulturePage = () => {
   const navigate = useNavigate();
@@ -184,8 +183,6 @@ const MainCulturePage = () => {
 
   return (
     <div className={styles.container}>
-      <Header />
-
       {/* Search Bar */}
       <div className={styles.searchSection} ref={searchRef}>
         <form onSubmit={handleSearchSubmit} className={styles.searchForm}>

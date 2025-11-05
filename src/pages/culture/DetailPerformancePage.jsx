@@ -275,14 +275,6 @@ const DetailPerformancePage = () => {
 
   return (
     <div className={styles.container}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <Link to="/culture" className={styles.backButton}>←</Link>
-          <div className={styles.headerTitle}>공연</div>
-          <Link to="/login" className={styles.loginLink}>로그인</Link>
-        </div>
-      </header>
 
       {/* Main Poster */}
       <div className={styles.mainPoster}>
