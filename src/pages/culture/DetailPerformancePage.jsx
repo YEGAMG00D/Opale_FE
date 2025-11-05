@@ -631,15 +631,6 @@ const DetailPerformancePage = () => {
           </div>
         </div>
       )}
-
-      {/* Bottom Navigation */}
-      <nav className={styles.bottomNav}>
-        <Link to="/place" className={styles.navItem}>공연장</Link>
-        <Link to="/culture" className={`${styles.navItem} ${styles.active}`}>공연</Link>
-        <Link to="/" className={styles.navItem}>홈</Link>
-        <Link to="/chat" className={styles.navItem}>채팅</Link>
-        <Link to="/recommend" className={styles.navItem}>추천</Link>
-      </nav>
     </div>
   );
 };
