@@ -1,0 +1,63 @@
+.openChatSection {
+  padding: 20px 24px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #F5F5F5;
+}
+
+.openChatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000;
+  margin: 0;
+}
+
+.reportLink {
+  font-size: 12px;
+  color: #666666;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.reportLink:hover {
+  opacity: 0.7;
+}
+
+.openChatButton {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(#FFFFFF, #FFFFFF) padding-box,
+              linear-gradient(45deg, #DDE5F7, #FFFBD1, #FDE7EF, #D8EEDD) border-box;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+  outline: none;
+}
+
+.openChatButton:focus {
+  outline: none;
+  border-color: #fbccdc;
+}
+
+.openChatButton:hover {
+  background: linear-gradient(#FAFAFA, #FAFAFA) padding-box,
+              linear-gradient(45deg, #DDE5F7, #FFFBD1, #FDE7EF, #D8EEDD) border-box;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+@media (max-width: 375px) {
+  .openChatSection {
+    padding: 16px 20px;
+  }
+}
+

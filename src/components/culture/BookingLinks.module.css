@@ -1,0 +1,79 @@
+.bookingSection {
+  padding: 20px 24px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #F5F5F5;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000;
+  margin: 0 0 16px 0;
+}
+
+.bookingSites {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.bookingSite {
+  min-width: 80px;
+  height: 60px;
+  border-radius: 8px;
+  border: none;
+  background-color: #F5F5F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  box-shadow: none;
+}
+
+.bookingSite:hover {
+  opacity: 0.8;
+}
+
+.naverLogo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: white;
+  color: #03C75A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.siteName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666666;
+}
+
+.moreButton {
+  min-width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  border: 1px solid #E5E5E5;
+  background-color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  color: #666666;
+  box-shadow: none;
+}
+
+@media (max-width: 375px) {
+  .bookingSection {
+    padding: 16px 20px;
+  }
+}
+

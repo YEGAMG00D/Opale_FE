@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import styles from './DetailPerformancePage.module.css';
+import PerformancePoster from '../../components/culture/PerformancePoster';
+import PerformanceInfoCard from '../../components/culture/PerformanceInfoCard';
+import PerformanceTrailer from '../../components/culture/PerformanceTrailer';
+import PerformanceDetails from '../../components/culture/PerformanceDetails';
+import BookingLinks from '../../components/culture/BookingLinks';
+import OpenChatSection from '../../components/culture/OpenChatSection';
 
 const DetailPerformancePage = () => {
   const { id } = useParams();
@@ -275,107 +281,40 @@ const DetailPerformancePage = () => {
 
   return (
     <div className={styles.container}>
+      <PerformancePoster
+        imageUrl={`/poster/${performance.image}.${posterExt[performance.image] || 'jpg'}`}
+        isFavorite={isFavorite}
+        onFavoriteToggle={toggleFavorite}
+      />
 
-      {/* Main Poster */}
-      <div className={styles.mainPoster}>
-        <img
-          className={styles.mainPosterImg}
-          src={`/poster/${performance.image}.${posterExt[performance.image] || 'jpg'}`}
-          alt={`${performance.title} 포스터`}
-        />
-        <div className={styles.posterGradient}></div>
-        <button className={styles.favoriteButton} onClick={toggleFavorite}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill={isFavorite ? "#FF69B4" : "none"} stroke={isFavorite ? "#FF69B4" : "#999999"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-          </svg>
-        </button>
-      </div>
+      <PerformanceInfoCard
+        category={performance.category}
+        title={performance.title}
+        englishTitle={performance.englishTitle}
+        venue={performance.venue}
+        address={performance.address}
+        date={performance.date}
+        duration={performance.duration}
+        ageLimit={performance.ageLimit}
+      />
 
-      {/* Performance Info Card */}
-      <div className={styles.infoCard}>
-        <div className={styles.categoryTag}>{performance.category}</div>
-        <h1 className={styles.performanceTitle}>
-          {performance.title} <span className={styles.englishTitle}>({performance.englishTitle})</span>
-        </h1>
-        <div className={styles.infoRow}>
-          <div className={styles.infoLabel}>공연장</div>
-          <div className={styles.infoContent}>
-            <div className={styles.infoValue}>{performance.venue}</div>
-            <div className={styles.infoAddress}>{performance.address}</div>
-          </div>
-        </div>
-        <div className={styles.infoRow}>
-          <div className={styles.infoLabel}>공연 기간</div>
-          <div className={styles.infoValue}>{performance.date}</div>
-        </div>
-        <div className={styles.infoRow}>
-          <div className={styles.infoLabel}>공연 시간</div>
-          <div className={styles.infoValue}>{performance.duration}</div>
-        </div>
-        <div className={styles.infoRow}>
-          <div className={styles.infoLabel}>관람 연령</div>
-          <div className={styles.infoValue}>{performance.ageLimit}</div>
-        </div>
-      </div>
+      <PerformanceTrailer
+        englishTitle={performance.englishTitle}
+        title={performance.title}
+        trailerImage={performance.trailerImage}
+      />
 
-      {/* Trailer Section */}
-      {/* TODO: YouTube 공식 링크 연결 예정 */}
-      <div className={`${styles.trailerSection} ${styles[performance.trailerImage]}`}>
-        <div className={styles.trailerContent}>
-          <div className={styles.trailerTitle}>{performance.englishTitle}</div>
-          <div className={styles.trailerSubtitle}>{performance.title}</div>
-          <button className={styles.playButton}>
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          </button>
-          {/* YouTube 임베드 코드를 여기에 추가할 예정 */}
-          {/* 예시: <iframe className={styles.youtubeEmbed} src="YOUTUBE_EMBED_URL" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe> */}
-        </div>
-      </div>
+      <PerformanceDetails
+        rating={performance.rating}
+        reviewCount={performance.reviewCount}
+        hashtags={performance.hashtags}
+        genre={performance.genre}
+        description={performance.description}
+      />
 
-      {/* Rating and Details Section */}
-      <div className={styles.detailsSection}>
-        <div className={styles.ratingRow}>
-          <span className={styles.star}>★</span>
-          <span className={styles.ratingText}>{performance.rating} ({performance.reviewCount})</span>
-        </div>
-        <div className={styles.hashtags}>
-          {performance.hashtags.map((tag, index) => (
-            <span key={index} className={styles.hashtag}>{tag}</span>
-          ))}
-        </div>
-        <div className={styles.genre}>{performance.genre}</div>
-        <div className={styles.description}>{performance.description}</div>
-      </div>
+      <BookingLinks bookingSites={bookingSites} />
 
-      {/* Booking Sites */}
-      <div className={styles.bookingSection}>
-        <h3 className={styles.sectionTitle}>예매처 링크</h3>
-        <div className={styles.bookingSites}>
-          {bookingSites.map((site, index) => (
-            <button key={index} className={styles.bookingSite} style={{ backgroundColor: site.color || "#F5F5F5" }}>
-              {site.name === "네이버 예약" ? (
-                <div className={styles.naverLogo}>N</div>
-              ) : (
-                <span className={styles.siteName}>{site.logo}</span>
-              )}
-            </button>
-          ))}
-          <button className={styles.moreButton}>...</button>
-        </div>
-      </div>
-
-      {/* Open Chat */}
-      <div className={styles.openChatSection}>
-        <div className={styles.openChatHeader}>
-          <h3 className={styles.sectionTitle}>오픈 채팅방</h3>
-          <Link to="#" className={styles.reportLink}>제보</Link>
-        </div>
-        <button className={styles.openChatButton}>
-          오픈채팅방 바로가기
-        </button>
-      </div>
+      <OpenChatSection />
 
       {/* Tabs */}
       <div className={styles.tabSection}>
