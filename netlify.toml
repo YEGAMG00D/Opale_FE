@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# 메인 브랜치
+[context.production]
+  command = "npm run build"
+  publish = "dist"
+
+# dev 브랜치 (별도 배포 설정)
+[context.dev]
+  command = "npm run build"
+  publish = "dist"
