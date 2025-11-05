@@ -7,6 +7,7 @@
   margin: 0 auto;
   background-color: #ffffff;
   position: relative;
+  --header-height: 81px; /* Header 높이: 20px top + ~40px content + 1px divider + 20px bottom (충분한 여유) */
 }
 
 .main-content {
@@ -14,10 +15,10 @@
   width: 100%;
   background-color: #ffffff;
   overflow-y: auto;
-  padding: 0;
-  margin-top: 80px; /* Header 높이만큼 (더 여유있게) */
-  margin-bottom: 80px; /* Footer 높이만큼 (더 여유있게) */
-  height: calc(100vh - 160px); /* Header + Footer 높이 제외 */
+  padding-top: var(--header-height); /* Header 높이만큼 공간 확보 */
+  padding-bottom: 0;
+  margin: 0;
+  margin-bottom: 80px; /* Footer 높이만큼 */
   /* 스크롤바 숨기기 */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */

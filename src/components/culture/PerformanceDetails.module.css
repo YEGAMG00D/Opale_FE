@@ -1,0 +1,53 @@
+.detailsSection {
+  padding: 24px 24px 32px;
+  background-color: #FFFFFF;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.star {
+  color: #FF69B4;
+  font-size: 18px;
+}
+
+.ratingText {
+  font-size: 16px;
+  color: #000000;
+  font-weight: 500;
+}
+
+.hashtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.hashtag {
+  font-size: 14px;
+  color: #000000;
+}
+
+.genre {
+  font-size: 14px;
+  color: #666666;
+  margin-bottom: 12px;
+}
+
+.description {
+  font-size: 14px;
+  color: #666666;
+  line-height: 1.6;
+}
+
+@media (max-width: 375px) {
+  .detailsSection {
+    padding: 20px 20px 28px;
+  }
+}
+
