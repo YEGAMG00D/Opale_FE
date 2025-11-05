@@ -1,0 +1,50 @@
+.compactItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.compactItem:active {
+  background: #f8fafc;
+}
+
+.avatarSmall {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.compactMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.compactTitle {
+  font-size: 14px;
+  color: #111827;
+}
+
+.compactSub {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.dot {
+  margin: 0 6px;
+  color: #cbd5e1;
+}
+
+.textOn {
+  color: #079455;
+}
+
+.textOff {
+  color: #667085;
+}
+

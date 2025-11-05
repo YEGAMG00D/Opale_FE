@@ -1,0 +1,30 @@
+.message {
+  margin: 8px 0;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.messageContent {
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.messageText {
+  padding: 10px 14px;
+  border-radius: 18px;
+  word-wrap: break-word;
+  line-height: 1.4;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+.messageTime {
+  font-size: 11px;
+  color: #9ca3af;
+  padding: 0 4px;
+}
+

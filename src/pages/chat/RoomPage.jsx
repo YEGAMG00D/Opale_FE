@@ -2,6 +2,9 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './RoomPage.module.css';
 import { getRoomById } from './mockChatRooms';
+import ChatRoomHeader from '../../components/chat/ChatRoomHeader';
+import MyMessage from '../../components/chat/MyMessage';
+import OtherMessage from '../../components/chat/OtherMessage';
 
 const RoomPage = () => {
   const { id } = useParams();
@@ -97,45 +100,33 @@ const RoomPage = () => {
           </div>
         </div>
       )}
-      <header className={styles.header}> 
-        <button 
-          onClick={goToPerformance}
-          className={styles.thumbButton}
-          aria-label={`${room.performanceName} 공연 상세 페이지로 이동`}
-        >
-          <img src={room.image} alt={room.performanceName} className={styles.thumb} />
-        </button>
-        <div className={styles.headerMeta}>
-          <div className={styles.headerTop}>
-            <strong className={styles.roomTitle}>{room.title}</strong>
-            <span className={room.active ? styles.badgeOn : styles.badgeOff}>
-              {room.active ? '활성' : '비활성'}
-            </span>
-          </div>
-          <div className={styles.headerSub}>
-            <span>{room.performanceName}</span>
-            <span className={styles.dot}>·</span>
-            <span>{room.visitors ?? room.participants}명 방문</span>
-            <span className={styles.dot}>·</span>
-            <span>개설자 {room.creatorNickname}</span>
-          </div>
-        </div>
-      </header>
+      <ChatRoomHeader
+        title={room.title}
+        performanceName={room.performanceName}
+        image={room.image}
+        active={room.active}
+        visitors={room.visitors}
+        participants={room.participants}
+        creatorNickname={room.creatorNickname}
+        onPosterClick={goToPerformance}
+      />
 
       <main className={styles.chatArea}>
         <div className={styles.dayDivider}>오늘</div>
         {messages.map((message) => (
-          <div 
-            key={message.id} 
-            className={`${styles.message} ${
-              message.sender === currentUser ? styles.messageSelf : styles.messageOther
-            }`}
-          >
-            <div className={styles.messageContent}>
-              <span className={styles.messageText}>{message.text}</span>
-              <span className={styles.messageTime}>{message.time}</span>
-            </div>
-          </div>
+          message.sender === currentUser ? (
+            <MyMessage
+              key={message.id}
+              text={message.text}
+              time={message.time}
+            />
+          ) : (
+            <OtherMessage
+              key={message.id}
+              text={message.text}
+              time={message.time}
+            />
+          )
         ))}
         <div ref={messagesEndRef} />
       </main>

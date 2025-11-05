@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import styles from './MainPlacePage.module.css';
 import RegionFilter from '../../components/place/RegionFilter';
+import PlaceCard from '../../components/place/PlaceCard';
 
 // 간단한 더미 공연장 데이터. 실제 API 연결 시 대체합니다.
 const DUMMY_PLACES = [
@@ -68,13 +68,13 @@ const MainPlacePage = () => {
 
           <ul className={styles.placeList}>
             {filteredPlaces.map((place) => (
-              <li key={place.id} className={styles.placeItem}>
-                <div className={styles.placeMeta}>
-                  <span className={styles.placeName}>{place.name}</span>
-                  <span className={styles.placeLoc}>{place.region} · {place.district}</span>
-                </div>
-                <Link className={styles.detailBtn} to={`/place/${place.id}`}>상세 보기</Link>
-              </li>
+              <PlaceCard
+                key={place.id}
+                id={place.id}
+                name={place.name}
+                region={place.region}
+                district={place.district}
+              />
             ))}
           </ul>
         </div>
