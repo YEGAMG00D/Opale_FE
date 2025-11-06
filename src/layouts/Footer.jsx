@@ -13,7 +13,6 @@ const Footer = () => {
 
   return (
     <footer className="footer">
-      <div className="footer-divider"></div>
       <nav className="footer-nav">
         <Link 
           to="/place" 

@@ -5,6 +5,8 @@
   padding: 16px;
   background: #fff;
   min-height: 100vh;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .searchBar {

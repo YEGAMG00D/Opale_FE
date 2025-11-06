@@ -5,7 +5,9 @@
   background-color: #FFFFFF;
   min-height: 100vh;
   position: relative;
-  padding-bottom: 80px;
+  padding-bottom: 61px; /* Footer 높이만큼 (1px border + 60px min-height) */
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 
@@ -15,6 +17,8 @@
   padding: 16px 24px;
   position: relative;
   z-index: 50;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .searchForm {
@@ -117,13 +121,23 @@
 .categorySection {
   padding: 20px 24px 16px;
   background-color: #FFFFFF;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .categoryTabs {
   display: flex;
   gap: 8px;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.categoryTabs::-webkit-scrollbar {
+  display: none;
 }
 
 .categoryTab {
@@ -153,6 +167,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .performanceCard {

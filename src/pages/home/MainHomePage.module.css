@@ -5,7 +5,9 @@
   background-color: #FFFFFF;
   min-height: 100vh;
   position: relative;
-  padding-bottom: 80px; /* 하단 네비게이션 공간 */
+  padding-bottom: 61px; /* Footer 높이만큼 (1px border + 60px min-height) */
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 
@@ -14,12 +16,22 @@
   margin-top: 0;
   padding: 0;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: visible;
+  box-sizing: border-box;
 }
 
 .carouselContainer {
   overflow: hidden;
   width: 100%;
+  max-width: 100%;
   height: 300px;
+  box-sizing: border-box;
+  position: relative;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .carouselTrack {
@@ -27,12 +39,15 @@
   width: 600%;
   height: 100%;
   transition: transform 0.5s ease;
+  will-change: transform;
+  position: relative;
 }
 
 .carouselSlide {
   width: 16.666%;
   height: 100%;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .slideLink {
@@ -156,6 +171,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .ctaButton {
@@ -192,6 +209,8 @@
 /* Featured Section */
 .featuredSection {
   padding: 0 24px 20px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .featuredGrid {

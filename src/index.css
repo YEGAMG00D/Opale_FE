@@ -42,6 +42,15 @@ button:focus-visible {
 
 html {
   overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
 /* 웹앱 컨테이너 */
@@ -54,6 +63,7 @@ html {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* Reset CSS */

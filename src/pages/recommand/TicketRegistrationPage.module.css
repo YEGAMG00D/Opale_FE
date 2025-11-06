@@ -8,6 +8,8 @@
   justify-content: center;
   background-color: #f3f4f6;
   padding: 20px;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .card {
