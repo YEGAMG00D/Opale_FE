@@ -4,7 +4,9 @@
   margin: 0 auto;
   background-color: #FFFFFF;
   min-height: 100vh;
-  padding: 0 0 100px;
+  padding: 0 0 61px; /* Footer 높이만큼 (1px border + 60px min-height) */
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* 헤더 */

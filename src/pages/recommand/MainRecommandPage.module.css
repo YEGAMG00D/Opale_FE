@@ -4,7 +4,9 @@
   margin: 0 auto;
   background-color: #FFFFFF;
   min-height: 100vh;
-  padding: 0 0 100px;
+  padding: 0 0 61px; /* Footer 높이만큼 (1px border + 60px min-height) */
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* 헤더 */
@@ -18,6 +20,8 @@
   position: sticky;
   top: 0;
   z-index: 100;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .headerTitle {
@@ -291,6 +295,8 @@
   padding: 0 24px;
   cursor: grab;
   user-select: none;
+  box-sizing: border-box;
+  width: calc(100% + 48px);
 }
 
 .sliderContainer:active {

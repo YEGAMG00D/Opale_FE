@@ -7,6 +7,8 @@
   margin: 0 auto;
   background-color: #ffffff;
   position: relative;
+  overflow-x: hidden;
+  box-sizing: border-box;
   --header-height: 81px; /* Header 높이: 20px top + ~40px content + 1px divider + 20px bottom (충분한 여유) */
 }
 
@@ -15,10 +17,12 @@
   width: 100%;
   background-color: #ffffff;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-top: var(--header-height); /* Header 높이만큼 공간 확보 */
   padding-bottom: 0;
   margin: 0;
-  margin-bottom: 80px; /* Footer 높이만큼 */
+  margin-bottom: 61px; /* Footer 높이만큼 (1px border + 60px min-height) */
+  box-sizing: border-box;
   /* 스크롤바 숨기기 */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */

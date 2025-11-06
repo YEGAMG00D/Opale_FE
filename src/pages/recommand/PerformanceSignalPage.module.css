@@ -8,6 +8,8 @@
   justify-content: center;
   background-color: #f9fafb;
   padding: 20px;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .content {

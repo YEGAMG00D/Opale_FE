@@ -4,6 +4,8 @@
   margin: 0 auto;
   padding: 24px 20px;
   background-color: #ffffff;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .error {

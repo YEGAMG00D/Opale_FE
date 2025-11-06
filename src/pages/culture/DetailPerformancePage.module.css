@@ -5,7 +5,9 @@
   background-color: #FFFFFF;
   min-height: 100vh;
   position: relative;
-  padding-bottom: 80px;
+  padding-bottom: 61px; /* Footer 높이만큼 (1px border + 60px min-height) */
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 /* Main Poster */
 .mainPoster {
@@ -268,7 +270,15 @@
   display: flex;
   gap: 12px;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.bookingSites::-webkit-scrollbar {
+  display: none;
 }
 
 .bookingSite {
