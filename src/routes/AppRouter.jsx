@@ -35,6 +35,10 @@ import RoomPage from '../pages/chat/RoomPage';
 
 // 추천
 import MainRecommandPage from '../pages/recommand/MainRecommandPage';
+import PerformanceSignalPage from '../pages/recommand/PerformanceSignalPage';
+import TicketRegistrationPage from '../pages/recommand/TicketRegistrationPage';
+import ReviewWritingPage from '../pages/recommand/ReviewWritingPage';
+import MyTicketPage from '../pages/recommand/MyTicketPage';
 
 // 예외 페이지 (레이아웃 없음)
 import LaunchingPage from '../pages/exception/LaunchingPage';
@@ -80,6 +84,10 @@ const AppRouter = () => {
 
           {/* 추천 */}
           <Route path="recommend" element={<MainRecommandPage />} />
+          <Route path="recommend/signal" element={<PerformanceSignalPage />} />
+          <Route path="recommend/ticket" element={<TicketRegistrationPage />} />
+          <Route path="recommend/review" element={<ReviewWritingPage />} />
+          <Route path="recommend/my-ticket" element={<MyTicketPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
