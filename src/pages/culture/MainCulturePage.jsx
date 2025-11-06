@@ -24,7 +24,8 @@ const MainCulturePage = () => {
       rating: 4.6,
       reviewCount: 210,
       keywords: ["뮤지컬", "오리지널", "내한공연"],
-      category: "musical"
+      category: "musical",
+      status: "ongoing" // 진행중
     },
     {
       id: 2,
@@ -38,7 +39,8 @@ const MainCulturePage = () => {
       rating: 4.7,
       reviewCount: 189,
       keywords: ["뮤지컬", "로맨스", "클래식"],
-      category: "musical"
+      category: "musical",
+      status: "ongoing" // 진행중
     },
     {
       id: 3,
@@ -51,7 +53,8 @@ const MainCulturePage = () => {
       rating: 4.8,
       reviewCount: 156,
       keywords: ["뮤지컬", "코미디", "감동"],
-      category: "musical"
+      category: "musical",
+      status: "ongoing" // 진행중
     },
     {
       id: 4,
@@ -64,7 +67,8 @@ const MainCulturePage = () => {
       rating: 4.5,
       reviewCount: 98,
       keywords: ["창작뮤지컬", "역사", "과학"],
-      category: "musical"
+      category: "musical",
+      status: "ongoing" // 진행중
     },
     {
       id: 5,
@@ -77,7 +81,8 @@ const MainCulturePage = () => {
       rating: 4.4,
       reviewCount: 167,
       keywords: ["뮤지컬", "스릴러", "판타지"],
-      category: "musical"
+      category: "musical",
+      status: "ongoing" // 진행중
     },
     {
       id: 6,
@@ -90,7 +95,320 @@ const MainCulturePage = () => {
       rating: 4.9,
       reviewCount: 234,
       keywords: ["뮤지컬", "드라마", "감동"],
-      category: "musical"
+      category: "musical",
+      status: "ongoing" // 진행중
+    },
+    // 진행중인 공연 5개 추가
+    {
+      id: 7,
+      title: "햄릿",
+      subtitle: "HAMLET",
+      description: "세상에서 가장 유명한 비극",
+      date: "2025.01.15 ~ 2025.03.30",
+      venue: "예술의전당 오페라하우스",
+      image: "wicked", // 임시 이미지
+      rating: 4.5,
+      reviewCount: 145,
+      keywords: ["연극", "클래식", "셰익스피어"],
+      category: "play",
+      status: "ongoing"
+    },
+    {
+      id: 8,
+      title: "시카고",
+      subtitle: "CHICAGO",
+      description: "재즈 시대의 화려한 범죄 스토리",
+      date: "2025.02.01 ~ 2025.04.15",
+      venue: "세종문화회관 대극장",
+      image: "moulin-rouge", // 임시 이미지
+      rating: 4.7,
+      reviewCount: 198,
+      keywords: ["뮤지컬", "재즈", "범죄"],
+      category: "musical",
+      status: "ongoing"
+    },
+    {
+      id: 9,
+      title: "오페라의 유령",
+      subtitle: "THE PHANTOM OF THE OPERA",
+      description: "오페라 하우스의 비밀스러운 사랑 이야기",
+      date: "2025.01.20 ~ 2025.05.10",
+      venue: "블루스퀘어 신한카드홀",
+      image: "kinky-boots", // 임시 이미지
+      rating: 4.8,
+      reviewCount: 267,
+      keywords: ["뮤지컬", "로맨스", "클래식"],
+      category: "musical",
+      status: "ongoing"
+    },
+    {
+      id: 10,
+      title: "리어왕",
+      subtitle: "KING LEAR",
+      description: "권력과 가족의 비극",
+      date: "2025.02.10 ~ 2025.04.20",
+      venue: "국립극장 해오름극장",
+      image: "hanbok-man", // 임시 이미지
+      rating: 4.3,
+      reviewCount: 112,
+      keywords: ["연극", "비극", "셰익스피어"],
+      category: "play",
+      status: "ongoing"
+    },
+    {
+      id: 11,
+      title: "레미제라블",
+      subtitle: "LES MISÉRABLES",
+      description: "프랑스 혁명의 시대를 배경으로 한 감동 드라마",
+      date: "2025.01.25 ~ 2025.05.30",
+      venue: "충무아트센터 대극장",
+      image: "rent", // 임시 이미지
+      rating: 4.9,
+      reviewCount: 312,
+      keywords: ["뮤지컬", "드라마", "역사"],
+      category: "musical",
+      status: "ongoing"
+    },
+    // 종료된 공연 5개 추가
+    {
+      id: 12,
+      title: "맘마미아!",
+      subtitle: "MAMMA MIA!",
+      description: "ABBA의 명곡들로 만든 화려한 뮤지컬",
+      date: "2024.09.01 ~ 2024.11.30",
+      venue: "디큐브 링크아트센터",
+      image: "death-note", // 임시 이미지
+      rating: 4.6,
+      reviewCount: 189,
+      keywords: ["뮤지컬", "코미디", "ABBA"],
+      category: "musical",
+      status: "ended"
+    },
+    {
+      id: 13,
+      title: "햄릿",
+      subtitle: "HAMLET (2024)",
+      description: "셰익스피어의 대표작",
+      date: "2024.08.15 ~ 2024.10.20",
+      venue: "예술의전당 CJ토월극장",
+      image: "wicked", // 임시 이미지
+      rating: 4.4,
+      reviewCount: 156,
+      keywords: ["연극", "클래식", "셰익스피어"],
+      category: "play",
+      status: "ended"
+    },
+    {
+      id: 14,
+      title: "라이온킹",
+      subtitle: "THE LION KING",
+      description: "디즈니의 아프리카 대자연 이야기",
+      date: "2024.07.01 ~ 2024.09.30",
+      venue: "샤롯데씨어터",
+      image: "moulin-rouge", // 임시 이미지
+      rating: 4.8,
+      reviewCount: 245,
+      keywords: ["뮤지컬", "디즈니", "가족"],
+      category: "musical",
+      status: "ended"
+    },
+    {
+      id: 15,
+      title: "세일즈맨의 죽음",
+      subtitle: "DEATH OF A SALESMAN",
+      description: "아서 밀러의 명작",
+      date: "2024.06.10 ~ 2024.08.15",
+      venue: "국립극장 자유소극장",
+      image: "kinky-boots", // 임시 이미지
+      rating: 4.5,
+      reviewCount: 134,
+      keywords: ["연극", "드라마", "현대극"],
+      category: "play",
+      status: "ended"
+    },
+    {
+      id: 16,
+      title: "캣츠",
+      subtitle: "CATS",
+      description: "앤드루 로이드 웨버의 대표작",
+      date: "2024.05.01 ~ 2024.07.20",
+      venue: "블루스퀘어 신한카드홀",
+      image: "hanbok-man", // 임시 이미지
+      rating: 4.7,
+      reviewCount: 201,
+      keywords: ["뮤지컬", "판타지", "가족"],
+      category: "musical",
+      status: "ended"
+    },
+    // 진행 예정인 공연 5개 추가
+    {
+      id: 17,
+      title: "미스 사이공",
+      subtitle: "MISS SAIGON",
+      description: "베트남 전쟁 시대의 사랑 이야기",
+      date: "2025.06.01 ~ 2025.08.31",
+      venue: "세종문화회관 대극장",
+      image: "rent", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["뮤지컬", "로맨스", "드라마"],
+      category: "musical",
+      status: "upcoming"
+    },
+    {
+      id: 18,
+      title: "햄릿",
+      subtitle: "HAMLET (2025 Summer)",
+      description: "셰익스피어의 불멸의 명작",
+      date: "2025.07.15 ~ 2025.09.30",
+      venue: "예술의전당 오페라하우스",
+      image: "death-note", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["연극", "클래식", "셰익스피어"],
+      category: "play",
+      status: "upcoming"
+    },
+    {
+      id: 19,
+      title: "에비타",
+      subtitle: "EVITA",
+      description: "아르헨티나의 영부인 에비타 페론의 이야기",
+      date: "2025.08.01 ~ 2025.10.31",
+      venue: "충무아트센터 대극장",
+      image: "wicked", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["뮤지컬", "역사", "드라마"],
+      category: "musical",
+      status: "upcoming"
+    },
+    {
+      id: 20,
+      title: "오셀로",
+      subtitle: "OTHELLO",
+      description: "질투와 사랑의 비극",
+      date: "2025.09.10 ~ 2025.11.20",
+      venue: "국립극장 해오름극장",
+      image: "moulin-rouge", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["연극", "비극", "셰익스피어"],
+      category: "play",
+      status: "upcoming"
+    },
+    {
+      id: 21,
+      title: "드림걸스",
+      subtitle: "DREAMGIRLS",
+      description: "1960년대 R&B 그룹의 성공 스토리",
+      date: "2025.10.05 ~ 2026.01.15",
+      venue: "디큐브 링크아트센터",
+      image: "kinky-boots", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["뮤지컬", "R&B", "드라마"],
+      category: "musical",
+      status: "upcoming"
+    },
+    // 콘서트 추가
+    {
+      id: 22,
+      title: "NCT WISH 콘서트",
+      subtitle: "NCT WISH CONCERT",
+      description: "NCT WISH의 화려한 무대",
+      date: "2025.01.05 ~ 2025.01.07",
+      venue: "올림픽공원 올림픽홀",
+      image: "rent", // 임시 이미지
+      rating: 4.8,
+      reviewCount: 342,
+      keywords: ["콘서트", "K-pop", "NCT"],
+      category: "concert",
+      status: "ended"
+    },
+    {
+      id: 23,
+      title: "SKY FESTIVAL",
+      subtitle: "SKY FESTIVAL 2025",
+      description: "올해 최고의 페스티벌, SKY FESTIVAL",
+      date: "2025.01.18 ~ 2025.01.19",
+      venue: "잠실종합운동장 주경기장",
+      image: "moulin-rouge", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["콘서트", "페스티벌", "K-pop"],
+      category: "concert",
+      status: "upcoming"
+    },
+    {
+      id: 24,
+      title: "아이유 콘서트",
+      subtitle: "IU CONCERT - The Golden Hour",
+      description: "아이유의 황금빛 무대",
+      date: "2025.02.15 ~ 2025.02.16",
+      venue: "잠실실내체육관",
+      image: "kinky-boots", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["콘서트", "K-pop", "아이유"],
+      category: "concert",
+      status: "upcoming"
+    },
+    {
+      id: 25,
+      title: "BTS 콘서트",
+      subtitle: "BTS WORLD TOUR",
+      description: "BTS의 글로벌 월드 투어",
+      date: "2024.12.20 ~ 2024.12.22",
+      venue: "고척스카이돔",
+      image: "wicked", // 임시 이미지
+      rating: 4.9,
+      reviewCount: 567,
+      keywords: ["콘서트", "K-pop", "BTS"],
+      category: "concert",
+      status: "ended"
+    },
+    {
+      id: 26,
+      title: "뉴진스 콘서트",
+      subtitle: "NewJeans LIVE",
+      description: "뉴진스의 특별한 라이브 무대",
+      date: "2025.03.10 ~ 2025.03.12",
+      venue: "올림픽공원 체조경기장",
+      image: "death-note", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["콘서트", "K-pop", "뉴진스"],
+      category: "concert",
+      status: "upcoming"
+    },
+    {
+      id: 27,
+      title: "세븐틴 콘서트",
+      subtitle: "SEVENTEEN TOUR",
+      description: "세븐틴의 화려한 퍼포먼스",
+      date: "2024.11.15 ~ 2024.11.17",
+      venue: "잠실종합운동장 주경기장",
+      image: "hanbok-man", // 임시 이미지
+      rating: 4.7,
+      reviewCount: 289,
+      keywords: ["콘서트", "K-pop", "세븐틴"],
+      category: "concert",
+      status: "ended"
+    },
+    {
+      id: 28,
+      title: "르세라핌 콘서트",
+      subtitle: "LE SSERAFIM LIVE",
+      description: "르세라핌의 강렬한 무대",
+      date: "2025.02.28 ~ 2025.03.02",
+      venue: "올림픽공원 올림픽홀",
+      image: "rent", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["콘서트", "K-pop", "르세라핌"],
+      category: "concert",
+      status: "upcoming"
     }
   ];
 

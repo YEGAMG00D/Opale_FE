@@ -207,6 +207,534 @@ const DetailPerformancePage = () => {
         { seat: "S석", price: "130,000원" },
         { seat: "A석", price: "80,000원" }
       ]
+    },
+    7: {
+      id: 7,
+      category: "연극",
+      title: "햄릿",
+      englishTitle: "HAMLET",
+      venue: "예술의전당 오페라하우스",
+      address: "서울 서초구 남부순환로 2406",
+      date: "2025.01.15 ~ 2025.03.30",
+      duration: "180분 (인터미션 포함)",
+      ageLimit: "12세 이상 관람가",
+      rating: 4.5,
+      reviewCount: 145,
+      hashtags: ["#셰익스피어", "#비극", "#클래식 연극"],
+      genre: "비극 클래식 드라마",
+      description: "세상에서 가장 유명한 비극, 덴마크 왕자 햄릿의 복수 이야기",
+      image: "wicked",
+      trailerImage: "wicked",
+      prices: [
+        { seat: "VIP석", price: "120,000원" },
+        { seat: "R석", price: "90,000원" },
+        { seat: "S석", price: "70,000원" },
+        { seat: "A석", price: "50,000원" }
+      ]
+    },
+    8: {
+      id: 8,
+      category: "뮤지컬",
+      title: "시카고",
+      englishTitle: "CHICAGO",
+      venue: "세종문화회관 대극장",
+      address: "서울 종로구 세종대로 175",
+      date: "2025.02.01 ~ 2025.04.15",
+      duration: "150분 (인터미션 포함)",
+      ageLimit: "15세 이상 관람가",
+      rating: 4.7,
+      reviewCount: 198,
+      hashtags: ["#재즈", "#범죄", "#토니상 수상작"],
+      genre: "재즈 뮤지컬 코미디",
+      description: "재즈 시대의 화려한 범죄 스토리, 1920년대 시카고의 유혹적인 세계",
+      image: "moulin-rouge",
+      trailerImage: "moulin-rouge",
+      prices: [
+        { seat: "VIP석", price: "180,000원" },
+        { seat: "R석", price: "150,000원" },
+        { seat: "S석", price: "120,000원" },
+        { seat: "A석", price: "80,000원" }
+      ]
+    },
+    9: {
+      id: 9,
+      category: "뮤지컬",
+      title: "오페라의 유령",
+      englishTitle: "THE PHANTOM OF THE OPERA",
+      venue: "블루스퀘어 신한카드홀",
+      address: "서울 용산구 이태원로 294",
+      date: "2025.01.20 ~ 2025.05.10",
+      duration: "165분 (인터미션 포함)",
+      ageLimit: "8세 이상 관람가",
+      rating: 4.8,
+      reviewCount: 267,
+      hashtags: ["#로맨스", "#클래식", "#세기의 명작"],
+      genre: "로맨스 뮤지컬 드라마",
+      description: "오페라 하우스의 비밀스러운 사랑 이야기, 파리 오페라극장의 유령과 크리스틴의 이야기",
+      image: "kinky-boots",
+      trailerImage: "kinky-boots",
+      prices: [
+        { seat: "VIP석", price: "200,000원" },
+        { seat: "R석", price: "170,000원" },
+        { seat: "S석", price: "140,000원" },
+        { seat: "A석", price: "90,000원" }
+      ]
+    },
+    10: {
+      id: 10,
+      category: "연극",
+      title: "리어왕",
+      englishTitle: "KING LEAR",
+      venue: "국립극장 해오름극장",
+      address: "서울 중구 장충단로 59",
+      date: "2025.02.10 ~ 2025.04.20",
+      duration: "170분 (인터미션 포함)",
+      ageLimit: "12세 이상 관람가",
+      rating: 4.3,
+      reviewCount: 112,
+      hashtags: ["#셰익스피어", "#권력", "#비극"],
+      genre: "비극 클래식 드라마",
+      description: "권력과 가족의 비극, 리어왕과 그의 세 딸들의 이야기",
+      image: "hanbok-man",
+      trailerImage: "hanbok-man",
+      prices: [
+        { seat: "VIP석", price: "110,000원" },
+        { seat: "R석", price: "80,000원" },
+        { seat: "S석", price: "60,000원" },
+        { seat: "A석", price: "40,000원" }
+      ]
+    },
+    11: {
+      id: 11,
+      category: "뮤지컬",
+      title: "레미제라블",
+      englishTitle: "LES MISÉRABLES",
+      venue: "충무아트센터 대극장",
+      address: "서울 중구 퇴계로 387",
+      date: "2025.01.25 ~ 2025.05.30",
+      duration: "175분 (인터미션 포함)",
+      ageLimit: "8세 이상 관람가",
+      rating: 4.9,
+      reviewCount: 312,
+      hashtags: ["#역사", "#드라마", "#프랑스 혁명"],
+      genre: "역사 뮤지컬 드라마",
+      description: "프랑스 혁명의 시대를 배경으로 한 감동 드라마, 장 발장의 이야기",
+      image: "rent",
+      trailerImage: "rent",
+      prices: [
+        { seat: "VIP석", price: "190,000원" },
+        { seat: "R석", price: "160,000원" },
+        { seat: "S석", price: "130,000원" },
+        { seat: "A석", price: "80,000원" }
+      ]
+    },
+    12: {
+      id: 12,
+      category: "뮤지컬",
+      title: "맘마미아!",
+      englishTitle: "MAMMA MIA!",
+      venue: "디큐브 링크아트센터",
+      address: "서울 강남구 영동대로 513",
+      date: "2024.09.01 ~ 2024.11.30",
+      duration: "140분 (인터미션 포함)",
+      ageLimit: "8세 이상 관람가",
+      rating: 4.6,
+      reviewCount: 189,
+      hashtags: ["#ABBA", "#코미디", "#로맨스"],
+      genre: "코미디 뮤지컬 로맨스",
+      description: "ABBA의 명곡들로 만든 화려한 뮤지컬, 그리스 섬의 결혼식 이야기",
+      image: "death-note",
+      trailerImage: "death-note",
+      prices: [
+        { seat: "VIP석", price: "170,000원" },
+        { seat: "R석", price: "140,000원" },
+        { seat: "S석", price: "110,000원" },
+        { seat: "A석", price: "70,000원" }
+      ]
+    },
+    13: {
+      id: 13,
+      category: "연극",
+      title: "햄릿",
+      englishTitle: "HAMLET (2024)",
+      venue: "예술의전당 CJ토월극장",
+      address: "서울 서초구 남부순환로 2406",
+      date: "2024.08.15 ~ 2024.10.20",
+      duration: "180분 (인터미션 포함)",
+      ageLimit: "12세 이상 관람가",
+      rating: 4.4,
+      reviewCount: 156,
+      hashtags: ["#셰익스피어", "#비극", "#클래식"],
+      genre: "비극 클래식 드라마",
+      description: "셰익스피어의 대표작, 덴마크 왕자 햄릿의 복수 이야기",
+      image: "wicked",
+      trailerImage: "wicked",
+      prices: [
+        { seat: "VIP석", price: "120,000원" },
+        { seat: "R석", price: "90,000원" },
+        { seat: "S석", price: "70,000원" },
+        { seat: "A석", price: "50,000원" }
+      ]
+    },
+    14: {
+      id: 14,
+      category: "뮤지컬",
+      title: "라이온킹",
+      englishTitle: "THE LION KING",
+      venue: "샤롯데씨어터",
+      address: "서울 송파구 올림픽로 240",
+      date: "2024.07.01 ~ 2024.09.30",
+      duration: "165분 (인터미션 포함)",
+      ageLimit: "만 5세 이상 관람가",
+      rating: 4.8,
+      reviewCount: 245,
+      hashtags: ["#디즈니", "#가족", "#아프리카"],
+      genre: "가족 뮤지컬 판타지",
+      description: "디즈니의 아프리카 대자연 이야기, 심바의 성장 이야기",
+      image: "moulin-rouge",
+      trailerImage: "moulin-rouge",
+      prices: [
+        { seat: "VIP석", price: "180,000원" },
+        { seat: "R석", price: "150,000원" },
+        { seat: "S석", price: "120,000원" },
+        { seat: "A석", price: "80,000원" }
+      ]
+    },
+    15: {
+      id: 15,
+      category: "연극",
+      title: "세일즈맨의 죽음",
+      englishTitle: "DEATH OF A SALESMAN",
+      venue: "국립극장 자유소극장",
+      address: "서울 중구 장충단로 59",
+      date: "2024.06.10 ~ 2024.08.15",
+      duration: "160분 (인터미션 포함)",
+      ageLimit: "15세 이상 관람가",
+      rating: 4.5,
+      reviewCount: 134,
+      hashtags: ["#현대극", "#드라마", "#아서 밀러"],
+      genre: "현대극 드라마 비극",
+      description: "아서 밀러의 명작, 세일즈맨 윌리 로먼의 삶과 죽음",
+      image: "kinky-boots",
+      trailerImage: "kinky-boots",
+      prices: [
+        { seat: "VIP석", price: "100,000원" },
+        { seat: "R석", price: "70,000원" },
+        { seat: "S석", price: "50,000원" },
+        { seat: "A석", price: "30,000원" }
+      ]
+    },
+    16: {
+      id: 16,
+      category: "뮤지컬",
+      title: "캣츠",
+      englishTitle: "CATS",
+      venue: "블루스퀘어 신한카드홀",
+      address: "서울 용산구 이태원로 294",
+      date: "2024.05.01 ~ 2024.07.20",
+      duration: "150분 (인터미션 포함)",
+      ageLimit: "8세 이상 관람가",
+      rating: 4.7,
+      reviewCount: 201,
+      hashtags: ["#판타지", "#가족", "#앤드루 로이드 웨버"],
+      genre: "판타지 뮤지컬 가족",
+      description: "앤드루 로이드 웨버의 대표작, 재즈리 캣츠의 연례 모임",
+      image: "hanbok-man",
+      trailerImage: "hanbok-man",
+      prices: [
+        { seat: "VIP석", price: "170,000원" },
+        { seat: "R석", price: "140,000원" },
+        { seat: "S석", price: "110,000원" },
+        { seat: "A석", price: "70,000원" }
+      ]
+    },
+    17: {
+      id: 17,
+      category: "뮤지컬",
+      title: "미스 사이공",
+      englishTitle: "MISS SAIGON",
+      venue: "세종문화회관 대극장",
+      address: "서울 종로구 세종대로 175",
+      date: "2025.06.01 ~ 2025.08.31",
+      duration: "165분 (인터미션 포함)",
+      ageLimit: "15세 이상 관람가",
+      rating: 0,
+      reviewCount: 0,
+      hashtags: ["#로맨스", "#드라마", "#베트남 전쟁"],
+      genre: "로맨스 뮤지컬 드라마",
+      description: "베트남 전쟁 시대의 사랑 이야기, 사이공의 기적",
+      image: "rent",
+      trailerImage: "rent",
+      prices: [
+        { seat: "VIP석", price: "190,000원" },
+        { seat: "R석", price: "160,000원" },
+        { seat: "S석", price: "130,000원" },
+        { seat: "A석", price: "80,000원" }
+      ]
+    },
+    18: {
+      id: 18,
+      category: "연극",
+      title: "햄릿",
+      englishTitle: "HAMLET (2025 Summer)",
+      venue: "예술의전당 오페라하우스",
+      address: "서울 서초구 남부순환로 2406",
+      date: "2025.07.15 ~ 2025.09.30",
+      duration: "180분 (인터미션 포함)",
+      ageLimit: "12세 이상 관람가",
+      rating: 0,
+      reviewCount: 0,
+      hashtags: ["#셰익스피어", "#클래식", "#비극"],
+      genre: "비극 클래식 드라마",
+      description: "셰익스피어의 불멸의 명작, 덴마크 왕자 햄릿의 복수 이야기",
+      image: "death-note",
+      trailerImage: "death-note",
+      prices: [
+        { seat: "VIP석", price: "120,000원" },
+        { seat: "R석", price: "90,000원" },
+        { seat: "S석", price: "70,000원" },
+        { seat: "A석", price: "50,000원" }
+      ]
+    },
+    19: {
+      id: 19,
+      category: "뮤지컬",
+      title: "에비타",
+      englishTitle: "EVITA",
+      venue: "충무아트센터 대극장",
+      address: "서울 중구 퇴계로 387",
+      date: "2025.08.01 ~ 2025.10.31",
+      duration: "155분 (인터미션 포함)",
+      ageLimit: "12세 이상 관람가",
+      rating: 0,
+      reviewCount: 0,
+      hashtags: ["#역사", "#드라마", "#앤드루 로이드 웨버"],
+      genre: "역사 뮤지컬 드라마",
+      description: "아르헨티나의 영부인 에비타 페론의 이야기",
+      image: "wicked",
+      trailerImage: "wicked",
+      prices: [
+        { seat: "VIP석", price: "180,000원" },
+        { seat: "R석", price: "150,000원" },
+        { seat: "S석", price: "120,000원" },
+        { seat: "A석", price: "80,000원" }
+      ]
+    },
+    20: {
+      id: 20,
+      category: "연극",
+      title: "오셀로",
+      englishTitle: "OTHELLO",
+      venue: "국립극장 해오름극장",
+      address: "서울 중구 장충단로 59",
+      date: "2025.09.10 ~ 2025.11.20",
+      duration: "170분 (인터미션 포함)",
+      ageLimit: "12세 이상 관람가",
+      rating: 0,
+      reviewCount: 0,
+      hashtags: ["#셰익스피어", "#비극", "#질투"],
+      genre: "비극 클래식 드라마",
+      description: "질투와 사랑의 비극, 오셀로와 데스데모나의 이야기",
+      image: "moulin-rouge",
+      trailerImage: "moulin-rouge",
+      prices: [
+        { seat: "VIP석", price: "110,000원" },
+        { seat: "R석", price: "80,000원" },
+        { seat: "S석", price: "60,000원" },
+        { seat: "A석", price: "40,000원" }
+      ]
+    },
+    21: {
+      id: 21,
+      category: "뮤지컬",
+      title: "드림걸스",
+      englishTitle: "DREAMGIRLS",
+      venue: "디큐브 링크아트센터",
+      address: "서울 강남구 영동대로 513",
+      date: "2025.10.05 ~ 2026.01.15",
+      duration: "150분 (인터미션 포함)",
+      ageLimit: "12세 이상 관람가",
+      rating: 0,
+      reviewCount: 0,
+      hashtags: ["#R&B", "#드라마", "#음악"],
+      genre: "R&B 뮤지컬 드라마",
+      description: "1960년대 R&B 그룹의 성공 스토리, 드림걸스의 도전과 성장",
+      image: "kinky-boots",
+      trailerImage: "kinky-boots",
+      prices: [
+        { seat: "VIP석", price: "180,000원" },
+        { seat: "R석", price: "150,000원" },
+        { seat: "S석", price: "120,000원" },
+        { seat: "A석", price: "80,000원" }
+      ]
+    },
+    22: {
+      id: 22,
+      category: "콘서트",
+      title: "NCT WISH 콘서트",
+      englishTitle: "NCT WISH CONCERT",
+      venue: "올림픽공원 올림픽홀",
+      address: "서울 송파구 올림픽로 424",
+      date: "2025.01.05 ~ 2025.01.07",
+      duration: "120분",
+      ageLimit: "전체 관람가",
+      rating: 4.8,
+      reviewCount: 342,
+      hashtags: ["#NCT", "#K-pop", "#콘서트"],
+      genre: "K-pop 콘서트",
+      description: "NCT WISH의 화려한 무대와 강렬한 퍼포먼스",
+      image: "rent",
+      trailerImage: "rent",
+      prices: [
+        { seat: "VIP석", price: "180,000원" },
+        { seat: "R석", price: "150,000원" },
+        { seat: "S석", price: "120,000원" },
+        { seat: "A석", price: "90,000원" }
+      ]
+    },
+    23: {
+      id: 23,
+      category: "콘서트",
+      title: "SKY FESTIVAL",
+      englishTitle: "SKY FESTIVAL 2025",
+      venue: "잠실종합운동장 주경기장",
+      address: "서울 송파구 올림픽로 25",
+      date: "2025.01.18 ~ 2025.01.19",
+      duration: "300분 (2일차)",
+      ageLimit: "전체 관람가",
+      rating: 0,
+      reviewCount: 0,
+      hashtags: ["#페스티벌", "#K-pop", "#올스타"],
+      genre: "K-pop 페스티벌",
+      description: "올해 최고의 페스티벌, 최정상 아티스트들의 무대",
+      image: "moulin-rouge",
+      trailerImage: "moulin-rouge",
+      prices: [
+        { seat: "VIP석", price: "200,000원" },
+        { seat: "R석", price: "160,000원" },
+        { seat: "S석", price: "130,000원" },
+        { seat: "A석", price: "100,000원" }
+      ]
+    },
+    24: {
+      id: 24,
+      category: "콘서트",
+      title: "아이유 콘서트",
+      englishTitle: "IU CONCERT - The Golden Hour",
+      venue: "잠실실내체육관",
+      address: "서울 송파구 올림픽로 240",
+      date: "2025.02.15 ~ 2025.02.16",
+      duration: "150분",
+      ageLimit: "전체 관람가",
+      rating: 0,
+      reviewCount: 0,
+      hashtags: ["#아이유", "#K-pop", "#발라드"],
+      genre: "K-pop 콘서트",
+      description: "아이유의 황금빛 무대와 감동적인 라이브",
+      image: "kinky-boots",
+      trailerImage: "kinky-boots",
+      prices: [
+        { seat: "VIP석", price: "190,000원" },
+        { seat: "R석", price: "160,000원" },
+        { seat: "S석", price: "130,000원" },
+        { seat: "A석", price: "100,000원" }
+      ]
+    },
+    25: {
+      id: 25,
+      category: "콘서트",
+      title: "BTS 콘서트",
+      englishTitle: "BTS WORLD TOUR",
+      venue: "고척스카이돔",
+      address: "서울 구로구 경인로 430",
+      date: "2024.12.20 ~ 2024.12.22",
+      duration: "180분",
+      ageLimit: "전체 관람가",
+      rating: 4.9,
+      reviewCount: 567,
+      hashtags: ["#BTS", "#K-pop", "#월드투어"],
+      genre: "K-pop 콘서트",
+      description: "BTS의 글로벌 월드 투어, 전 세계를 열광시킨 무대",
+      image: "wicked",
+      trailerImage: "wicked",
+      prices: [
+        { seat: "VIP석", price: "220,000원" },
+        { seat: "R석", price: "180,000원" },
+        { seat: "S석", price: "150,000원" },
+        { seat: "A석", price: "120,000원" }
+      ]
+    },
+    26: {
+      id: 26,
+      category: "콘서트",
+      title: "뉴진스 콘서트",
+      englishTitle: "NewJeans LIVE",
+      venue: "올림픽공원 체조경기장",
+      address: "서울 송파구 올림픽로 424",
+      date: "2025.03.10 ~ 2025.03.12",
+      duration: "120분",
+      ageLimit: "전체 관람가",
+      rating: 0,
+      reviewCount: 0,
+      hashtags: ["#뉴진스", "#K-pop", "#라이브"],
+      genre: "K-pop 콘서트",
+      description: "뉴진스의 특별한 라이브 무대와 상큼한 에너지",
+      image: "death-note",
+      trailerImage: "death-note",
+      prices: [
+        { seat: "VIP석", price: "180,000원" },
+        { seat: "R석", price: "150,000원" },
+        { seat: "S석", price: "120,000원" },
+        { seat: "A석", price: "90,000원" }
+      ]
+    },
+    27: {
+      id: 27,
+      category: "콘서트",
+      title: "세븐틴 콘서트",
+      englishTitle: "SEVENTEEN TOUR",
+      venue: "잠실종합운동장 주경기장",
+      address: "서울 송파구 올림픽로 25",
+      date: "2024.11.15 ~ 2024.11.17",
+      duration: "150분",
+      ageLimit: "전체 관람가",
+      rating: 4.7,
+      reviewCount: 289,
+      hashtags: ["#세븐틴", "#K-pop", "#퍼포먼스"],
+      genre: "K-pop 콘서트",
+      description: "세븐틴의 화려한 퍼포먼스와 완벽한 무대",
+      image: "hanbok-man",
+      trailerImage: "hanbok-man",
+      prices: [
+        { seat: "VIP석", price: "190,000원" },
+        { seat: "R석", price: "160,000원" },
+        { seat: "S석", price: "130,000원" },
+        { seat: "A석", price: "100,000원" }
+      ]
+    },
+    28: {
+      id: 28,
+      category: "콘서트",
+      title: "르세라핌 콘서트",
+      englishTitle: "LE SSERAFIM LIVE",
+      venue: "올림픽공원 올림픽홀",
+      address: "서울 송파구 올림픽로 424",
+      date: "2025.02.28 ~ 2025.03.02",
+      duration: "120분",
+      ageLimit: "전체 관람가",
+      rating: 0,
+      reviewCount: 0,
+      hashtags: ["#르세라핌", "#K-pop", "#파워"],
+      genre: "K-pop 콘서트",
+      description: "르세라핌의 강렬한 무대와 파워풀한 퍼포먼스",
+      image: "rent",
+      trailerImage: "rent",
+      prices: [
+        { seat: "VIP석", price: "180,000원" },
+        { seat: "R석", price: "150,000원" },
+        { seat: "S석", price: "120,000원" },
+        { seat: "A석", price: "90,000원" }
+      ]
     }
   };
 
@@ -222,6 +750,15 @@ const DetailPerformancePage = () => {
     'hanbok-man': 'jpg',
     'death-note': 'gif',
     'rent': 'gif'
+  };
+  
+  // 포스터 이미지가 없는 경우 기본 이미지 사용
+  const getPosterImage = (imageName) => {
+    if (posterExt[imageName]) {
+      return `/poster/${imageName}.${posterExt[imageName]}`;
+    }
+    // 기본 이미지 사용 (기존 포스터 중 하나)
+    return `/poster/wicked.gif`;
   };
   
   // 페이지 로드 시 로그 (디버깅용)
@@ -275,7 +812,7 @@ const DetailPerformancePage = () => {
   return (
     <div className={styles.container}>
       <PerformancePoster
-        imageUrl={`/poster/${performance.image}.${posterExt[performance.image] || 'jpg'}`}
+        imageUrl={getPosterImage(performance.image)}
         isFavorite={isFavorite}
         onFavoriteToggle={toggleFavorite}
       />
@@ -307,7 +844,17 @@ const DetailPerformancePage = () => {
 
       <BookingLinks bookingSites={bookingSites} />
 
-      <OpenChatSection />
+      {/* 추천 버튼 */}
+      <div className={styles.recommendSection}>
+        <button 
+          className={styles.recommendButton}
+          onClick={() => navigate('/recommend')}
+        >
+          내가 본 공연과 잘 맞는 공연은?
+        </button>
+      </div>
+
+      <OpenChatSection performanceId={performanceId} />
 
       {/* Tabs */}
       <div className={styles.tabSection}>
@@ -336,6 +883,33 @@ const DetailPerformancePage = () => {
                   </div>
                 ))}
               </div>
+              
+              {/* 할인정보 섹션 */}
+              <div className={styles.discountSection}>
+                <h3 className={styles.contentTitle}>할인정보</h3>
+                <div className={styles.infoPlaceholder}>
+                  {/* 크롤링 정보 또는 이미지가 들어갈 공간 */}
+                  <p className={styles.placeholderText}>할인 정보가 여기에 표시됩니다</p>
+                </div>
+              </div>
+
+              {/* 캐스팅 섹션 */}
+              <div className={styles.castingSection}>
+                <h3 className={styles.contentTitle}>캐스팅</h3>
+                <div className={styles.infoPlaceholder}>
+                  {/* 크롤링 정보 또는 이미지가 들어갈 공간 */}
+                  <p className={styles.placeholderText}>캐스팅 정보가 여기에 표시됩니다</p>
+                </div>
+              </div>
+
+              {/* 좌석배치도 섹션 */}
+              <div className={styles.seatingChartSection}>
+                <h3 className={styles.contentTitle}>좌석배치도</h3>
+                <div className={styles.infoPlaceholder}>
+                  {/* 크롤링 정보 또는 이미지가 들어갈 공간 */}
+                  <p className={styles.placeholderText}>좌석배치도 이미지가 여기에 표시됩니다</p>
+                </div>
+              </div>
             </div>
           )}
           
@@ -351,6 +925,17 @@ const DetailPerformancePage = () => {
                 <p><strong>주소:</strong> {performance.address}</p>
                 <br/>
                 <p>{performance.description}</p>
+              </div>
+              
+              {/* 제작사 제공 소개 이미지 섹션 */}
+              <div className={styles.productionImagesSection}>
+                <h3 className={styles.contentTitle}>공연 소개</h3>
+                <div className={styles.productionImagesContainer}>
+                  {/* 제작사에서 제공하는 소개 이미지들이 들어갈 공간 */}
+                  <div className={styles.imagePlaceholder}>
+                    <p className={styles.placeholderText}>제작사 제공 소개 이미지가 여기에 표시됩니다</p>
+                  </div>
+                </div>
               </div>
             </div>
           )}

@@ -1,16 +1,528 @@
 .container {
-  padding: 20px;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 24px 20px;
   background-color: #ffffff;
 }
 
-h1 {
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 15px;
+.error {
+  text-align: center;
+  padding: 60px 20px;
 }
 
-p {
-  font-size: 16px;
+.error p {
+  font-size: 18px;
   color: #666;
-  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.backBtn {
+  padding: 12px 24px;
+  background-color: #111827;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.backBtn:hover {
+  background-color: #374151;
+}
+
+/* 헤더 섹션 */
+.header {
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.linkIcon {
+  font-size: 20px;
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.linkIcon:hover {
+  opacity: 1;
+}
+
+/* 섹션 공통 */
+.section {
+  margin-bottom: 40px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #111827;
+}
+
+/* 공연시설 정보 테이블 */
+.infoTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.infoTable th {
+  width: 150px;
+  padding: 14px 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: #374151;
+  text-align: left;
+  font-size: 14px;
+  vertical-align: top;
+}
+
+.infoTable td {
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+  font-size: 14px;
+}
+
+.homepageLink {
+  color: #0f62fe;
+  text-decoration: none;
+}
+
+.homepageLink:hover {
+  text-decoration: underline;
+}
+
+.facilities {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.facilityGroup {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.facilityLabel {
+  font-weight: 500;
+  color: #6b7280;
+  min-width: 80px;
+}
+
+.facilityItem {
+  color: #111827;
+}
+
+.noFacility {
+  color: #9ca3af;
+}
+
+.listBtn {
+  padding: 12px 24px;
+  background-color: #111827;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.listBtn:hover {
+  background-color: #374151;
+}
+
+/* 공연장 정보 테이블 */
+.stageTable {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e5e7eb;
+}
+
+.stageTable thead {
+  background-color: #f9fafb;
+}
+
+.stageTable th {
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: #374151;
+  text-align: left;
+  font-size: 14px;
+}
+
+.stageTable td {
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+  font-size: 14px;
+}
+
+.stageTable tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.registered {
+  color: #0f62fe;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 관련공연 섹션 */
+.performanceList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.performanceCard {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background-color: #ffffff;
+  transition: box-shadow 0.2s;
+}
+
+.performanceCard:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.performancePoster {
+  width: 120px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.performanceInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.performanceType {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.performanceTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.performanceDetail {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.detailLabel {
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 60px;
+}
+
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* 후기 섹션 */
+.writeButtonContainer {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.writeButton {
+  flex: 1;
+  padding: 12px 16px;
+  background-color: #F8F9FA;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.writeButton:focus {
+  outline: none;
+  border-color: #fbccdc;
+}
+
+.writeButton:hover {
+  background-color: #E9ECEF;
+  border-color: #DEE2E6;
+}
+
+.reviewList {
+  margin-top: 16px;
+}
+
+.reviewListHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.reviewListHeader h4 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000;
+  margin: 0;
+}
+
+.sortOption {
+  font-size: 12px;
+  color: #666666;
+  cursor: pointer;
+}
+
+/* 모달 스타일 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modalContent {
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 430px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.modalHeader h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #000000;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666666;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.closeButton:focus {
+  outline: none;
+}
+
+.closeButton:hover {
+  color: #000000;
+}
+
+.writeForm {
+  padding: 24px;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.formGroup input,
+.formGroup textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #000000;
+  background-color: #FFFFFF;
+  box-sizing: border-box;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #007BFF;
+}
+
+.formGroup textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.ratingInput {
+  display: flex;
+  gap: 8px;
+}
+
+.ratingStar {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #E5E5E5;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s ease;
+  outline: none;
+}
+
+.ratingStar:focus {
+  outline: none;
+}
+
+.ratingStar.filled {
+  color: #FFD700;
+}
+
+.ratingStar:hover {
+  color: #FFD700;
+}
+
+.formActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.cancelButton,
+.submitButton {
+  flex: 1;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.cancelButton:focus,
+.submitButton:focus {
+  outline: none;
+  border-color: #fbccdc;
+}
+
+.cancelButton {
+  background-color: #F8F9FA;
+  border: 1px solid #E5E5E5;
+  color: #666666;
+}
+
+.cancelButton:hover {
+  background-color: #E9ECEF;
+}
+
+.submitButton {
+  background-color: #007BFF;
+  border: 1px solid #007BFF;
+  color: #FFFFFF;
+}
+
+.submitButton:hover {
+  background-color: #0056B3;
+  border-color: #0056B3;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .titleSection {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .modifiedInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .infoTable {
+    font-size: 12px;
+  }
+
+  .infoTable th,
+  .infoTable td {
+    padding: 10px 12px;
+  }
+
+  .performanceCard {
+    flex-direction: column;
+  }
+
+  .performancePoster {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+  }
 }

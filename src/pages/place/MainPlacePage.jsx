@@ -2,25 +2,27 @@ import React, { useMemo, useState } from 'react';
 import styles from './MainPlacePage.module.css';
 import RegionFilter from '../../components/place/RegionFilter';
 import PlaceCard from '../../components/place/PlaceCard';
-
-// 간단한 더미 공연장 데이터. 실제 API 연결 시 대체합니다.
-const DUMMY_PLACES = [
-  { id: 1, name: '오팔 씨어터 강남', region: '서울', district: '강남' },
-  { id: 2, name: '오팔 씨어터 대학로', region: '서울', district: '대학로' },
-  { id: 3, name: '오팔 씨어터 수원', region: '경기', district: '수원' },
-  { id: 4, name: '오팔 씨어터 부평', region: '인천', district: '부평' },
-];
+import { PLACE_DATA, getPlacesByDistrict } from '../../data/placeData';
 
 const MainPlacePage = () => {
   const [activeTab, setActiveTab] = useState('map');
   const [selected, setSelected] = useState({ region: '서울', district: '전체' });
 
   const filteredPlaces = useMemo(() => {
-    return DUMMY_PLACES.filter((p) => {
-      const regionOk = p.region === selected.region;
-      const districtOk = selected.district === '전체' ? true : p.district === selected.district;
-      return regionOk && districtOk;
-    });
+    // 서울시가 선택된 경우 관할구역 필터링
+    if (selected.region === '서울') {
+      if (selected.district === '전체') {
+        // 서울 전체 공연장 반환
+        return Object.values(PLACE_DATA).filter(p => p.district.includes('구'));
+      } else {
+        // 선택된 관할구역의 공연장만 반환
+        return getPlacesByDistrict(selected.district);
+      }
+    }
+    
+    // 다른 지역 선택 시 (향후 확장용)
+    // 실제 API 연동 시 여기에 다른 지역 데이터 필터링 로직 추가
+    return [];
   }, [selected]);
 
   return (
@@ -72,7 +74,7 @@ const MainPlacePage = () => {
                 key={place.id}
                 id={place.id}
                 name={place.name}
-                region={place.region}
+                region="서울"
                 district={place.district}
               />
             ))}

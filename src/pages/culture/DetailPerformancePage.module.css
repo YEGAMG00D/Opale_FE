@@ -324,6 +324,30 @@
   box-shadow: none;
 }
 
+/* Recommend Section */
+.recommendSection {
+  padding: 16px 24px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.recommendButton {
+  width: 100%;
+  padding: 14px 20px;
+  background-color: #EAF5E0;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recommendButton:hover {
+  background-color: #D4E9C0;
+}
+
 /* Open Chat Section */
 .openChatSection {
   padding: 20px 24px;
@@ -523,6 +547,31 @@
   font-weight: 500;
 }
 
+/* 할인정보, 캐스팅, 좌석배치도 섹션 */
+.discountSection,
+.castingSection,
+.seatingChartSection {
+  margin-top: 32px;
+}
+
+.infoPlaceholder {
+  min-height: 200px;
+  background-color: #F8F9FA;
+  border: 1px dashed #E5E5E5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.placeholderText {
+  font-size: 14px;
+  color: #999999;
+  text-align: center;
+  margin: 0;
+}
+
 .detailText {
   font-size: 14px;
   color: #666666;
@@ -536,6 +585,26 @@
 .detailText strong {
   color: #000000;
   font-weight: 500;
+}
+
+/* 제작사 제공 소개 이미지 섹션 */
+.productionImagesSection {
+  margin-top: 32px;
+}
+
+.productionImagesContainer {
+  margin-top: 16px;
+}
+
+.imagePlaceholder {
+  min-height: 300px;
+  background-color: #F8F9FA;
+  border: 1px dashed #E5E5E5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 }
 
 /* 후기/기대평 섹션 */
