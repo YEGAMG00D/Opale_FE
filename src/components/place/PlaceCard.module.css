@@ -1,0 +1,40 @@
+.placeItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.placeItem:last-child {
+  border-bottom: none;
+}
+
+.placeMeta {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.placeName {
+  font-weight: 700;
+}
+
+.placeLoc {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.detailBtn {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #111827;
+  transition: background-color 0.2s ease;
+}
+
+.detailBtn:hover {
+  background: #f9fafb;
+}
+

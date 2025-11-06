@@ -1,0 +1,60 @@
+.container {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb;
+  padding: 20px;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.content {
+  text-align: center;
+  width: 100%;
+}
+
+.icon {
+  font-size: 80px;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px 0;
+}
+
+.description {
+  font-size: 20px;
+  color: #6b7280;
+  margin: 0 0 8px 0;
+}
+
+.subDescription {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0 0 32px 0;
+  line-height: 1.6;
+}
+
+.backButton {
+  padding: 12px 24px;
+  background-color: #111827;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background-color: #374151;
+}
+

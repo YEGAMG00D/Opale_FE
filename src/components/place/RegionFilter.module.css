@@ -1,0 +1,110 @@
+.wrapper {
+  display: block;
+}
+
+.searchRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.searchInput {
+  flex: 1 1 auto;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #dcdfe3;
+  border-radius: 8px;
+  outline: none;
+}
+
+.searchBtn {
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid #dcdfe3;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.filterBox {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  border: 1px solid #eceff3;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.leftTabs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-right: 1px solid #eceff3;
+  background: #f8fafc;
+}
+
+.leftTab {
+  padding: 12px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #3b3f45;
+}
+
+.active {
+  background: #111827;
+  color: #fff;
+}
+
+.count {
+  opacity: 0.6;
+}
+
+.rightPanel {
+  background: #fff;
+}
+
+.rightHeader {
+  padding: 12px 16px;
+  background: #f3f4f6;
+  border-bottom: 1px solid #eceff3;
+  font-weight: 600;
+}
+
+.allLabel { }
+
+.allCount {
+  margin-left: 6px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.districtList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.districtItem {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f3f5;
+  cursor: pointer;
+}
+
+.districtItem:hover {
+  background: #f9fafb;
+}
+
+.selected {
+  color: #0f62fe;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .filterBox { grid-template-columns: 1fr; }
+  .leftTabs { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .leftTab { border-right: 1px solid #eceff3; }
+}
+
+

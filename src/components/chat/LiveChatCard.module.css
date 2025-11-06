@@ -1,0 +1,87 @@
+.liveItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #eef2f4;
+  background: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.liveItem:active {
+  background: #f8fafc;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.liveMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roomTitle {
+  font-size: 14px;
+  color: #111827;
+}
+
+.badgeOn,
+.badgeOff {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.badgeOn {
+  background: #e6f8ee;
+  color: #079455;
+}
+
+.badgeOff {
+  background: #f2f4f7;
+  color: #667085;
+}
+
+.subMeta {
+  margin-top: 2px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.dot {
+  margin: 0 6px;
+  color: #cbd5e1;
+}
+
+.preview {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.lastMessage {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lastTime {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
