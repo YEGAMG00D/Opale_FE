@@ -1,54 +1,236 @@
 .container {
-  padding: 20px;
-  background-color: #ffffff;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: #FFFFFF;
+  min-height: 100vh;
+  padding: 0 0 100px;
 }
 
-h1 {
+/* 추천 영화 시리즈 섹션 */
+.seriesSection {
+  padding: 20px 24px;
+  position: relative;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 20px;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+/* 슬라이더 컨테이너 */
+.sliderContainer {
+  position: relative;
+  overflow: hidden;
+  margin: 0 -24px;
+  padding: 0 24px;
+  cursor: grab;
+  user-select: none;
+}
+
+.sliderContainer:active {
+  cursor: grabbing;
+}
+
+.sliderTrack {
+  display: flex;
+  transition: transform 0.3s ease;
+  gap: 16px;
+}
+
+.slideCard {
+  flex: 0 0 calc(100% / 2.5 - 13px);
+  min-width: 0;
+  max-width: calc(100% / 2.5 - 13px);
+}
+
+/* 슬라이드 인디케이터 */
+.sliderIndicators {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #D9D9D9;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.indicator:hover {
+  background-color: #A6A6A6;
+  transform: scale(1.1);
+}
+
+.indicator.active {
+  background-color: #000000;
+  transform: scale(1.2);
+}
+
+/* 좌우 화살표 버튼 */
+.prevButton,
+.nextButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid #E5E5E5;
   font-size: 24px;
-  color: #333;
-  margin-bottom: 15px;
+  color: #000000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-p {
-  font-size: 16px;
-  color: #666;
-  line-height: 1.5;
+.prevButton {
+  left: 8px;
 }
 
-.navigation {
-  margin: 30px 0;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+.nextButton {
+  right: 8px;
 }
 
-.navigation h2 {
-  font-size: 18px;
-  color: #333;
-  margin-bottom: 15px;
+.prevButton:hover,
+.nextButton:hover {
+  background-color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-50%) scale(1.1);
 }
 
-.linkGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px;
+.prevButton:active,
+.nextButton:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
-.link {
-  display: block;
-  padding: 10px 15px;
-  background-color: #ffffff;
-  color: #333;
-  text-decoration: none;
-  border-radius: 6px;
+/* 공연시그널 테스트 섹션 */
+.testSection {
+  padding: 20px 24px;
+  margin-top: 20px;
+}
+
+.testCard {
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFF0F5 100%);
+  border-radius: 16px;
+  padding: 32px 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.testCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.testCard:active {
+  transform: translateY(-2px);
+}
+
+.testContent {
   text-align: center;
-  font-weight: 500;
-  border: 1px solid #e9ecef;
-  transition: all 0.2s;
 }
 
-.link:hover {
-  background-color: #007bff;
-  color: #ffffff;
-  border-color: #007bff;
+.testTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 12px;
+  font-family: 'Pretendard Variable', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.testDescription {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 8px;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+.testSubDescription {
+  font-size: 14px;
+  color: #666666;
+  margin-bottom: 24px;
+  line-height: 1.6;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+.testButton {
+  display: inline-block;
+  padding: 12px 24px;
+  background-color: #000000;
+  color: #FFFFFF;
+  border-radius: 24px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+.testCard:hover .testButton {
+  background-color: #333333;
+  transform: translateX(4px);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 375px) {
+  .seriesSection {
+    padding: 16px 20px;
+  }
+
+  .sectionTitle {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .slideCard {
+    flex: 0 0 calc(90% - 8px);
+  }
+
+  .prevButton,
+  .nextButton {
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+  }
+
+  .prevButton {
+    left: 4px;
+  }
+
+  .nextButton {
+    right: 4px;
+  }
+
+  .testSection {
+    padding: 16px 20px;
+  }
+
+  .testCard {
+    padding: 24px 20px;
+  }
+
+  .testTitle {
+    font-size: 24px;
+  }
+
+  .testDescription {
+    font-size: 16px;
+  }
 }
