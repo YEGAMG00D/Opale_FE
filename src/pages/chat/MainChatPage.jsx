@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./MainChatPage.module.css";
 import axiosInstance from "../../api/axiosInstance";
-import LiveChatCard from "../../components/chat/LiveChatCard";
 import CompactChatCard from "../../components/chat/CompactChatCard";
+import { connectSocket } from "../../api/socket"; // ✅ 추가
 
 const MainChatPage = () => {
   const navigate = useNavigate();
@@ -11,16 +11,13 @@ const MainChatPage = () => {
   const [chatRooms, setChatRooms] = useState([]);
   const [error, setError] = useState("");
 
-  /* ============================================================
-      ✅ 아이콘 설정 (원하는 대로 변경 가능)
-  ============================================================ */
   const ICONS = {
-    PUBLIC: "🌐", // 오픈 채팅방
-    GROUP: "👥", // 공연 단체방
-    DM: "💬", // 개인 DM
+    PUBLIC: "🌐",
+    GROUP: "👥",
+    DM: "💬",
   };
 
-  // ✅ 채팅방 목록 불러오기
+  // ✅ 1. 채팅방 목록 불러오기
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -44,6 +41,29 @@ const MainChatPage = () => {
     fetchRooms();
   }, [navigate]);
 
+  // ✅ 2. 실시간 메시지 업데이트 구독 (WebSocket)
+  useEffect(() => {
+    const client = connectSocket(() => {
+      client.subscribe("/topic/rooms", (msg) => {
+        const update = JSON.parse(msg.body);
+        console.log("📩 최신 메시지 수신:", update);
+
+        setChatRooms((prev) =>
+          prev.map((room) =>
+            room.roomId === update.roomId
+              ? {
+                  ...room,
+                  lastMessage: update.lastMessage,
+                  lastMessageTime: update.lastMessageTime,
+                  isActive: update.isActive ?? room.isActive,
+                }
+              : room
+          )
+        );
+      });
+    });
+  }, []);
+
   // ✅ 검색 필터
   const filteredRooms = chatRooms.filter((r) =>
     r.title?.toLowerCase().includes(keyword.toLowerCase())
@@ -51,9 +71,6 @@ const MainChatPage = () => {
 
   const enterRoom = (id) => navigate(`/chat/${id}`);
 
-  /* ============================================================
-      ✅ 방 타입에 따라 아이콘 표시
-  ============================================================ */
   const getRoomIcon = (roomType) => {
     switch (roomType) {
       case "PERFORMANCE_PUBLIC":
@@ -63,7 +80,7 @@ const MainChatPage = () => {
       case "PRIVATE_DM":
         return ICONS.DM;
       default:
-        return "💠"; // 알 수 없는 타입 fallback
+        return "💠";
     }
   };
 
@@ -94,12 +111,14 @@ const MainChatPage = () => {
                 <CompactChatCard
                   key={room.roomId}
                   id={room.roomId}
-                  title={`${room.title} ${icon}`} // ✅ 아이콘 추가
+                  title={`${room.title} ${icon}`}
                   performanceName={room.performanceTitle}
                   image={room.thumbnailUrl}
                   active={room.isActive}
                   visitors={room.visitCount}
-                  participants={room.participants}
+                  participants={room.participantCount}
+                  lastMessage={room.lastMessage}
+                  lastMessageTime={room.lastMessageTime}
                   onClick={enterRoom}
                 />
               );
