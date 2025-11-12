@@ -10,6 +10,7 @@ const MainChatPage = () => {
   const [keyword, setKeyword] = useState("");
   const [chatRooms, setChatRooms] = useState([]);
   const [error, setError] = useState("");
+  const [currentTime, setCurrentTime] = useState(Date.now()); // 현재 시간 상태
 
   const ICONS = {
     PUBLIC: "🌐",
@@ -62,6 +63,15 @@ const MainChatPage = () => {
         );
       });
     });
+  }, []);
+
+  // ✅ 3. 현재 시간을 주기적으로 업데이트 (30초마다)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 30000); // 30초마다 업데이트 (성능과 실시간성의 균형)
+
+    return () => clearInterval(timer);
   }, []);
 
   // ✅ 검색 필터
@@ -119,6 +129,7 @@ const MainChatPage = () => {
                   participants={room.participantCount}
                   lastMessage={room.lastMessage}
                   lastMessageTime={room.lastMessageTime}
+                  currentTime={currentTime} // 현재 시간 전달
                   onClick={enterRoom}
                 />
               );

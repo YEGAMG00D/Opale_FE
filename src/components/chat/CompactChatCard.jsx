@@ -11,10 +11,19 @@ const CompactChatCard = ({
   participants,
   lastMessage,
   lastMessageTime,
+  currentTime, // 부모에서 전달받은 현재 시간
   onClick,
 }) => {
-  const [now, setNow] = useState(Date.now()); // 현재 시각 갱신용
+  const [now, setNow] = useState(currentTime || Date.now()); // 현재 시각 갱신용
 
+  // 부모에서 전달받은 currentTime이 변경되면 업데이트
+  useEffect(() => {
+    if (currentTime) {
+      setNow(currentTime);
+    }
+  }, [currentTime]);
+
+  // 1초마다 업데이트 (더 정확한 실시간 표시)
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
