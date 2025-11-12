@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
+import ContentsLayout from '../layouts/ContentsLayout';
 
 // 홈 페이지
 import MainHomePage from '../pages/home/MainHomePage';
@@ -69,18 +70,18 @@ const AppRouter = () => {
           {/* 공연 관련 */}
           <Route path="culture" element={<MainCulturePage />} />
           <Route path="culture/search" element={<SearchCulturePage />} />
-          <Route path="culture/:id" element={<DetailPerformancePage />} />
-          <Route path="culture/review" element={<PerformanceReviewWritingPage />} />
+          {/* <Route path="culture/:id" element={<DetailPerformancePage />} /> */}
+          {/* <Route path="culture/review" element={<PerformanceReviewWritingPage />} /> */}
 
           {/* 공연장 관련 */}
           <Route path="place" element={<MainPlacePage />} />
           <Route path="place/search" element={<SearchPlacePage />} />
-          <Route path="place/:id" element={<DetailPlacePage />} />
+          {/* <Route path="place/:id" element={<DetailPlacePage />} /> */}
 
           {/* 채팅 관련 */}
           <Route path="chat" element={<MainChatPage />} />
           <Route path="chat/search" element={<SearchChatPage />} />
-          <Route path="chat/:id" element={<RoomPage />} />
+          {/* <Route path="chat/:id" element={<RoomPage />} /> */}
 
           {/* 추천 */}
           <Route path="recommend" element={<MainRecommandPage />} />
@@ -89,6 +90,14 @@ const AppRouter = () => {
           <Route path="recommend/review" element={<ReviewWritingPage />} />
           <Route path="recommend/my-ticket" element={<MyTicketPage />} />
         </Route>
+
+        {/* 콘텐츠 레이아웃이 적용되는 라우트들 (푸터 없음) */}
+        <Route path="/culture/:id" element={<ContentsLayout><DetailPerformancePage /></ContentsLayout>} />
+        <Route path="/culture/review" element={<ContentsLayout><PerformanceReviewWritingPage /></ContentsLayout>} />
+        <Route path="/place/:id" element={<ContentsLayout><DetailPlacePage /></ContentsLayout>} />
+        <Route path="/chat/:id" element={<ContentsLayout><RoomPage /></ContentsLayout>} />
+
+
       </Routes>
     </BrowserRouter>
   );

@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import './Header.css';
 
 const Header = ({ showBackButton = false, title = null }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isLoggedIn = useSelector((state) => state.user.isLoggedIn);
 
   const handleBackClick = () => {
     navigate(-1);
@@ -28,7 +30,11 @@ const Header = ({ showBackButton = false, title = null }) => {
           )}
         </div>
         <div className="header-right">
-          <Link to="/login" className="login-btn">로그인</Link>
+          {isLoggedIn ? (
+            <Link to="/my" className="login-btn">MY</Link>
+          ) : (
+            <Link to="/login" className="login-btn">로그인</Link>
+          )}
         </div>
       </div>
       <div className="header-divider"></div>
