@@ -1,10 +1,11 @@
+// src/api/axiosInstance.js
 import axios from "axios";
+import store from "../store";
+import { reissueToken, logout } from "../store/userSlice";
 
-// ✅ 백엔드 주소 (.env로 관리 가능)
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
-// ✅ Axios 인스턴스 생성
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -16,30 +17,58 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     let token = localStorage.getItem("accessToken");
-
     if (token) {
-      // ✅ 혹시 공백이 섞여있으면 제거
       token = token.replace(/^Bearer\s+/i, "").trim();
       config.headers.Authorization = `Bearer ${token}`;
     } else {
-      delete config.headers.Authorization; // 토큰 없을 경우 헤더 제거
+      delete config.headers.Authorization;
     }
-
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// ✅ 응답 인터셉터 (401 처리)
+// ✅ 응답 인터셉터 (401 → 자동 재발급)
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      console.warn("⛔ 인증되지 않은 요청입니다. (401 Unauthorized)");
-      // 👉 로그인 만료 시 처리 로직
-      // localStorage.removeItem("accessToken");
-      // window.location.href = "/login";
+  async (error) => {
+    const originalRequest = error.config;
+
+    // AccessToken 만료로 401 발생한 경우
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem("refreshToken");
+        if (!refreshToken) throw new Error("Refresh token missing");
+
+        // 🔁 토큰 재발급 요청
+        const refreshResponse = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          {},
+          { headers: { "Refresh-Token": refreshToken } }
+        );
+
+        const { accessToken, refreshToken: newRefresh } =
+          refreshResponse.data.data;
+
+        // ✅ 새 토큰 저장
+        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("refreshToken", newRefresh);
+        store.dispatch(reissueToken(accessToken));
+
+        // ✅ 기존 요청 재시도
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return axiosInstance(originalRequest);
+      } catch (refreshError) {
+        console.warn("❌ 토큰 재발급 실패:", refreshError);
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        store.dispatch(logout());
+        window.location.href = "/login";
+      }
     }
+
     return Promise.reject(error);
   }
 );
