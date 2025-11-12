@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import axiosInstance from "../../../api/axiosInstance";
+import { loginSuccess } from "../../../store/userSlice";
 import styles from "./LoginPage.module.css";
 
-// ✅ 백엔드 주소 (.env 로 관리 가능)
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
@@ -12,6 +13,16 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { isLoggedIn } = useSelector((state) => state.user);
+
+  /** ✅ 이미 로그인된 사용자는 접근 차단 */
+  useEffect(() => {
+    const storedToken = localStorage.getItem("accessToken");
+    if (storedToken && isLoggedIn) {
+      navigate("/");
+    }
+  }, [isLoggedIn, navigate]);
 
   /** ✅ 로그인 요청 */
   const handleLogin = async (e) => {
@@ -19,21 +30,26 @@ const LoginPage = () => {
     setError("");
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+      const response = await axiosInstance.post(`${API_BASE_URL}/auth/login`, {
         email,
         password,
       });
 
       if (response.data.success) {
-        const { accessToken, refreshToken } = response.data.data;
+        const { token, user } = response.data.data;
+        const { accessToken, refreshToken } = token;
 
-        // ✅ 토큰 저장
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
-        console.log('로그인 성공 - 토큰 저장 완료')
 
-        alert("로그인 성공!");
-        navigate("/"); // 로그인 후 채팅 목록으로 이동
+        dispatch(
+          loginSuccess({
+            user,
+            token: accessToken,
+          })
+        );
+
+        navigate("/");
       } else {
         setError(response.data.message || "로그인 실패");
       }
