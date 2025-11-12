@@ -4,7 +4,7 @@ import styles from "./RoomPage.module.css";
 import ChatRoomHeader from "../../components/chat/ChatRoomHeader";
 import MyMessage from "../../components/chat/MyMessage";
 import OtherMessage from "../../components/chat/OtherMessage";
-import { fetchChatRoom, fetchMessages } from "../../api/chatApi";
+import { fetchChatRooms, fetchChatRoom, fetchMessages } from "../../api/chatApi";
 import {
   connectSocket,
   subscribeRoom,
@@ -47,11 +47,23 @@ const RoomPage = () => {
     ? Number(payload.sub)
     : null;
 
-  /* ✅ 채팅방 정보 */
+  /* ✅ 채팅방 정보 로드 */
   useEffect(() => {
     const loadRoom = async () => {
       try {
-        const data = await fetchChatRoom(id);
+        // 1️⃣ 전체 방 목록에서 현재 방 타입 확인
+        const allRooms = await fetchChatRooms();
+        const currentRoom = allRooms.find(
+          (r) => String(r.roomId) === String(id)
+        );
+
+        if (!currentRoom) {
+          setRoom(null);
+          return;
+        }
+
+        // 2️⃣ roomType 기반으로 public / private 자동 분기 호출
+        const data = await fetchChatRoom(id, currentRoom.roomType);
         setRoom(data);
       } catch (err) {
         console.error("❌ 채팅방 불러오기 실패:", err);
@@ -83,31 +95,21 @@ const RoomPage = () => {
       subscribeRoom(id, (msg) => {
         console.log("📩 새 메시지 수신:", msg);
         setMessages((prev) => {
-          // 중복 체크: id를 문자열로 변환하여 비교 (Long 타입 대응)
           const existingIndex = prev.findIndex((m) => {
-            // id 비교 (타입 불일치 방지를 위해 문자열로 변환)
             if (m.id != null && msg.id != null) {
-              if (String(m.id) === String(msg.id)) {
-                return true;
-              }
+              return String(m.id) === String(msg.id);
             }
             return false;
           });
 
-          // 같은 id가 있으면 중복이므로 무시
-          if (existingIndex !== -1) {
-            console.log("⚠️ 중복 메시지 감지 (id 일치), 무시:", msg);
-            return prev;
-          }
+          if (existingIndex !== -1) return prev;
 
-          // 임시 메시지(temp-로 시작하는 id)와 매칭: 같은 userId, 같은 message 내용이면 임시 메시지를 실제 메시지로 교체
           const tempMsgIndex = prev.findIndex((m) => {
             if (m.id && String(m.id).startsWith("temp-")) {
               const mUserId = m.userId || m.user?.userId;
               const msgUserId = msg.userId;
               const mText = m.message || m.contents || "";
               const msgText = msg.message || msg.contents || "";
-              
               return (
                 mUserId != null &&
                 msgUserId != null &&
@@ -121,19 +123,13 @@ const RoomPage = () => {
 
           let updated;
           if (tempMsgIndex !== -1) {
-            // 임시 메시지를 실제 메시지로 교체
-            console.log("🔄 임시 메시지를 실제 메시지로 교체:", msg);
             updated = [...prev];
             updated[tempMsgIndex] = msg;
           } else {
-            // 새 메시지 추가
             updated = [...prev, msg];
           }
 
-          // 시간순 정렬
           updated.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
-
-          console.log("✅ 메시지 추가 완료, 총 메시지 수:", updated.length);
           return updated;
         });
       });
@@ -179,7 +175,6 @@ const RoomPage = () => {
     const messageDto = { roomId: id, message: newMessage };
     sendSocketMessage(id, messageDto, token);
 
-    // 로컬 반영용 (임시 메시지)
     const tempMsg = {
       id: `temp-${Date.now()}`,
       userId: currentUserId,
@@ -192,6 +187,9 @@ const RoomPage = () => {
 
   if (!room)
     return <div className={styles.container}>존재하지 않는 채팅방입니다.</div>;
+
+  const isPublicNoLogin =
+    !token && room.roomType === "PERFORMANCE_PUBLIC";
 
   return (
     <div className={styles.container}>
@@ -231,11 +229,20 @@ const RoomPage = () => {
       <form className={styles.inputBar} onSubmit={handleSendMessage}>
         <input
           className={styles.input}
-          placeholder="메시지를 입력하세요"
+          placeholder={
+            isPublicNoLogin
+              ? "로그인 후 메시지를 입력할 수 있습니다"
+              : "메시지를 입력하세요"
+          }
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
+          disabled={isPublicNoLogin}
         />
-        <button type="submit" className={styles.sendBtn}>
+        <button
+          type="submit"
+          className={styles.sendBtn}
+          disabled={isPublicNoLogin}
+        >
           전송
         </button>
       </form>

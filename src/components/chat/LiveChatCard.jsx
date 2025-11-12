@@ -32,11 +32,11 @@ const LiveChatCard = ({
             {active ? '활성' : '비활성'}
           </span>
         </div>
-        <div className={styles.subMeta}>
+        {/* <div className={styles.subMeta}>
           <span className={styles.performance}>{performanceName}</span>
           <span className={styles.dot}>·</span>
           <span className={styles.participants}>{visitors ?? participants}명 방문</span>
-        </div>
+        </div> */}
         <div className={styles.preview}>
           <span className={styles.lastMessage}>{lastMessage}</span>
           <span className={styles.lastTime}>{lastTime}</span>

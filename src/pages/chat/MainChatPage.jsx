@@ -11,6 +11,15 @@ const MainChatPage = () => {
   const [chatRooms, setChatRooms] = useState([]);
   const [error, setError] = useState("");
 
+  /* ============================================================
+      ✅ 아이콘 설정 (원하는 대로 변경 가능)
+  ============================================================ */
+  const ICONS = {
+    PUBLIC: "🌐", // 오픈 채팅방
+    GROUP: "👥", // 공연 단체방
+    DM: "💬", // 개인 DM
+  };
+
   // ✅ 채팅방 목록 불러오기
   useEffect(() => {
     const fetchRooms = async () => {
@@ -35,11 +44,28 @@ const MainChatPage = () => {
     fetchRooms();
   }, [navigate]);
 
+  // ✅ 검색 필터
   const filteredRooms = chatRooms.filter((r) =>
-    r.title.toLowerCase().includes(keyword.toLowerCase())
+    r.title?.toLowerCase().includes(keyword.toLowerCase())
   );
 
   const enterRoom = (id) => navigate(`/chat/${id}`);
+
+  /* ============================================================
+      ✅ 방 타입에 따라 아이콘 표시
+  ============================================================ */
+  const getRoomIcon = (roomType) => {
+    switch (roomType) {
+      case "PERFORMANCE_PUBLIC":
+        return ICONS.PUBLIC;
+      case "PERFORMANCE_GROUP":
+        return ICONS.GROUP;
+      case "PRIVATE_DM":
+        return ICONS.DM;
+      default:
+        return "💠"; // 알 수 없는 타입 fallback
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -55,25 +81,29 @@ const MainChatPage = () => {
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>모든 채팅방</h2>
+
         {error ? (
           <p className={styles.error}>{error}</p>
         ) : filteredRooms.length === 0 ? (
           <p className={styles.empty}>검색 결과가 없습니다.</p>
         ) : (
           <ul className={styles.compactList}>
-            {filteredRooms.map((room) => (
-              <CompactChatCard
-                key={room.roomId}
-                id={room.roomId}
-                title={room.title}
-                performanceName={room.performanceTitle}
-                image={room.thumbnailUrl}
-                active={room.isActive}
-                visitors={room.visitCount}
-                participants={room.participants}
-                onClick={enterRoom}
-              />
-            ))}
+            {filteredRooms.map((room) => {
+              const icon = getRoomIcon(room.roomType);
+              return (
+                <CompactChatCard
+                  key={room.roomId}
+                  id={room.roomId}
+                  title={`${room.title} ${icon}`} // ✅ 아이콘 추가
+                  performanceName={room.performanceTitle}
+                  image={room.thumbnailUrl}
+                  active={room.isActive}
+                  visitors={room.visitCount}
+                  participants={room.participants}
+                  onClick={enterRoom}
+                />
+              );
+            })}
           </ul>
         )}
       </div>

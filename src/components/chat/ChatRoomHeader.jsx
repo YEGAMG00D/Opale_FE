@@ -29,8 +29,8 @@ const ChatRoomHeader = ({
         </div>
         <div className={styles.headerSub}>
           <span>{performanceName}</span>
-          <span className={styles.dot}>·</span>
-          <span>{visitors ?? participants}명 방문</span>
+          {/* <span className={styles.dot}>·</span>
+          <span>{visitors ?? participants}명 방문</span> */}
           <span className={styles.dot}>·</span>
           <span>개설자 {creatorNickname}</span>
         </div>

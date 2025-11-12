@@ -26,9 +26,9 @@ const CompactChatCard = ({
       <div className={styles.compactMeta}>
         <div className={styles.compactTitle}>{title}</div>
         <div className={styles.compactSub}>
-          <span>{performanceName}</span>
+          {/* <span>{performanceName}</span>
           <span className={styles.dot}>·</span>
-          <span>{visitors ?? participants}명 방문</span>
+          <span>{visitors ?? participants}명 방문</span> */}
           <span className={styles.dot}>·</span>
           <span className={active ? styles.textOn : styles.textOff}>
             {active ? '활성' : '비활성'}

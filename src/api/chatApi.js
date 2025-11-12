@@ -1,4 +1,3 @@
-// src/api/chatApi.js
 import axiosInstance from "./axiosInstance";
 
 const base = "/chat";
@@ -18,11 +17,24 @@ export const fetchChatRooms = async () => {
 };
 
 /* ============================================================
-    ✅ 2. 단일 채팅방 상세 조회
+    ✅ 2. 단일 채팅방 상세 조회 (로그인 여부 자동 분기)
 ============================================================ */
-export const fetchChatRoom = async (roomId) => {
+export const fetchChatRoom = async (roomId, roomType) => {
   try {
-    const res = await axiosInstance.get(`${base}/rooms/${roomId}`);
+    const token = localStorage.getItem("accessToken");
+
+    // 🟢 roomType이 PERFORMANCE_PUBLIC이고 로그인 안 되어 있으면 public endpoint 사용
+    const isPublicView =
+      roomType === "PERFORMANCE_PUBLIC" && (!token || token.trim() === "");
+
+    const url = isPublicView
+      ? `${base}/rooms/public/${roomId}`
+      : `${base}/rooms/${roomId}`;
+
+    console.log("📡 호출 URL:", url);
+
+    const res = await axiosInstance.get(url);
+
     if (res.data.success) return res.data.data;
     throw new Error("채팅방 상세 불러오기 실패");
   } catch (err) {
@@ -32,7 +44,7 @@ export const fetchChatRoom = async (roomId) => {
 };
 
 /* ============================================================
-    ✅ 3. 특정 채팅방의 과거 메시지 조회 (정렬 ASC)
+    ✅ 3. 메시지 목록 조회
 ============================================================ */
 export const fetchMessages = async (roomId, page = 1, size = 50) => {
   try {
@@ -44,9 +56,10 @@ export const fetchMessages = async (roomId, page = 1, size = 50) => {
 
     const list = res.data.data?.messages || [];
 
-    // ✅ 오래된 → 최신순 정렬 보장 (백엔드와 UI 일치)
+    // 오래된 → 최신순 정렬
     return list.sort(
-      (a, b) => new Date(a.sentAt ?? a.createdAt) - new Date(b.sentAt ?? b.createdAt)
+      (a, b) =>
+        new Date(a.sentAt ?? a.createdAt) - new Date(b.sentAt ?? b.createdAt)
     );
   } catch (err) {
     console.error("❌ fetchMessages 오류:", err);
