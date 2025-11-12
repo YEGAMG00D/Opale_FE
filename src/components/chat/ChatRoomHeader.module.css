@@ -16,8 +16,12 @@
   transition: transform 0.2s ease;
 }
 
-.thumbButton:hover {
+.thumbButton:hover:not(:disabled) {
   transform: scale(1.05);
+}
+
+.thumbButton:disabled {
+  cursor: default;
 }
 
 .thumb {
@@ -69,5 +73,16 @@
 .dot {
   margin: 0 6px;
   color: #cbd5e1;
+}
+
+.performanceLink {
+  cursor: pointer;
+  text-decoration: underline;
+  color: #111827;
+  transition: color 0.2s ease;
+}
+
+.performanceLink:hover {
+  color: #079455;
 }
 

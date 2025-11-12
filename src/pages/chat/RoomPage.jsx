@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import styles from "./RoomPage.module.css";
 import ChatRoomHeader from "../../components/chat/ChatRoomHeader";
 import MyMessage from "../../components/chat/MyMessage";
@@ -31,6 +31,7 @@ const parseJwt = (token) => {
 
 const RoomPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -191,6 +192,13 @@ const RoomPage = () => {
   const isPublicNoLogin =
     !token && room.roomType === "PERFORMANCE_PUBLIC";
 
+  // ✅ 공연 상세 페이지로 이동하는 핸들러
+  const handlePosterClick = () => {
+    if (room.roomType === "PERFORMANCE_PUBLIC" && room.performanceId) {
+      navigate(`/culture/${room.performanceId}`);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.headerWrapper}>
@@ -202,6 +210,11 @@ const RoomPage = () => {
           visitors={room.visitCount}
           participants={0}
           creatorNickname={room.creatorNickname || "익명"}
+          onPosterClick={
+            room.roomType === "PERFORMANCE_PUBLIC" && room.performanceId
+              ? handlePosterClick
+              : undefined
+          }
         />
       </div>
 
