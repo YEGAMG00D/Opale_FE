@@ -16,6 +16,7 @@ const ChatRoomHeader = ({
       <button 
         onClick={onPosterClick}
         className={styles.thumbButton}
+        disabled={!onPosterClick}
         aria-label={`${performanceName} 공연 상세 페이지로 이동`}
       >
         <img src={image} alt={performanceName} className={styles.thumb} />
@@ -28,9 +29,14 @@ const ChatRoomHeader = ({
           </span>
         </div>
         <div className={styles.headerSub}>
-          <span>{performanceName}</span>
-          <span className={styles.dot}>·</span>
-          <span>{visitors ?? participants}명 방문</span>
+          <span 
+            onClick={onPosterClick}
+            className={onPosterClick ? styles.performanceLink : undefined}
+          >
+            {performanceName}
+          </span>
+          {/* <span className={styles.dot}>·</span>
+          <span>{visitors ?? participants}명 방문</span> */}
           <span className={styles.dot}>·</span>
           <span>개설자 {creatorNickname}</span>
         </div>
