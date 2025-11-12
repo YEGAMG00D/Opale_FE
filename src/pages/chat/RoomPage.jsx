@@ -193,15 +193,17 @@ const RoomPage = () => {
 
   return (
     <div className={styles.container}>
-      <ChatRoomHeader
-        title={room.title}
-        performanceName={room.performanceTitle || "공연 없음"}
-        image={room.thumbnailUrl || "/poster/default.jpg"}
-        active={room.isActive}
-        visitors={room.visitCount}
-        participants={0}
-        creatorNickname={room.creatorNickname || "익명"}
-      />
+      <div className={styles.headerWrapper}>
+        <ChatRoomHeader
+          title={room.title}
+          performanceName={room.performanceTitle || "공연 없음"}
+          image={room.thumbnailUrl || "/poster/default.jpg"}
+          active={room.isActive}
+          visitors={room.visitCount}
+          participants={0}
+          creatorNickname={room.creatorNickname || "익명"}
+        />
+      </div>
 
       <main className={styles.chatArea} ref={scrollRef} onScroll={handleScroll}>
         <div className={styles.dayDivider}>오늘</div>

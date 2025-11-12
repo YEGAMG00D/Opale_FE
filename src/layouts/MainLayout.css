@@ -9,7 +9,7 @@
   position: relative;
   overflow-x: hidden;
   box-sizing: border-box;
-  --header-height: 81px; /* Header 높이: 20px top + ~40px content + 1px divider + 20px bottom (충분한 여유) */
+  --header-height: 61px; /* Header 높이: 10px top + ~22px content + 10px bottom + 1px divider */
 }
 
 .main-content {
