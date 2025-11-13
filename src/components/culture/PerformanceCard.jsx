@@ -1,6 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './PerformanceCard.module.css';
+import wickedPoster from '../../assets/poster/wicked.gif';
+import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
+import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
+import hanbokManPoster from '../../assets/poster/hanbok-man.jpg';
+import deathNotePoster from '../../assets/poster/death-note.gif';
+import rentPoster from '../../assets/poster/rent.gif';
 
 const PerformanceCard = ({
   id,
@@ -16,14 +22,14 @@ const PerformanceCard = ({
 }) => {
   const navigate = useNavigate();
 
-  // 포스터 확장자 매핑
-  const posterExt = {
-    'wicked': 'gif',
-    'moulin-rouge': 'gif',
-    'kinky-boots': 'gif',
-    'hanbok-man': 'jpg',
-    'death-note': 'gif',
-    'rent': 'gif'
+  // 포스터 이미지 매핑
+  const posterImages = {
+    'wicked': wickedPoster,
+    'moulin-rouge': moulinRougePoster,
+    'kinky-boots': kinkyBootsPoster,
+    'hanbok-man': hanbokManPoster,
+    'death-note': deathNotePoster,
+    'rent': rentPoster
   };
 
   const handleCardClick = (e) => {
@@ -52,7 +58,7 @@ const PerformanceCard = ({
       <div className={styles.posterCard}>
         <img
           className={styles.posterImg}
-          src={`/poster/${image}.${posterExt[image] || 'jpg'}`}
+          src={posterImages[image] || wickedPoster}
           alt={`${title} 포스터`}
         />
       </div>

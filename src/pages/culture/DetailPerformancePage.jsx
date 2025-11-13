@@ -8,6 +8,12 @@ import PerformanceDetails from '../../components/culture/PerformanceDetails';
 import BookingLinks from '../../components/culture/BookingLinks';
 import OpenChatSection from '../../components/culture/OpenChatSection';
 import ReviewCard from '../../components/culture/ReviewCard';
+import wickedPoster from '../../assets/poster/wicked.gif';
+import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
+import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
+import hanbokManPoster from '../../assets/poster/hanbok-man.jpg';
+import deathNotePoster from '../../assets/poster/death-note.gif';
+import rentPoster from '../../assets/poster/rent.gif';
 
 const DetailPerformancePage = () => {
   const { id } = useParams();
@@ -742,23 +748,19 @@ const DetailPerformancePage = () => {
   const performanceId = parseInt(id, 10);
   const performance = allPerformances[performanceId] || allPerformances[1];
   
-  // 포스터 확장자 매핑
-  const posterExt = {
-    'wicked': 'gif',
-    'moulin-rouge': 'gif',
-    'kinky-boots': 'gif',
-    'hanbok-man': 'jpg',
-    'death-note': 'gif',
-    'rent': 'gif'
+  // 포스터 이미지 매핑
+  const posterImages = {
+    'wicked': wickedPoster,
+    'moulin-rouge': moulinRougePoster,
+    'kinky-boots': kinkyBootsPoster,
+    'hanbok-man': hanbokManPoster,
+    'death-note': deathNotePoster,
+    'rent': rentPoster
   };
   
   // 포스터 이미지가 없는 경우 기본 이미지 사용
   const getPosterImage = (imageName) => {
-    if (posterExt[imageName]) {
-      return `/poster/${imageName}.${posterExt[imageName]}`;
-    }
-    // 기본 이미지 사용 (기존 포스터 중 하나)
-    return `/poster/wicked.gif`;
+    return posterImages[imageName] || wickedPoster;
   };
   
   // 페이지 로드 시 로그 (디버깅용)

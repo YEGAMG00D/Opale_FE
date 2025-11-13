@@ -11,6 +11,7 @@ import {
   sendMessage as sendSocketMessage,
   disconnectSocket,
 } from "../../api/socket";
+import defaultPoster from "../../assets/poster/wicked.gif";
 
 // ✅ JWT에서 userId 추출
 const parseJwt = (token) => {
@@ -205,7 +206,7 @@ const RoomPage = () => {
         <ChatRoomHeader
           title={room.title}
           performanceName={room.performanceTitle || "공연 없음"}
-          image={room.thumbnailUrl || "/poster/default.jpg"}
+          image={room.thumbnailUrl || defaultPoster}
           active={room.isActive}
           visitors={room.visitCount}
           participants={0}
