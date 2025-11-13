@@ -1,5 +1,11 @@
 // KOPIS DB 구조에 맞춘 공연장 데이터
 // 실제 API 연동 시 이 구조를 그대로 사용하면 됩니다.
+import wickedPoster from '../assets/poster/wicked.gif';
+import moulinRougePoster from '../assets/poster/moulin-rouge.gif';
+import kinkyBootsPoster from '../assets/poster/kinky-boots.gif';
+import hanbokManPoster from '../assets/poster/hanbok-man.jpg';
+import deathNotePoster from '../assets/poster/death-note.gif';
+import rentPoster from '../assets/poster/rent.gif';
 
 export const PLACE_DATA = {
   1: {
@@ -47,7 +53,7 @@ export const PLACE_DATA = {
         venue: '유니플렉스 2관(중극장)',
         cast: '',
         production: '(주)씨에이치수박',
-        poster: '/poster/death-note.gif'
+        poster: deathNotePoster
       }
     ]
   },
@@ -89,7 +95,7 @@ export const PLACE_DATA = {
         venue: '마포아트센터 아트홀',
         cast: '김영배, 이소연',
         production: '(주)마포문화재단',
-        poster: '/poster/wicked.gif'
+        poster: wickedPoster
       }
     ]
   },
@@ -138,7 +144,7 @@ export const PLACE_DATA = {
         venue: '관악문화예술회관 대공연장',
         cast: '김선아, 박혜진',
         production: '(주)씨제이엔터테인먼트',
-        poster: '/poster/wicked.gif'
+        poster: wickedPoster
       },
       {
         id: 302,
@@ -148,7 +154,7 @@ export const PLACE_DATA = {
         venue: '관악문화예술회관 소공연장',
         cast: '정우성, 전지현',
         production: '(주)드라마하우스',
-        poster: '/poster/hanbok-man.jpg'
+        poster: hanbokManPoster
       }
     ]
   },
@@ -190,7 +196,7 @@ export const PLACE_DATA = {
         venue: '성북문화예술회관 대극장',
         cast: '이동휘, 아이유',
         production: '(주)에스엔컴퍼니',
-        poster: '/poster/rent.gif'
+        poster: rentPoster
       }
     ]
   },
@@ -246,7 +252,7 @@ export const PLACE_DATA = {
         venue: '강남아트센터 그랜드홀',
         cast: '조승우, 수지',
         production: '(주)샤피엔터테인먼트',
-        poster: '/poster/moulin-rouge.gif'
+        poster: moulinRougePoster
       },
       {
         id: 502,
@@ -256,7 +262,7 @@ export const PLACE_DATA = {
         venue: '강남아트센터 아트홀',
         cast: '정성화, 박은태',
         production: '(주)씨제이엔터테인먼트',
-        poster: '/poster/kinky-boots.gif'
+        poster: kinkyBootsPoster
       }
     ]
   }

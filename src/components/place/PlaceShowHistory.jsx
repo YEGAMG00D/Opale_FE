@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import styles from './PlaceShowHistory.module.css';
+import wickedPoster from '../../assets/poster/wicked.gif';
+import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
+import rentPoster from '../../assets/poster/rent.gif';
 
 // 더미 데이터: 실제 API 연동 시 placeId로 필터링하세요.
 const DUMMY_SHOWS = [
-  { id: 101, placeId: 1, title: '위키드', period: '2025.09.01 ~ 2026.01.05', status: '현재', poster: '/poster/wicked.gif' },
-  { id: 102, placeId: 1, title: '렌트', period: '2025.05.10 ~ 2025.08.20', status: '과거', poster: '/poster/rent.gif' },
-  { id: 103, placeId: 1, title: '물랑루즈', period: '2024.12.01 ~ 2025.03.20', status: '과거', poster: '/poster/moulin-rouge.gif' },
+  { id: 101, placeId: 1, title: '위키드', period: '2025.09.01 ~ 2026.01.05', status: '현재', poster: wickedPoster },
+  { id: 102, placeId: 1, title: '렌트', period: '2025.05.10 ~ 2025.08.20', status: '과거', poster: rentPoster },
+  { id: 103, placeId: 1, title: '물랑루즈', period: '2024.12.01 ~ 2025.03.20', status: '과거', poster: moulinRougePoster },
 ];
 
 export default function PlaceShowHistory({ placeId = 1 }) {

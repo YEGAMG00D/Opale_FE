@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PerformanceCard from '../../components/culture/PerformanceCard';
 import styles from './MainHomePage.module.css';
+import wickedPoster from '../../assets/poster/wicked.gif';
+import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
+import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
+import hanbokManPoster from '../../assets/poster/hanbok-man.jpg';
+import deathNotePoster from '../../assets/poster/death-note.gif';
+import rentPoster from '../../assets/poster/rent.gif';
 
 const MainHomePage = () => {
   const navigate = useNavigate();
@@ -122,14 +128,14 @@ const MainHomePage = () => {
     }
   ];
 
-  // 포스터 확장자 매핑
-  const posterExt = {
-    'wicked': 'gif',
-    'moulin-rouge': 'gif',
-    'kinky-boots': 'gif',
-    'hanbok-man': 'jpg',
-    'death-note': 'gif',
-    'rent': 'gif'
+  // 포스터 이미지 매핑
+  const posterImages = {
+    'wicked': wickedPoster,
+    'moulin-rouge': moulinRougePoster,
+    'kinky-boots': kinkyBootsPoster,
+    'hanbok-man': hanbokManPoster,
+    'death-note': deathNotePoster,
+    'rent': rentPoster
   };
 
   return (
@@ -148,7 +154,7 @@ const MainHomePage = () => {
                   <div className={styles.poster}>
                     <img
                       className={styles.posterImg}
-                      src={`/poster/${performance.image}.${posterExt[performance.image] || 'jpg'}`}
+                      src={posterImages[performance.image] || wickedPoster}
                       alt={`${performance.title} 포스터`}
                     />
                     <div className={styles.posterOverlay}></div>
