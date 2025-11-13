@@ -2,7 +2,7 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 
-const SOCKET_URL = "http://localhost:8080/ws";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
 let stompClient = null;
 
 // ✅ WebSocket 연결 (중복 연결 방지)

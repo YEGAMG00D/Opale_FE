@@ -5,8 +5,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import { loginSuccess } from "../../../store/userSlice";
 import styles from "./LoginPage.module.css";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+const API_BASE_URL =import.meta.env.VITE_API_BASE_URL;
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
