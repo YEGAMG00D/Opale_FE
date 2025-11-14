@@ -91,6 +91,9 @@ const LoginPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <Link to="/new-password" className={styles.findPasswordLink}>
+              비밀번호 찾기
+            </Link>
           </div>
 
           {error && <p className={styles.errorMsg}>{error}</p>}
@@ -100,14 +103,9 @@ const LoginPage = () => {
           </button>
         </form>
 
-        <div className={styles.footerLinks}>
-          <Link to="/signup" className={styles.signupLink}>
-            회원가입
-          </Link>
-          <Link to="/find-password" className={styles.findPasswordLink}>
-            비밀번호 찾기
-          </Link>
-        </div>
+        <Link to="/signup" className={styles.signupLink}>
+          회원가입
+        </Link>
       </div>
     </div>
   );

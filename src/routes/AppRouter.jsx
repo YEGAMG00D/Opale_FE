@@ -10,6 +10,8 @@ import MainHomePage from '../pages/home/MainHomePage';
 import LoginPage from '../pages/user/auth/LoginPage';
 import SignupPage from '../pages/user/auth/SignupPage';
 import WelcomePage from '../pages/user/auth/WelcomePage';
+import NewPasswordPage from '../pages/user/auth/NewPasswordPage';
+import SuccessedNewPasswordPage from '../pages/user/auth/SuccessedNewPasswordPage';
 
 // 마이페이지 관련
 import MainMyPage from '../pages/user/mypage/MainMyPage';
@@ -54,6 +56,8 @@ const AppRouter = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/signup/welcome" element={<WelcomePage />} />
+        <Route path="/new-password" element={<NewPasswordPage />} />
+        <Route path="/new-password/success" element={<SuccessedNewPasswordPage />} />
         <Route path="*" element={<ErrorPage />} />
 
         {/* 메인 레이아웃이 적용되는 라우트들 */}
