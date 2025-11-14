@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './SignupPage.module.css';
+import Step1EmailVerification from './signup-steps/Step1EmailVerification';
+import Step2Password from './signup-steps/Step2Password';
+import Step3PersonalInfo from './signup-steps/Step3PersonalInfo';
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -98,23 +101,25 @@ const SignupPage = () => {
         </div>
 
         <div className={styles.content}>
-          <div className={styles.logoSection}>
-            <div className={styles.logo}>opale</div>
-            <div className={styles.decorativeElements}>
-              <div className={styles.dotPink1}></div>
-              <div className={styles.dotPink2}></div>
-              <div className={styles.dotBlue1}></div>
-              <div className={styles.dotBlue2}></div>
-              <div className={styles.starPink1}></div>
-              <div className={styles.starBlue1}></div>
+          <div className={styles.topSection}>
+            <div className={styles.logoSection}>
+              <div className={styles.logo}>opale</div>
+              <div className={styles.decorativeElements}>
+                <div className={styles.dotPink1}></div>
+                <div className={styles.dotPink2}></div>
+                <div className={styles.dotBlue1}></div>
+                <div className={styles.dotBlue2}></div>
+                <div className={styles.starPink1}></div>
+                <div className={styles.starBlue1}></div>
+              </div>
             </div>
-          </div>
 
-          <div className={styles.questionSection}>
-            <h2 className={styles.question}>만 14세 미만 이용자입니까?</h2>
-            <p className={styles.description}>
-              본인에 해당하는 회원유형을 정확히 선택해 주세요.
-            </p>
+            <div className={styles.questionSection}>
+              <h2 className={styles.question}>만 14세 미만 이용자입니까?</h2>
+              <p className={styles.description}>
+                본인에 해당하는 회원유형을 정확히 선택해 주세요.
+              </p>
+            </div>
           </div>
 
           <div className={styles.buttonSection}>
@@ -141,242 +146,30 @@ const SignupPage = () => {
 
       <div className={styles.content}>
         <div className={styles.card}>
-          {/* Step 1: 이메일/인증번호 */}
           {step === 1 && (
-            <div className={styles.stepContent}>
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  이메일 <span className={styles.required}>*</span>
-                </label>
-                <div className={styles.inputWithButton}>
-                  <input
-                    type="email"
-                    name="email"
-                    className={styles.input}
-                    placeholder="user@example.com"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                  />
-                  <button
-                    type="button"
-                    className={styles.smallButton}
-                    onClick={handleResendCode}
-                  >
-                    인증번호 재전송
-                  </button>
-                </div>
-                <p className={styles.successMsg}>인증번호를 전송하였습니다.</p>
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  인증번호 <span className={styles.required}>*</span>
-                </label>
-                <div className={styles.inputWithButton}>
-                  <input
-                    type="text"
-                    name="verificationCode"
-                    className={styles.input}
-                    placeholder="123456"
-                    value={formData.verificationCode}
-                    onChange={handleInputChange}
-                  />
-                  <button
-                    type="button"
-                    className={styles.smallButton}
-                    onClick={handleVerifyCode}
-                  >
-                    인증번호 확인
-                  </button>
-                </div>
-                <div className={styles.errorContainer}>
-                  <p className={styles.errorMsg}>인증번호가 일치하지 않습니다.</p>
-                  <span className={styles.timer}>{formatTimer(timer)}</span>
-                </div>
-              </div>
-            </div>
+            <Step1EmailVerification
+              formData={formData}
+              handleInputChange={handleInputChange}
+              handleResendCode={handleResendCode}
+              handleVerifyCode={handleVerifyCode}
+              timer={timer}
+              formatTimer={formatTimer}
+            />
           )}
 
-          {/* Step 2: 비밀번호 */}
           {step === 2 && (
-            <div className={styles.stepContent}>
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  비밀번호 <span className={styles.required}>*</span>
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  className={styles.input}
-                  placeholder="비밀번호는 영문, 숫자, 특수문자를 포함한 8자"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  비밀번호 확인 <span className={styles.required}>*</span>
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  className={styles.input}
-                  placeholder="비밀번호 확인"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                />
-                <p className={styles.errorMsg}>비밀번호와 일치하지 않습니다.</p>
-              </div>
-            </div>
+            <Step2Password
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />
           )}
 
-          {/* Step 3: 개인정보 */}
           {step === 3 && (
-            <div className={styles.stepContent}>
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  닉네임 <span className={styles.required}>*</span>
-                </label>
-                <div className={styles.inputWithButton}>
-                  <input
-                    type="text"
-                    name="nickname"
-                    className={styles.input}
-                    placeholder="2자 이상 10자 이하"
-                    value={formData.nickname}
-                    onChange={handleInputChange}
-                  />
-                  <button
-                    type="button"
-                    className={styles.smallButton}
-                    onClick={handleCheckNickname}
-                  >
-                    닉네임 중복확인
-                  </button>
-                </div>
-                <p className={styles.successMsg}>사용가능한 닉네임입니다.</p>
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  성명 <span className={styles.required}>*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  className={styles.input}
-                  placeholder="Value"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  성별 <span className={styles.required}>*</span>
-                </label>
-                <div className={styles.radioGroup}>
-                  <label className={styles.radioLabel}>
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="male"
-                      checked={formData.gender === 'male'}
-                      onChange={handleInputChange}
-                    />
-                    <span>남성</span>
-                  </label>
-                  <label className={styles.radioLabel}>
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="female"
-                      checked={formData.gender === 'female'}
-                      onChange={handleInputChange}
-                    />
-                    <span>여성</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  생년월일 <span className={styles.required}>*</span>
-                </label>
-                <input
-                  type="text"
-                  name="birthDate"
-                  className={styles.input}
-                  placeholder="YYYYMMdd"
-                  value={formData.birthDate}
-                  onChange={handleInputChange}
-                />
-                <p className={styles.errorMsg}>인증번호가 일치하지 않습니다.</p>
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  연락처 <span className={styles.required}>*</span>
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  className={styles.input}
-                  placeholder="01012341234"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                />
-                <p className={styles.errorMsg}>인증번호가 일치하지 않습니다.</p>
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  주소 <span className={styles.required}>*</span>
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  className={styles.input}
-                  placeholder="Value"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                />
-                <p className={styles.errorMsg}>인증번호가 일치하지 않습니다.</p>
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>
-                  상세주소 <span className={styles.required}>*</span>
-                </label>
-                <input
-                  type="text"
-                  name="detailAddress"
-                  className={styles.input}
-                  placeholder="Value"
-                  value={formData.detailAddress}
-                  onChange={handleInputChange}
-                />
-                <p className={styles.errorMsg}>인증번호가 일치하지 않습니다.</p>
-              </div>
-
-              <div className={styles.termsSection}>
-                <textarea
-                  className={styles.termsText}
-                  readOnly
-                  value="opale에서는 ~~~할 수 있습니다."
-                />
-                <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    name="agreeToTerms"
-                    checked={formData.agreeToTerms}
-                    onChange={handleInputChange}
-                  />
-                  <span>위 사항에 동의합니다. <span className={styles.required}>*</span></span>
-                </label>
-              </div>
-            </div>
+            <Step3PersonalInfo
+              formData={formData}
+              handleInputChange={handleInputChange}
+              handleCheckNickname={handleCheckNickname}
+            />
           )}
         </div>
 
