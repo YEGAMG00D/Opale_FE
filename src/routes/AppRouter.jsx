@@ -16,6 +16,7 @@ import SuccessedNewPasswordPage from '../pages/user/auth/SuccessedNewPasswordPag
 // 마이페이지 관련
 import MainMyPage from '../pages/user/mypage/MainMyPage';
 import UpdateMyInfoPage from '../pages/user/mypage/UpdateMyInfoPage';
+import ChangePasswordPage from '../pages/user/mypage/ChangePasswordPage';
 import FavoriteCulturePerformancePage from '../pages/user/mypage/FavoriteCulturePerformancePage';
 import BookingPerformancePage from '../pages/user/mypage/BookingPerformancePage';
 import BookingPerformanceRegistrationPage from '../pages/user/mypage/BookingPerformanceRegistrationPage';
@@ -67,6 +68,7 @@ const AppRouter = () => {
           {/* 마이페이지 관련 */}
           <Route path="my" element={<MainMyPage />} />
           <Route path="my/update-info" element={<UpdateMyInfoPage />} />
+          <Route path="my/change-password" element={<ChangePasswordPage />} />
           <Route path="my/favorite-performances" element={<FavoriteCulturePerformancePage />} />
           <Route path="my/booking-performances" element={<BookingPerformancePage />} />
           <Route path="my/booking-performances/register" element={<BookingPerformanceRegistrationPage />} />

@@ -27,6 +27,9 @@ const MainMyPage = () => {
           <Link to="/my/update-info" className={styles.link}>
             정보 변경
           </Link>
+          <Link to="/my/change-password" className={styles.link}>
+            비밀번호 변경
+          </Link>
           <Link to="/my/favorite-performances" className={styles.link}>
             관심 공연
           </Link>
