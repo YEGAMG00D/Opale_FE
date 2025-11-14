@@ -269,6 +269,11 @@
   gap: 8px;
 }
 
+.inputGroup.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .label {
   font-size: 14px;
   font-weight: 400;
@@ -286,7 +291,7 @@
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   background: #ffffff;
-  font-size: 16px;
+  font-size: 14px;
   color: #333;
   outline: none;
   transition: border-color 0.3s;
@@ -313,11 +318,12 @@
   border-radius: 8px;
   background: #ffffff;
   color: #000000;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 0.2s;
+  min-width: 110px;
 }
 
 .smallButton:hover {
@@ -338,8 +344,16 @@
 
 .errorContainer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
+  min-height: 20px;
+  position: relative;
+}
+
+.errorContainer p {
+  margin: 0;
+  position: absolute;
+  left: 0;
 }
 
 .timer {
@@ -471,8 +485,14 @@
   color: #000000;
 }
 
-.nextButton:hover {
+.nextButton:hover:not(:disabled) {
   background-color: #fff5f7;
+}
+
+.nextButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #e0e0e0;
 }
 
 .signupButton {

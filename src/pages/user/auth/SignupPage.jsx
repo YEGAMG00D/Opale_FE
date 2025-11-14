@@ -37,6 +37,11 @@ const SignupPage = () => {
   const [errors, setErrors] = useState({});
   const [validationMessages, setValidationMessages] = useState({});
   const [timer, setTimer] = useState(300); // 5분 타이머
+  // Step1 관련 상태
+  const [isCodeSent, setIsCodeSent] = useState(false); // 인증번호 전송 여부
+  const [isCodeVerified, setIsCodeVerified] = useState(false); // 인증번호 확인 여부
+  const [emailSendStatus, setEmailSendStatus] = useState(null); // 'success' | 'error' | null
+  const [codeVerifyStatus, setCodeVerifyStatus] = useState(null); // 'success' | 'error' | null
 
   const handleUnder14 = () => {
     console.log('Under 14 signup');
@@ -44,6 +49,13 @@ const SignupPage = () => {
 
   const handleOver14 = () => {
     console.log('Over 14 signup');
+    // Step1 상태 초기화
+    setIsCodeSent(false);
+    setIsCodeVerified(false);
+    setEmailSendStatus(null);
+    setCodeVerifyStatus(null);
+    setTimer(300);
+    setValidationMessages({});
     setStep(1);
   };
 
@@ -56,7 +68,7 @@ const SignupPage = () => {
 
   const handlePrev = () => {
     console.log('Previous step');
-    if (step > 1) {
+    if (step > 0) {
       setStep(step - 1);
     }
   };
@@ -76,7 +88,12 @@ const SignupPage = () => {
         validationResult = validateEmail(value);
         break;
       case 'verificationCode':
-        validationResult = validateVerificationCode(value);
+        // 인증번호 입력 시: 6자리 숫자가 아니면 빨간 글씨만 (초록 글씨 안 나옴)
+        if (value && !/^\d{6}$/.test(value)) {
+          validationResult = { isValid: false, message: '인증번호는 6자리 숫자여야 합니다.' };
+        } else {
+          validationResult = { isValid: null, message: '' }; // 정상 입력 시 메시지 없음
+        }
         break;
       case 'password':
         validationResult = validatePassword(value);
@@ -120,13 +137,58 @@ const SignupPage = () => {
     }));
   };
 
-  const handleResendCode = () => {
-    console.log('Resend verification code');
-    setTimer(300);
+  // 인증번호 전송 (개발용: 항상 200 응답)
+  const handleSendCode = async () => {
+    // TODO: 실제 API 호출로 교체
+    // const response = await sendVerificationCode(formData.email);
+    
+    // 개발용: 항상 성공 응답
+    const mockResponse = { status: 200 };
+    
+    if (mockResponse.status === 200) {
+      setEmailSendStatus('success');
+      setIsCodeSent(true);
+      setTimer(300); // 5분 타이머 시작
+      setValidationMessages(prev => ({
+        ...prev,
+        email: { isValid: true, message: '인증번호를 전송하였습니다.' }
+      }));
+    } else {
+      setEmailSendStatus('error');
+      setValidationMessages(prev => ({
+        ...prev,
+        email: { isValid: false, message: '전송 실패하였습니다.' }
+      }));
+    }
   };
 
-  const handleVerifyCode = () => {
-    console.log('Verify code');
+  // 인증번호 재전송
+  const handleResendCode = async () => {
+    await handleSendCode();
+  };
+
+  // 인증번호 확인 (개발용: 항상 200 응답)
+  const handleVerifyCode = async () => {
+    // TODO: 실제 API 호출로 교체
+    // const response = await verifyCode(formData.email, formData.verificationCode);
+    
+    // 개발용: 항상 성공 응답
+    const mockResponse = { status: 200 };
+    
+    if (mockResponse.status === 200) {
+      setCodeVerifyStatus('success');
+      setIsCodeVerified(true);
+      setValidationMessages(prev => ({
+        ...prev,
+        verificationCode: { isValid: true, message: '인증번호가 확인되었습니다.' }
+      }));
+    } else {
+      setCodeVerifyStatus('error');
+      setValidationMessages(prev => ({
+        ...prev,
+        verificationCode: { isValid: false, message: '인증번호가 일치하지 않습니다.' }
+      }));
+    }
   };
 
   const handleCheckNickname = () => {
@@ -138,15 +200,25 @@ const SignupPage = () => {
     navigate('/signup/welcome', { state: { nickname: formData.nickname || '닉네임' } });
   };
 
-  // 타이머 효과
+  // 타이머 효과 (인증번호 전송 후에만 작동)
   React.useEffect(() => {
-    if (step === 1 && timer > 0) {
+    if (step === 1 && isCodeSent && timer > 0) {
       const interval = setInterval(() => {
-        setTimer(prev => prev - 1);
+        setTimer(prev => {
+          if (prev <= 1) {
+            // 시간 초과 시 메시지 표시
+            setValidationMessages(prev => ({
+              ...prev,
+              verificationCode: { isValid: false, message: '제한 시간 지났습니다. 재전송해주세요.' }
+            }));
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [step, timer]);
+  }, [step, isCodeSent, timer]);
 
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -214,11 +286,13 @@ const SignupPage = () => {
             <Step1EmailVerification
               formData={formData}
               handleInputChange={handleInputChange}
+              handleSendCode={handleSendCode}
               handleResendCode={handleResendCode}
               handleVerifyCode={handleVerifyCode}
               timer={timer}
               formatTimer={formatTimer}
               validationMessages={validationMessages}
+              isCodeSent={isCodeSent}
             />
           )}
 
@@ -252,12 +326,16 @@ const SignupPage = () => {
             <button
               className={styles.prevButton}
               onClick={handlePrev}
-              disabled={step === 1}
+              disabled={step === 0}
             >
               이전
             </button>
             {step < 3 ? (
-              <button className={styles.nextButton} onClick={handleNext}>
+              <button 
+                className={styles.nextButton} 
+                onClick={handleNext}
+                disabled={step === 1 && !isCodeVerified}
+              >
                 다음
               </button>
             ) : (
