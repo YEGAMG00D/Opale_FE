@@ -1,5 +1,7 @@
 import React from 'react';
 import styles from '../SignupPage.module.css';
+import FormInputWithButton from '../../../../components/signup/FormInputWithButton';
+import FormInputWithButtonAndTimer from '../../../../components/signup/FormInputWithButtonAndTimer';
 
 const Step1EmailVerification = ({ 
   formData, 
@@ -18,71 +20,35 @@ const Step1EmailVerification = ({
   return (
     <div className={styles.stepContent}>
       {/* 이메일 입력 영역 */}
-      <div className={styles.inputGroup}>
-        <label className={styles.label}>
-          이메일 <span className={styles.required}>*</span>
-        </label>
-        <div className={styles.inputWithButton}>
-          <input
-            type="email"
-            name="email"
-            className={styles.input}
-            placeholder="user@example.com"
-            value={formData.email}
-            onChange={handleInputChange}
-          />
-          <button
-            type="button"
-            className={styles.smallButton}
-            onClick={isCodeSent ? handleResendCode : handleSendCode}
-          >
-            {isCodeSent ? '인증번호 재전송' : '인증번호 전송'}
-          </button>
-        </div>
-        {/* 이메일 입력 중 유효성 검사 메시지 또는 전송 결과 메시지 */}
-        {emailValidation.isValid !== null && emailValidation.message && (
-          <p className={emailValidation.isValid ? styles.successMsg : styles.errorMsg}>
-            {emailValidation.message}
-          </p>
-        )}
-      </div>
+      <FormInputWithButton
+        label="이메일"
+        required
+        name="email"
+        type="email"
+        placeholder="user@example.com"
+        value={formData.email}
+        onChange={handleInputChange}
+        buttonText={isCodeSent ? '인증번호 재전송' : '인증번호 전송'}
+        onButtonClick={isCodeSent ? handleResendCode : handleSendCode}
+        validation={emailValidation}
+      />
 
       {/* 인증번호 입력 영역 (항상 공간 차지, 전송 성공 시에만 보임) */}
-      <div className={`${styles.inputGroup} ${!isCodeSent ? styles.hidden : ''}`}>
-        <label className={styles.label}>
-          인증번호 <span className={styles.required}>*</span>
-        </label>
-        <div className={styles.inputWithButton}>
-          <input
-            type="text"
-            name="verificationCode"
-            className={styles.input}
-            placeholder="123456"
-            value={formData.verificationCode}
-            onChange={handleInputChange}
-            disabled={!isCodeSent}
-          />
-          <button
-            type="button"
-            className={styles.smallButton}
-            onClick={handleVerifyCode}
-            disabled={!isCodeSent}
-          >
-            인증번호 확인
-          </button>
-        </div>
-        {/* 인증번호 유효성 검사 메시지 또는 확인 성공 메시지와 타이머 (타이머는 오른쪽 고정) */}
-        <div className={styles.errorContainer}>
-          {codeValidation.isValid !== null && codeValidation.message && (
-            <p className={codeValidation.isValid ? styles.successMsg : styles.errorMsg}>
-              {codeValidation.message}
-            </p>
-          )}
-          {timer > 0 && (
-            <span className={styles.timer}>{formatTimer(timer)}</span>
-          )}
-        </div>
-      </div>
+      <FormInputWithButtonAndTimer
+        label="인증번호"
+        required
+        name="verificationCode"
+        placeholder="123456"
+        value={formData.verificationCode}
+        onChange={handleInputChange}
+        buttonText="인증번호 확인"
+        onButtonClick={handleVerifyCode}
+        validation={codeValidation}
+        timer={timer}
+        formatTimer={formatTimer}
+        disabled={!isCodeSent}
+        hidden={!isCodeSent}
+      />
     </div>
   );
 };

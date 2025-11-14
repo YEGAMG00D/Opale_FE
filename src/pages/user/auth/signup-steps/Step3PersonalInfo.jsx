@@ -1,5 +1,7 @@
 import React from 'react';
 import styles from '../SignupPage.module.css';
+import FormInputField from '../../../../components/signup/FormInputField';
+import FormInputWithButton from '../../../../components/signup/FormInputWithButton';
 
 const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, validationMessages }) => {
   const nicknameValidation = validationMessages?.nickname || { isValid: null, message: '' };
@@ -11,56 +13,29 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
 
   return (
     <div className={styles.stepContent}>
-      <div className={styles.inputGroup}>
-        <label className={styles.label}>
-          닉네임 <span className={styles.required}>*</span>
-        </label>
-        <div className={styles.inputWithButton}>
-          <input
-            type="text"
-            name="nickname"
-            className={styles.input}
-            placeholder="2자 이상 10자 이하"
-            value={formData.nickname}
-            onChange={handleInputChange}
-          />
-          <button
-            type="button"
-            className={styles.smallButton}
-            onClick={handleCheckNickname}
-          >
-            닉네임 중복확인
-          </button>
-        </div>
-        <div className={styles.messageContainer}>
-          {nicknameValidation.isValid !== null && nicknameValidation.message && (
-            <p className={nicknameValidation.isValid ? styles.successMsg : styles.errorMsg}>
-              {nicknameValidation.message}
-            </p>
-          )}
-        </div>
-      </div>
+      <FormInputWithButton
+        label="닉네임"
+        required
+        name="nickname"
+        type="text"
+        placeholder="2자 이상 10자 이하"
+        value={formData.nickname}
+        onChange={handleInputChange}
+        buttonText="닉네임 중복확인"
+        onButtonClick={handleCheckNickname}
+        validation={nicknameValidation}
+      />
 
-      <div className={styles.inputGroup}>
-        <label className={styles.label}>
-          성명 <span className={styles.required}>*</span>
-        </label>
-        <input
-          type="text"
-          name="name"
-          className={styles.input}
-          placeholder="Value"
-          value={formData.name}
-          onChange={handleInputChange}
-        />
-        <div className={styles.messageContainer}>
-          {nameValidation.isValid !== null && nameValidation.message && (
-            <p className={nameValidation.isValid ? styles.successMsg : styles.errorMsg}>
-              {nameValidation.message}
-            </p>
-          )}
-        </div>
-      </div>
+      <FormInputField
+        label="성명"
+        required
+        name="name"
+        type="text"
+        placeholder="Value"
+        value={formData.name}
+        onChange={handleInputChange}
+        validation={nameValidation}
+      />
 
       <div className={styles.inputGroup}>
         <label className={styles.label}>
@@ -90,89 +65,49 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
         </div>
       </div>
 
-      <div className={styles.inputGroup}>
-        <label className={styles.label}>
-          생년월일 <span className={styles.required}>*</span>
-        </label>
-        <input
-          type="text"
-          name="birthDate"
-          className={styles.input}
-          placeholder="YYYYMMdd"
-          value={formData.birthDate}
-          onChange={handleInputChange}
-        />
-        <div className={styles.messageContainer}>
-          {birthDateValidation.isValid !== null && birthDateValidation.message && (
-            <p className={birthDateValidation.isValid ? styles.successMsg : styles.errorMsg}>
-              {birthDateValidation.message}
-            </p>
-          )}
-        </div>
-      </div>
+      <FormInputField
+        label="생년월일"
+        required
+        name="birthDate"
+        type="text"
+        placeholder="YYYYMMdd"
+        value={formData.birthDate}
+        onChange={handleInputChange}
+        validation={birthDateValidation}
+      />
 
-      <div className={styles.inputGroup}>
-        <label className={styles.label}>
-          연락처 <span className={styles.required}>*</span>
-        </label>
-        <input
-          type="tel"
-          name="phone"
-          className={styles.input}
-          placeholder="01012341234"
-          value={formData.phone}
-          onChange={handleInputChange}
-        />
-        <div className={styles.messageContainer}>
-          {phoneValidation.isValid !== null && phoneValidation.message && (
-            <p className={phoneValidation.isValid ? styles.successMsg : styles.errorMsg}>
-              {phoneValidation.message}
-            </p>
-          )}
-        </div>
-      </div>
+      <FormInputField
+        label="연락처"
+        required
+        name="phone"
+        type="tel"
+        placeholder="01012341234"
+        value={formData.phone}
+        onChange={handleInputChange}
+        validation={phoneValidation}
+      />
 
-      <div className={styles.inputGroup}>
-        <label className={styles.label}>
-          주소 <span className={styles.required}>*</span>
-        </label>
-        <input
-          type="text"
-          name="address"
-          className={styles.input}
-          placeholder="Value"
-          value={formData.address}
-          onChange={handleInputChange}
-        />
-        <div className={styles.messageContainer}>
-          {addressValidation.isValid !== null && addressValidation.message && (
-            <p className={addressValidation.isValid ? styles.successMsg : styles.errorMsg}>
-              {addressValidation.message}
-            </p>
-          )}
-        </div>
-      </div>
+      <FormInputField
+        label="주소"
+        required
+        name="address"
+        type="text"
+        placeholder="Value"
+        value={formData.address}
+        onChange={handleInputChange}
+        validation={addressValidation}
+      />
 
-      <div className={styles.inputGroup}>
-        <label className={styles.label}>
-          상세주소 <span className={styles.required}>*</span>
-        </label>
-        <input
-          type="text"
-          name="detailAddress"
-          className={styles.input}
-          placeholder="Value"
-          value={formData.detailAddress}
-          onChange={handleInputChange}
-        />
-        <div className={styles.messageContainer}>
-          {detailAddressValidation.isValid !== null && detailAddressValidation.message && (
-            <p className={detailAddressValidation.isValid ? styles.successMsg : styles.errorMsg}>
-              {detailAddressValidation.message}
-            </p>
-          )}
-        </div>
-      </div>
+      <FormInputField
+        label="상세주소"
+        required
+        name="detailAddress"
+        type="text"
+        placeholder="Value"
+        value={formData.detailAddress}
+        onChange={handleInputChange}
+        validation={detailAddressValidation}
+      />
 
       <div className={styles.termsSection}>
         <textarea
