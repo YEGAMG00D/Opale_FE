@@ -4,6 +4,18 @@ import styles from './SignupPage.module.css';
 import Step1EmailVerification from './signup-steps/Step1EmailVerification';
 import Step2Password from './signup-steps/Step2Password';
 import Step3PersonalInfo from './signup-steps/Step3PersonalInfo';
+import {
+  validateEmail,
+  validateVerificationCode,
+  validatePassword,
+  validateConfirmPassword,
+  validateNickname,
+  validateName,
+  validateBirthDate,
+  validatePhone,
+  validateAddress,
+  validateDetailAddress,
+} from '../../../utils/validation';
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -23,6 +35,7 @@ const SignupPage = () => {
     agreeToTerms: false,
   });
   const [errors, setErrors] = useState({});
+  const [validationMessages, setValidationMessages] = useState({});
   const [timer, setTimer] = useState(300); // 5분 타이머
 
   const handleUnder14 = () => {
@@ -53,6 +66,57 @@ const SignupPage = () => {
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+
+    // 유효성 검사 실행
+    let validationResult = { isValid: null, message: '' };
+    
+    switch (name) {
+      case 'email':
+        validationResult = validateEmail(value);
+        break;
+      case 'verificationCode':
+        validationResult = validateVerificationCode(value);
+        break;
+      case 'password':
+        validationResult = validatePassword(value);
+        // 비밀번호가 변경되면 비밀번호 확인도 다시 검증
+        if (formData.confirmPassword) {
+          const confirmResult = validateConfirmPassword(value, formData.confirmPassword);
+          setValidationMessages(prev => ({
+            ...prev,
+            confirmPassword: confirmResult
+          }));
+        }
+        break;
+      case 'confirmPassword':
+        validationResult = validateConfirmPassword(formData.password, value);
+        break;
+      case 'nickname':
+        validationResult = validateNickname(value);
+        break;
+      case 'name':
+        validationResult = validateName(value);
+        break;
+      case 'birthDate':
+        validationResult = validateBirthDate(value);
+        break;
+      case 'phone':
+        validationResult = validatePhone(value);
+        break;
+      case 'address':
+        validationResult = validateAddress(value);
+        break;
+      case 'detailAddress':
+        validationResult = validateDetailAddress(value);
+        break;
+      default:
+        break;
+    }
+
+    setValidationMessages(prev => ({
+      ...prev,
+      [name]: validationResult
     }));
   };
 
@@ -154,6 +218,7 @@ const SignupPage = () => {
               handleVerifyCode={handleVerifyCode}
               timer={timer}
               formatTimer={formatTimer}
+              validationMessages={validationMessages}
             />
           )}
 
@@ -161,6 +226,7 @@ const SignupPage = () => {
             <Step2Password
               formData={formData}
               handleInputChange={handleInputChange}
+              validationMessages={validationMessages}
             />
           )}
 
@@ -169,6 +235,7 @@ const SignupPage = () => {
               formData={formData}
               handleInputChange={handleInputChange}
               handleCheckNickname={handleCheckNickname}
+              validationMessages={validationMessages}
             />
           )}
         </div>

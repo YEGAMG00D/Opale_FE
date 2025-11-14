@@ -1,7 +1,10 @@
 import React from 'react';
 import styles from '../SignupPage.module.css';
 
-const Step2Password = ({ formData, handleInputChange }) => {
+const Step2Password = ({ formData, handleInputChange, validationMessages }) => {
+  const passwordValidation = validationMessages?.password || { isValid: null, message: '' };
+  const confirmPasswordValidation = validationMessages?.confirmPassword || { isValid: null, message: '' };
+
   return (
     <div className={styles.stepContent}>
       <div className={styles.inputGroup}>
@@ -16,6 +19,11 @@ const Step2Password = ({ formData, handleInputChange }) => {
           value={formData.password}
           onChange={handleInputChange}
         />
+        {passwordValidation.isValid !== null && passwordValidation.message && (
+          <p className={passwordValidation.isValid ? styles.successMsg : styles.errorMsg}>
+            {passwordValidation.message}
+          </p>
+        )}
       </div>
 
       <div className={styles.inputGroup}>
@@ -30,7 +38,11 @@ const Step2Password = ({ formData, handleInputChange }) => {
           value={formData.confirmPassword}
           onChange={handleInputChange}
         />
-        <p className={styles.errorMsg}>비밀번호와 일치하지 않습니다.</p>
+        {confirmPasswordValidation.isValid !== null && confirmPasswordValidation.message && (
+          <p className={confirmPasswordValidation.isValid ? styles.successMsg : styles.errorMsg}>
+            {confirmPasswordValidation.message}
+          </p>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,10 @@
 import React from 'react';
 import styles from '../SignupPage.module.css';
 
-const Step1EmailVerification = ({ formData, handleInputChange, handleResendCode, handleVerifyCode, timer, formatTimer }) => {
+const Step1EmailVerification = ({ formData, handleInputChange, handleResendCode, handleVerifyCode, timer, formatTimer, validationMessages }) => {
+  const emailValidation = validationMessages?.email || { isValid: null, message: '' };
+  const codeValidation = validationMessages?.verificationCode || { isValid: null, message: '' };
+
   return (
     <div className={styles.stepContent}>
       <div className={styles.inputGroup}>
@@ -25,7 +28,11 @@ const Step1EmailVerification = ({ formData, handleInputChange, handleResendCode,
             인증번호 재전송
           </button>
         </div>
-        <p className={styles.successMsg}>인증번호를 전송하였습니다.</p>
+        {emailValidation.isValid !== null && emailValidation.message && (
+          <p className={emailValidation.isValid ? styles.successMsg : styles.errorMsg}>
+            {emailValidation.message}
+          </p>
+        )}
       </div>
 
       <div className={styles.inputGroup}>
@@ -50,7 +57,11 @@ const Step1EmailVerification = ({ formData, handleInputChange, handleResendCode,
           </button>
         </div>
         <div className={styles.errorContainer}>
-          <p className={styles.errorMsg}>인증번호가 일치하지 않습니다.</p>
+          {codeValidation.isValid !== null && codeValidation.message && (
+            <p className={codeValidation.isValid ? styles.successMsg : styles.errorMsg}>
+              {codeValidation.message}
+            </p>
+          )}
           <span className={styles.timer}>{formatTimer(timer)}</span>
         </div>
       </div>

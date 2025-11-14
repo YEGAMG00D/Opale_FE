@@ -1,7 +1,14 @@
 import React from 'react';
 import styles from '../SignupPage.module.css';
 
-const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname }) => {
+const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, validationMessages }) => {
+  const nicknameValidation = validationMessages?.nickname || { isValid: null, message: '' };
+  const nameValidation = validationMessages?.name || { isValid: null, message: '' };
+  const birthDateValidation = validationMessages?.birthDate || { isValid: null, message: '' };
+  const phoneValidation = validationMessages?.phone || { isValid: null, message: '' };
+  const addressValidation = validationMessages?.address || { isValid: null, message: '' };
+  const detailAddressValidation = validationMessages?.detailAddress || { isValid: null, message: '' };
+
   return (
     <div className={styles.stepContent}>
       <div className={styles.inputGroup}>
@@ -25,7 +32,11 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname })
             닉네임 중복확인
           </button>
         </div>
-        <p className={styles.successMsg}>사용가능한 닉네임입니다.</p>
+        {nicknameValidation.isValid !== null && nicknameValidation.message && (
+          <p className={nicknameValidation.isValid ? styles.successMsg : styles.errorMsg}>
+            {nicknameValidation.message}
+          </p>
+        )}
       </div>
 
       <div className={styles.inputGroup}>
@@ -40,6 +51,11 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname })
           value={formData.name}
           onChange={handleInputChange}
         />
+        {nameValidation.isValid !== null && nameValidation.message && (
+          <p className={nameValidation.isValid ? styles.successMsg : styles.errorMsg}>
+            {nameValidation.message}
+          </p>
+        )}
       </div>
 
       <div className={styles.inputGroup}>
@@ -82,7 +98,11 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname })
           value={formData.birthDate}
           onChange={handleInputChange}
         />
-        <p className={styles.errorMsg}>인증번호가 일치하지 않습니다.</p>
+        {birthDateValidation.isValid !== null && birthDateValidation.message && (
+          <p className={birthDateValidation.isValid ? styles.successMsg : styles.errorMsg}>
+            {birthDateValidation.message}
+          </p>
+        )}
       </div>
 
       <div className={styles.inputGroup}>
@@ -97,7 +117,11 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname })
           value={formData.phone}
           onChange={handleInputChange}
         />
-        <p className={styles.errorMsg}>인증번호가 일치하지 않습니다.</p>
+        {phoneValidation.isValid !== null && phoneValidation.message && (
+          <p className={phoneValidation.isValid ? styles.successMsg : styles.errorMsg}>
+            {phoneValidation.message}
+          </p>
+        )}
       </div>
 
       <div className={styles.inputGroup}>
@@ -112,7 +136,11 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname })
           value={formData.address}
           onChange={handleInputChange}
         />
-        <p className={styles.errorMsg}>인증번호가 일치하지 않습니다.</p>
+        {addressValidation.isValid !== null && addressValidation.message && (
+          <p className={addressValidation.isValid ? styles.successMsg : styles.errorMsg}>
+            {addressValidation.message}
+          </p>
+        )}
       </div>
 
       <div className={styles.inputGroup}>
@@ -127,7 +155,11 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname })
           value={formData.detailAddress}
           onChange={handleInputChange}
         />
-        <p className={styles.errorMsg}>인증번호가 일치하지 않습니다.</p>
+        {detailAddressValidation.isValid !== null && detailAddressValidation.message && (
+          <p className={detailAddressValidation.isValid ? styles.successMsg : styles.errorMsg}>
+            {detailAddressValidation.message}
+          </p>
+        )}
       </div>
 
       <div className={styles.termsSection}>
