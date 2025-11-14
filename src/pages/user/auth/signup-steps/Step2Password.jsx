@@ -19,11 +19,13 @@ const Step2Password = ({ formData, handleInputChange, validationMessages }) => {
           value={formData.password}
           onChange={handleInputChange}
         />
-        {passwordValidation.isValid !== null && passwordValidation.message && (
-          <p className={passwordValidation.isValid ? styles.successMsg : styles.errorMsg}>
-            {passwordValidation.message}
-          </p>
-        )}
+        <div className={styles.messageContainer}>
+          {passwordValidation.isValid !== null && passwordValidation.message && (
+            <p className={passwordValidation.isValid ? styles.successMsg : styles.errorMsg}>
+              {passwordValidation.message}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className={styles.inputGroup}>
@@ -38,11 +40,13 @@ const Step2Password = ({ formData, handleInputChange, validationMessages }) => {
           value={formData.confirmPassword}
           onChange={handleInputChange}
         />
-        {confirmPasswordValidation.isValid !== null && confirmPasswordValidation.message && (
-          <p className={confirmPasswordValidation.isValid ? styles.successMsg : styles.errorMsg}>
-            {confirmPasswordValidation.message}
-          </p>
-        )}
+        <div className={styles.messageContainer}>
+          {confirmPasswordValidation.isValid !== null && confirmPasswordValidation.message && (
+            <p className={confirmPasswordValidation.isValid ? styles.successMsg : styles.errorMsg}>
+              {confirmPasswordValidation.message}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

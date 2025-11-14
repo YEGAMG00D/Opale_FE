@@ -334,12 +334,31 @@ const SignupPage = () => {
               <button 
                 className={styles.nextButton} 
                 onClick={handleNext}
-                disabled={step === 1 && !isCodeVerified}
+                disabled={
+                  (step === 1 && !isCodeVerified) ||
+                  (step === 2 && (
+                    !validationMessages?.password?.isValid || 
+                    !validationMessages?.confirmPassword?.isValid
+                  ))
+                }
               >
                 다음
               </button>
             ) : (
-              <button className={styles.signupButton} onClick={handleSignup}>
+              <button 
+                className={styles.signupButton} 
+                onClick={handleSignup}
+                disabled={
+                  !validationMessages?.nickname?.isValid ||
+                  !validationMessages?.name?.isValid ||
+                  !formData.gender ||
+                  !validationMessages?.birthDate?.isValid ||
+                  !validationMessages?.phone?.isValid ||
+                  !validationMessages?.address?.isValid ||
+                  !validationMessages?.detailAddress?.isValid ||
+                  !formData.agreeToTerms
+                }
+              >
                 가입
               </button>
             )}

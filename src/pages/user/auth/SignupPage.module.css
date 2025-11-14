@@ -253,7 +253,7 @@
   max-width: 320px;
   background-color: #ffffff;
   border-radius: 12px;
-  padding: 24px;
+  padding: 24px 24px 40px 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -340,6 +340,12 @@
   color: #ff0000;
   font-size: 12px;
   margin: 0;
+}
+
+.messageContainer {
+  min-height: 20px;
+  display: flex;
+  align-items: flex-start;
 }
 
 .errorContainer {

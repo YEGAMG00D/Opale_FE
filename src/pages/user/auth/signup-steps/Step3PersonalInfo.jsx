@@ -32,11 +32,13 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
             닉네임 중복확인
           </button>
         </div>
-        {nicknameValidation.isValid !== null && nicknameValidation.message && (
-          <p className={nicknameValidation.isValid ? styles.successMsg : styles.errorMsg}>
-            {nicknameValidation.message}
-          </p>
-        )}
+        <div className={styles.messageContainer}>
+          {nicknameValidation.isValid !== null && nicknameValidation.message && (
+            <p className={nicknameValidation.isValid ? styles.successMsg : styles.errorMsg}>
+              {nicknameValidation.message}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className={styles.inputGroup}>
@@ -51,11 +53,13 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
           value={formData.name}
           onChange={handleInputChange}
         />
-        {nameValidation.isValid !== null && nameValidation.message && (
-          <p className={nameValidation.isValid ? styles.successMsg : styles.errorMsg}>
-            {nameValidation.message}
-          </p>
-        )}
+        <div className={styles.messageContainer}>
+          {nameValidation.isValid !== null && nameValidation.message && (
+            <p className={nameValidation.isValid ? styles.successMsg : styles.errorMsg}>
+              {nameValidation.message}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className={styles.inputGroup}>
@@ -98,11 +102,13 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
           value={formData.birthDate}
           onChange={handleInputChange}
         />
-        {birthDateValidation.isValid !== null && birthDateValidation.message && (
-          <p className={birthDateValidation.isValid ? styles.successMsg : styles.errorMsg}>
-            {birthDateValidation.message}
-          </p>
-        )}
+        <div className={styles.messageContainer}>
+          {birthDateValidation.isValid !== null && birthDateValidation.message && (
+            <p className={birthDateValidation.isValid ? styles.successMsg : styles.errorMsg}>
+              {birthDateValidation.message}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className={styles.inputGroup}>
@@ -117,11 +123,13 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
           value={formData.phone}
           onChange={handleInputChange}
         />
-        {phoneValidation.isValid !== null && phoneValidation.message && (
-          <p className={phoneValidation.isValid ? styles.successMsg : styles.errorMsg}>
-            {phoneValidation.message}
-          </p>
-        )}
+        <div className={styles.messageContainer}>
+          {phoneValidation.isValid !== null && phoneValidation.message && (
+            <p className={phoneValidation.isValid ? styles.successMsg : styles.errorMsg}>
+              {phoneValidation.message}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className={styles.inputGroup}>
@@ -136,11 +144,13 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
           value={formData.address}
           onChange={handleInputChange}
         />
-        {addressValidation.isValid !== null && addressValidation.message && (
-          <p className={addressValidation.isValid ? styles.successMsg : styles.errorMsg}>
-            {addressValidation.message}
-          </p>
-        )}
+        <div className={styles.messageContainer}>
+          {addressValidation.isValid !== null && addressValidation.message && (
+            <p className={addressValidation.isValid ? styles.successMsg : styles.errorMsg}>
+              {addressValidation.message}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className={styles.inputGroup}>
@@ -155,11 +165,13 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
           value={formData.detailAddress}
           onChange={handleInputChange}
         />
-        {detailAddressValidation.isValid !== null && detailAddressValidation.message && (
-          <p className={detailAddressValidation.isValid ? styles.successMsg : styles.errorMsg}>
-            {detailAddressValidation.message}
-          </p>
-        )}
+        <div className={styles.messageContainer}>
+          {detailAddressValidation.isValid !== null && detailAddressValidation.message && (
+            <p className={detailAddressValidation.isValid ? styles.successMsg : styles.errorMsg}>
+              {detailAddressValidation.message}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className={styles.termsSection}>
