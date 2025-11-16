@@ -83,7 +83,24 @@ const MainChatPage = () => {
     r.title?.toLowerCase().includes(keyword.toLowerCase())
   );
 
-  const enterRoom = (id) => navigate(`/chat/${id}`);
+  const enterRoom = (id) => {
+    const token = localStorage.getItem("accessToken");
+  
+    const room = chatRooms.find(r => r.roomId === id);
+    if (!room) return;
+  
+    if (!token) {
+      // 1) 로그인 안된 상태
+      if (room.roomType !== "PERFORMANCE_PUBLIC") {
+        // PUBLIC 외에는 로그인 필요
+        return navigate("/login");
+      }
+    }
+  
+    // 2) PUBLIC 이거나, 로그인 된 상태
+    navigate(`/chat/${id}`);
+  };
+  
 
   const getRoomIcon = (roomType) => {
     switch (roomType) {
