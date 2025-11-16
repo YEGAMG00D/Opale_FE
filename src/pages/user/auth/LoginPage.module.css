@@ -59,6 +59,7 @@
 
 .inputGroup {
   width: 100%;
+  position: relative;
 }
 
 .input {
@@ -105,32 +106,35 @@
   transform: translateY(0);
 }
 
-.footerLinks {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 320px;
-  margin-top: 40px;
-  padding: 0 10px;
-}
-
-.signupLink {
-  color: #ffb6c1;
-  text-decoration: none;
+.errorMsg {
+  color: #ff0000;
   font-size: 14px;
-  font-weight: 500;
-}
-
-.signupLink:hover {
-  text-decoration: underline;
+  margin: 0;
+  text-align: center;
 }
 
 .findPasswordLink {
   color: #999;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 12px;
+  position: absolute;
+  right: 0;
+  bottom: -20px;
 }
 
 .findPasswordLink:hover {
+  text-decoration: underline;
+}
+
+.signupLink {
+  color: #000000;
+  text-decoration: underline;
+  font-size: 16px;
+  margin-top: 24px;
+  text-align: center;
+  display: block;
+}
+
+.signupLink:hover {
   text-decoration: underline;
 }

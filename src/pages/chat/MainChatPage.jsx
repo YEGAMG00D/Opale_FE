@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./MainChatPage.module.css";
 import axiosInstance from "../../api/axiosInstance";
 import CompactChatCard from "../../components/chat/CompactChatCard";
-import { connectSocket } from "../../api/socket"; // ✅ 추가
+import { connectSocket } from "../../api/socket";
 
 const MainChatPage = () => {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
   const [chatRooms, setChatRooms] = useState([]);
   const [error, setError] = useState("");
-  const [currentTime, setCurrentTime] = useState(Date.now()); // 현재 시간 상태
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  const subscriptionRef = useRef(null); // ✅ 구독 저장용
 
   const ICONS = {
     PUBLIC: "🌐",
@@ -18,7 +20,7 @@ const MainChatPage = () => {
     DM: "💬",
   };
 
-  // ✅ 1. 채팅방 목록 불러오기
+  // 1️⃣ 채팅방 목록 로드
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -38,16 +40,15 @@ const MainChatPage = () => {
         }
       }
     };
-
     fetchRooms();
   }, [navigate]);
 
-  // ✅ 2. 실시간 메시지 업데이트 구독 (WebSocket)
+  // 2️⃣ WebSocket: 방 목록 업데이트 구독
   useEffect(() => {
     const client = connectSocket(() => {
-      client.subscribe("/topic/rooms", (msg) => {
+      // 구독 저장
+      subscriptionRef.current = client.subscribe("/topic/rooms", (msg) => {
         const update = JSON.parse(msg.body);
-        console.log("📩 최신 메시지 수신:", update);
 
         setChatRooms((prev) =>
           prev.map((room) =>
@@ -63,23 +64,43 @@ const MainChatPage = () => {
         );
       });
     });
+
+    return () => {
+      // ❗ 소켓은 끊지 않고, 구독만 해제
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+      }
+    };
   }, []);
 
-  // ✅ 3. 현재 시간을 주기적으로 업데이트 (30초마다)
+  // 3️⃣ 현재 시간 업데이트
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 30000); // 30초마다 업데이트 (성능과 실시간성의 균형)
-
+    const timer = setInterval(() => setCurrentTime(Date.now()), 30000);
     return () => clearInterval(timer);
   }, []);
 
-  // ✅ 검색 필터
   const filteredRooms = chatRooms.filter((r) =>
     r.title?.toLowerCase().includes(keyword.toLowerCase())
   );
 
-  const enterRoom = (id) => navigate(`/chat/${id}`);
+  const enterRoom = (id) => {
+    const token = localStorage.getItem("accessToken");
+  
+    const room = chatRooms.find(r => r.roomId === id);
+    if (!room) return;
+  
+    if (!token) {
+      // 1) 로그인 안된 상태
+      if (room.roomType !== "PERFORMANCE_PUBLIC") {
+        // PUBLIC 외에는 로그인 필요
+        return navigate("/login");
+      }
+    }
+  
+    // 2) PUBLIC 이거나, 로그인 된 상태
+    navigate(`/chat/${id}`);
+  };
+  
 
   const getRoomIcon = (roomType) => {
     switch (roomType) {
@@ -117,6 +138,7 @@ const MainChatPage = () => {
           <ul className={styles.compactList}>
             {filteredRooms.map((room) => {
               const icon = getRoomIcon(room.roomType);
+
               return (
                 <CompactChatCard
                   key={room.roomId}
@@ -129,7 +151,7 @@ const MainChatPage = () => {
                   participants={room.participantCount}
                   lastMessage={room.lastMessage}
                   lastMessageTime={room.lastMessageTime}
-                  currentTime={currentTime} // 현재 시간 전달
+                  currentTime={currentTime}
                   onClick={enterRoom}
                 />
               );

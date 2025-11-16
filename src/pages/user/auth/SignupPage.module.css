@@ -47,6 +47,14 @@
   flex-direction: column;
   align-items: center;
   padding: 40px 20px 20px;
+  justify-content: space-between;
+}
+
+.topSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 .logoSection {
@@ -55,7 +63,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 60px;
+  margin-bottom: 30px;
   min-height: 120px;
 }
 
@@ -237,4 +245,268 @@
 
 .secondaryLink:active {
   opacity: 0.6;
+}
+
+/* Step Form Styles */
+.card {
+  width: 100%;
+  max-width: 320px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px 24px 40px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputGroup.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 400;
+  color: #000000;
+  margin: 0;
+}
+
+.required {
+  color: #ff0000;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  border-color: #ffb6c1;
+}
+
+.inputWithButton {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.inputWithButton .input {
+  flex: 1;
+}
+
+.smallButton {
+  padding: 12px 16px;
+  border: 1px solid #ffb6c1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #000000;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+  min-width: 110px;
+}
+
+.smallButton:hover {
+  background-color: #fff5f7;
+}
+
+.successMsg {
+  color: #00aa00;
+  font-size: 12px;
+  margin: 0;
+}
+
+.errorMsg {
+  color: #ff0000;
+  font-size: 12px;
+  margin: 0;
+}
+
+.messageContainer {
+  min-height: 20px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.errorContainer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 20px;
+  position: relative;
+}
+
+.errorContainer p {
+  margin: 0;
+  position: absolute;
+  left: 0;
+}
+
+.timer {
+  color: #ff0000;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 24px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #000000;
+}
+
+.radioLabel input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.termsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.termsText {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 14px;
+  color: #333;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #000000;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.bottomSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 350px;
+  margin: 60px 0px 20px 0px;
+}
+
+.stepIndicators {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.stepDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid #ffb6c1;
+  background: transparent;
+  transition: background-color 0.3s;
+}
+
+.stepDot.active {
+  background-color: #ffb6c1;
+  border-color: #ffb6c1;
+}
+
+.navigationButtons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.prevButton,
+.nextButton,
+.signupButton {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.prevButton {
+  border: 2px solid #e0e0e0;
+  background: #ffffff;
+  color: #000000;
+}
+
+.prevButton:hover:not(:disabled) {
+  background-color: #f5f5f5;
+}
+
+.prevButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nextButton {
+  border: 2px solid #ffb6c1;
+  background: #ffffff;
+  color: #000000;
+}
+
+.nextButton:hover:not(:disabled) {
+  background-color: #fff5f7;
+}
+
+.nextButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #e0e0e0;
+}
+
+.signupButton {
+  border: 2px solid #ffb6c1;
+  background: #ffb6c1;
+  color: #ffffff;
+}
+
+.signupButton:hover {
+  background-color: #ffa5b8;
 }

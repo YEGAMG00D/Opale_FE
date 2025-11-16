@@ -12,6 +12,8 @@ const MainMyPage = () => {
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    
     dispatch(logout());
     navigate("/");
   };
@@ -26,6 +28,9 @@ const MainMyPage = () => {
         <div className={styles.linkGrid}>
           <Link to="/my/update-info" className={styles.link}>
             정보 변경
+          </Link>
+          <Link to="/my/change-password" className={styles.link}>
+            비밀번호 변경
           </Link>
           <Link to="/my/favorite-performances" className={styles.link}>
             관심 공연
