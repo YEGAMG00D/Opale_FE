@@ -9,11 +9,10 @@ import {
   connectSocket,
   subscribeRoom,
   sendMessage as sendSocketMessage,
-  disconnectSocket,
-} from "../../api/socket";
+} from "../../api/socket"; // ❗ disconnectSocket 제거
 import defaultPoster from "../../assets/poster/wicked.gif";
 
-// ✅ JWT에서 userId 추출
+// JWT 파싱
 const parseJwt = (token) => {
   try {
     const base64Url = token.split(".")[1];
@@ -33,13 +32,17 @@ const parseJwt = (token) => {
 const RoomPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
   const messagesEndRef = useRef(null);
   const scrollRef = useRef(null);
+
+  const subscriptionRef = useRef(null); // ✅ 방 구독 저장용
 
   const token = localStorage.getItem("accessToken");
   const payload = token ? parseJwt(token) : null;
@@ -49,11 +52,10 @@ const RoomPage = () => {
     ? Number(payload.sub)
     : null;
 
-  /* ✅ 채팅방 정보 로드 */
+  // 1️⃣ 채팅방 정보 불러오기
   useEffect(() => {
     const loadRoom = async () => {
       try {
-        // 1️⃣ 전체 방 목록에서 현재 방 타입 확인
         const allRooms = await fetchChatRooms();
         const currentRoom = allRooms.find(
           (r) => String(r.roomId) === String(id)
@@ -64,7 +66,6 @@ const RoomPage = () => {
           return;
         }
 
-        // 2️⃣ roomType 기반으로 public / private 자동 분기 호출
         const data = await fetchChatRoom(id, currentRoom.roomType);
         setRoom(data);
       } catch (err) {
@@ -74,7 +75,7 @@ const RoomPage = () => {
     loadRoom();
   }, [id]);
 
-  /* ✅ 초기 메시지 로드 */
+  // 2️⃣ 기존 메시지 로드
   useEffect(() => {
     const loadMessages = async () => {
       try {
@@ -91,42 +92,28 @@ const RoomPage = () => {
     loadMessages();
   }, [id]);
 
-  /* ✅ WebSocket 연결 및 실시간 수신 */
+  // 3️⃣ WebSocket 연결 및 실시간 메시지 구독
   useEffect(() => {
     const client = connectSocket(() => {
-      subscribeRoom(id, (msg) => {
-        console.log("📩 새 메시지 수신:", msg);
+      subscriptionRef.current = subscribeRoom(id, (msg) => {
         setMessages((prev) => {
-          const existingIndex = prev.findIndex((m) => {
-            if (m.id != null && msg.id != null) {
-              return String(m.id) === String(msg.id);
-            }
-            return false;
-          });
-
+          const existingIndex = prev.findIndex(
+            (m) => m.id != null && msg.id != null && String(m.id) === String(msg.id)
+          );
           if (existingIndex !== -1) return prev;
 
-          const tempMsgIndex = prev.findIndex((m) => {
-            if (m.id && String(m.id).startsWith("temp-")) {
-              const mUserId = m.userId || m.user?.userId;
-              const msgUserId = msg.userId;
-              const mText = m.message || m.contents || "";
-              const msgText = msg.message || msg.contents || "";
-              return (
-                mUserId != null &&
-                msgUserId != null &&
-                Number(mUserId) === Number(msgUserId) &&
-                mText === msgText &&
-                mText !== ""
-              );
-            }
-            return false;
-          });
+          const tempIndex = prev.findIndex(
+            (m) =>
+              m.id &&
+              String(m.id).startsWith("temp-") &&
+              (m.userId || m.user?.userId) === msg.userId &&
+              (m.message || m.contents) === (msg.message || msg.contents)
+          );
 
           let updated;
-          if (tempMsgIndex !== -1) {
+          if (tempIndex !== -1) {
             updated = [...prev];
-            updated[tempMsgIndex] = msg;
+            updated[tempIndex] = msg;
           } else {
             updated = [...prev, msg];
           }
@@ -136,10 +123,17 @@ const RoomPage = () => {
         });
       });
     });
-    return () => disconnectSocket(client);
+
+    return () => {
+      // ❗ 소켓 연결은 유지하고 "구독만 해제"
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+    };
   }, [id]);
 
-  /* ✅ 메시지 변경 시 스크롤 맨 아래로 */
+  // 4️⃣ 메시지 입력 스크롤 유지
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -148,15 +142,18 @@ const RoomPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  /* ✅ 스크롤 시 이전 메시지 로드 */
+  // 5️⃣ 이전 메시지 불러오기
   const handleScroll = async () => {
     if (!scrollRef.current || !hasMore) return;
+
     if (scrollRef.current.scrollTop === 0) {
       const nextPage = page + 1;
       try {
         const older = await fetchMessages(id, nextPage);
-        if (older.length === 0) setHasMore(false);
-        else {
+
+        if (older.length === 0) {
+          setHasMore(false);
+        } else {
           const sorted = [...older, ...messages].sort(
             (a, b) => new Date(a.sentAt) - new Date(b.sentAt)
           );
@@ -169,12 +166,13 @@ const RoomPage = () => {
     }
   };
 
-  /* ✅ 메시지 전송 */
+  // 6️⃣ 메시지 전송
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
     const messageDto = { roomId: id, message: newMessage };
+
     sendSocketMessage(id, messageDto, token);
 
     const tempMsg = {
@@ -183,6 +181,7 @@ const RoomPage = () => {
       message: newMessage,
       sentAt: new Date().toISOString(),
     };
+
     setMessages((prev) => [...prev, tempMsg]);
     setNewMessage("");
   };
@@ -193,7 +192,6 @@ const RoomPage = () => {
   const isPublicNoLogin =
     !token && room.roomType === "PERFORMANCE_PUBLIC";
 
-  // ✅ 공연 상세 페이지로 이동하는 핸들러
   const handlePosterClick = () => {
     if (room.roomType === "PERFORMANCE_PUBLIC" && room.performanceId) {
       navigate(`/culture/${room.performanceId}`);
@@ -209,7 +207,6 @@ const RoomPage = () => {
           image={room.thumbnailUrl || defaultPoster}
           active={room.isActive}
           visitors={room.visitCount}
-          participants={0}
           creatorNickname={room.creatorNickname || "익명"}
           onPosterClick={
             room.roomType === "PERFORMANCE_PUBLIC" && room.performanceId
