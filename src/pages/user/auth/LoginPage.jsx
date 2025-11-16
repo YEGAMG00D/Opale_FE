@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import axiosInstance from "../../../api/axiosInstance";
 import { loginSuccess } from "../../../store/userSlice";
 import styles from "./LoginPage.module.css";
 
-const API_BASE_URL =import.meta.env.VITE_API_BASE_URL;
+import { login as loginApi } from "../../../api/authApi";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -15,7 +14,7 @@ const LoginPage = () => {
   const dispatch = useDispatch();
   const { isLoggedIn } = useSelector((state) => state.user);
 
-  /** ✅ 이미 로그인된 사용자는 접근 차단 */
+  /** 이미 로그인 상태라면 접근 차단 */
   useEffect(() => {
     const storedToken = localStorage.getItem("accessToken");
     if (storedToken && isLoggedIn) {
@@ -23,24 +22,24 @@ const LoginPage = () => {
     }
   }, [isLoggedIn, navigate]);
 
-  /** ✅ 로그인 요청 */
+  /** 로그인 요청 */
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      const response = await axiosInstance.post(`${API_BASE_URL}/auth/login`, {
-        email,
-        password,
-      });
+      const result = await loginApi(email, password);
 
-      if (response.data.success) {
-        const { token, user } = response.data.data;
+      if (result.success) {
+        const { token, user } = result.data;
         const { accessToken, refreshToken } = token;
 
+        // ⬇️ localStorage 할당
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("user", JSON.stringify(user));
 
+        // ⬇️ Redux 반영
         dispatch(
           loginSuccess({
             user,
@@ -50,13 +49,15 @@ const LoginPage = () => {
 
         navigate("/");
       } else {
-        setError(response.data.message || "로그인 실패");
+        setError(result.message || "로그인 실패");
       }
     } catch (err) {
       console.error("로그인 실패:", err);
-      if (err.response?.status === 401)
+      if (err.response?.status === 401) {
         setError("이메일 또는 비밀번호가 올바르지 않습니다.");
-      else setError("서버 오류가 발생했습니다.");
+      } else {
+        setError("서버 오류가 발생했습니다.");
+      }
     }
   };
 

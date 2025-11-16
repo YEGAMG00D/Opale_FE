@@ -7,11 +7,15 @@ import './index.css'
 import { Provider } from 'react-redux'
 import store from './store'
 
+import AppInitializer from "./AppInitializer";
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     {/* ✅ Redux Provider로 App 감싸기 */}
     <Provider store={store}>
-      <App />
+      <AppInitializer>
+          <App />
+        </AppInitializer>
     </Provider>
   </React.StrictMode>,
 )
