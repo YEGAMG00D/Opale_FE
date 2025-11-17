@@ -13,6 +13,7 @@ import { fetchPerformanceBasic } from '../../api/performanceApi';
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
 import { usePerformanceRelations } from '../../hooks/usePerformanceRelations';
 import { usePerformanceInfoImages } from '../../hooks/usePerformanceInfoImages';
+import { usePerformanceBooking } from '../../hooks/usePerformanceBooking';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -42,6 +43,9 @@ const DetailPerformancePage = () => {
   
   // 공연 소개 이미지 조회
   const { images: infoImages, loading: imagesLoading } = usePerformanceInfoImages(performanceId);
+  
+  // 공연 예매 정보 조회
+  const { bookingInfo, loading: bookingLoading } = usePerformanceBooking(performanceId);
 
   // 샘플 후기 데이터
   const sampleReviews = [
@@ -956,13 +960,14 @@ const DetailPerformancePage = () => {
             <div className={styles.reservationContent}>
               <h3 className={styles.contentTitle}>가격</h3>
               <div className={styles.priceList}>
-                {performance.prices && performance.prices.length > 0 ? (
-                  performance.prices.map((price, index) => (
-                    <div key={index} className={styles.priceItem}>
-                      <span className={styles.seatType}>{price.seat}</span>
-                      <span className={styles.seatPrice}>{price.price}</span>
-                    </div>
-                  ))
+                {bookingLoading ? (
+                  <div className={styles.priceItem}>
+                    <span className={styles.seatType}>가격 정보를 불러오는 중...</span>
+                  </div>
+                ) : bookingInfo?.price ? (
+                  <div className={styles.priceItem}>
+                    <span className={styles.seatType}>{bookingInfo.price}</span>
+                  </div>
                 ) : (
                   <div className={styles.priceItem}>
                     <span className={styles.seatType}>가격 정보 없음</span>
@@ -974,8 +979,25 @@ const DetailPerformancePage = () => {
               <div className={styles.discountSection}>
                 <h3 className={styles.contentTitle}>할인정보</h3>
                 <div className={styles.infoPlaceholder}>
-                  {/* 크롤링 정보 또는 이미지가 들어갈 공간 */}
-                  <p className={styles.placeholderText}>할인 정보가 여기에 표시됩니다</p>
+                  {bookingLoading ? (
+                    <p className={styles.placeholderText}>정보를 불러오는 중...</p>
+                  ) : bookingInfo?.discountImages && bookingInfo.discountImages.length > 0 ? (
+                    <div className={styles.imageContainer}>
+                      {bookingInfo.discountImages.map((image, index) => (
+                        <img
+                          key={image.performanceImageId || index}
+                          src={image.imageUrl}
+                          alt={`할인 정보 이미지 ${index + 1}`}
+                          className={styles.infoImage}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.placeholderText}>할인 정보가 여기에 표시됩니다</p>
+                  )}
                 </div>
               </div>
 
@@ -983,8 +1005,25 @@ const DetailPerformancePage = () => {
               <div className={styles.castingSection}>
                 <h3 className={styles.contentTitle}>캐스팅</h3>
                 <div className={styles.infoPlaceholder}>
-                  {/* 크롤링 정보 또는 이미지가 들어갈 공간 */}
-                  <p className={styles.placeholderText}>캐스팅 정보가 여기에 표시됩니다</p>
+                  {bookingLoading ? (
+                    <p className={styles.placeholderText}>정보를 불러오는 중...</p>
+                  ) : bookingInfo?.castingImages && bookingInfo.castingImages.length > 0 ? (
+                    <div className={styles.imageContainer}>
+                      {bookingInfo.castingImages.map((image, index) => (
+                        <img
+                          key={image.performanceImageId || index}
+                          src={image.imageUrl}
+                          alt={`캐스팅 정보 이미지 ${index + 1}`}
+                          className={styles.infoImage}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.placeholderText}>캐스팅 정보가 여기에 표시됩니다</p>
+                  )}
                 </div>
               </div>
 
@@ -992,8 +1031,25 @@ const DetailPerformancePage = () => {
               <div className={styles.seatingChartSection}>
                 <h3 className={styles.contentTitle}>좌석배치도</h3>
                 <div className={styles.infoPlaceholder}>
-                  {/* 크롤링 정보 또는 이미지가 들어갈 공간 */}
-                  <p className={styles.placeholderText}>좌석배치도 이미지가 여기에 표시됩니다</p>
+                  {bookingLoading ? (
+                    <p className={styles.placeholderText}>정보를 불러오는 중...</p>
+                  ) : bookingInfo?.seatImages && bookingInfo.seatImages.length > 0 ? (
+                    <div className={styles.imageContainer}>
+                      {bookingInfo.seatImages.map((image, index) => (
+                        <img
+                          key={image.performanceImageId || index}
+                          src={image.imageUrl}
+                          alt={`좌석배치도 이미지 ${index + 1}`}
+                          className={styles.infoImage}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.placeholderText}>좌석배치도 이미지가 여기에 표시됩니다</p>
+                  )}
                 </div>
               </div>
             </div>

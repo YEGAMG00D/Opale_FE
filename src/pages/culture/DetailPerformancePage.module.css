@@ -575,6 +575,25 @@
   padding: 24px;
 }
 
+.infoPlaceholder .imageContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+  min-height: auto;
+  background-color: transparent;
+  border: none;
+}
+
+.infoImage {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
+}
+
 .placeholderText {
   font-size: 14px;
   color: #999999;
