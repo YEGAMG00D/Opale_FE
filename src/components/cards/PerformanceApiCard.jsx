@@ -14,12 +14,16 @@ const PerformanceApiCard = ({
   reviewCount,
   keywords,
   aiSummary,
+  genre,
   onClick
 }) => {
   return (
     <div className={styles.card} onClick={() => onClick?.(id)}>
       {/* 포스터 */}
       <div className={styles.posterWrapper}>
+        {/* ⭐ 포스터 좌측 상단 장르 표시 */}
+        {genre && <div className={styles.genreBadge}>{genre}</div>}
+
         <img src={image} alt={title} className={styles.poster} />
       </div>
 

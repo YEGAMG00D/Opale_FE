@@ -1,50 +1,54 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import styles from "./MainCulturePage.module.css";
 import { usePerformanceList } from "../../hooks/usePerformanceList";
 import PerformanceApiCard from "../../components/cards/PerformanceApiCard";
-import { normalizePerformance } from "../../services/normalizePerformance";
 
 const MainCulturePage = () => {
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
-  /** ----------------------------
-   *   상태값
-   ----------------------------- */
+  /** 상태값 */
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [showOngoingOnly, setShowOngoingOnly] = useState(false);
 
-  /** ----------------------------
-   *   공연 API 연동
-   ----------------------------- */
+  /** ⭐ 영어 → 한국어 장르명 매핑 */
+  const categoryMapForRequest = {
+    musical: "뮤지컬",
+    play: "연극",
+    popular: "대중음악",
+    classical: "서양음악(클래식)",
+    traditional: "한국음악(국악)",
+  };
+
+  /** API 연동 */
   const { performances, sentinelRef, loading } = usePerformanceList({
-    genre: selectedCategory === "all" ? null : selectedCategory,
+    // 🔥 all → null, 나머지는 한국어로 변환하여 백엔드에 전달
+    genre:
+      selectedCategory === "all"
+        ? null
+        : categoryMapForRequest[selectedCategory],
     sortType: "인기",
   });
 
-  const parsed = performances.map(normalizePerformance);
-
-  /** ----------------------------
-   *   검색 기능
-   ----------------------------- */
+  /** 검색 기능 */
   useEffect(() => {
     if (!searchQuery.trim()) {
       setShowSuggestions(false);
       return;
     }
 
-    const filtered = parsed.filter((p) =>
+    const filtered = performances.filter((p) =>
       p.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     setFilteredSuggestions(filtered.slice(0, 5));
     setShowSuggestions(true);
-  }, [searchQuery, parsed]);
+  }, [searchQuery, performances]);
 
   /** 검색 제출 */
   const handleSearchSubmit = (e) => {
@@ -53,9 +57,7 @@ const MainCulturePage = () => {
     navigate(`/culture/search?q=${searchQuery}`);
   };
 
-  /** ----------------------------
-   *  진행중 공연 판단
-   ----------------------------- */
+  /** 진행중 공연 여부 판단 */
   const isOngoing = (item) => {
     if (!item.startDate || !item.endDate) return false;
 
@@ -66,28 +68,12 @@ const MainCulturePage = () => {
     return today >= s && today <= e;
   };
 
-  /** ----------------------------
-   *  카테고리 + 진행중 필터링
-   ----------------------------- */
-  const filteredPerformances = useMemo(() => {
-    let list = parsed;
+  /** 🔥 진행중 필터만 로컬에서 적용 (장르는 백엔드에서 처리됨) */
+  const finalList = showOngoingOnly
+    ? performances.filter((p) => isOngoing(p))
+    : performances;
 
-    // 카테고리 필터
-    if (selectedCategory !== "all") {
-      list = list.filter((p) => p.genre === selectedCategory);
-    }
-
-    // 진행중 필터
-    if (showOngoingOnly) {
-      list = list.filter((p) => isOngoing(p));
-    }
-
-    return list;
-  }, [parsed, selectedCategory, showOngoingOnly]);
-
-  /** ----------------------------
-   *  카테고리 목록
-   ----------------------------- */
+  /** 카테고리 UI */
   const categories = [
     { id: "all", label: "전체" },
     { id: "musical", label: "뮤지컬" },
@@ -127,7 +113,6 @@ const MainCulturePage = () => {
           ))}
         </div>
 
-        {/* 진행중 체크박스 */}
         <div className={styles.ongoingFilter}>
           <label className={styles.checkboxLabel}>
             <input
@@ -143,13 +128,15 @@ const MainCulturePage = () => {
 
       {/* 카드 리스트 */}
       <div className={styles.performanceGrid}>
-        {filteredPerformances.map((p, index) => (
-          <PerformanceApiCard
-            key={p.id + "_" + index}
-            {...p}
-            onClick={() => navigate(`/culture/${p.id}`)}
-          />
-        ))}
+        {finalList.map((p, index) => {
+          return (
+            <PerformanceApiCard
+              key={p.id + "_" + index}
+              {...p}
+              onClick={() => navigate(`/culture/${p.id}`)}
+            />
+          );
+        })}
       </div>
 
       <div ref={sentinelRef} style={{ height: 40 }} />

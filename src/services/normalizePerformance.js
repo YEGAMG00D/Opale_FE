@@ -3,27 +3,19 @@
 const DEFAULT_POSTER = "/assets/default_poster.png";
 
 export const normalizePerformance = (item) => {
+
+  // 1) 포스터: 문자열 그대로 사용
   let poster = item.poster;
-
-  // 🔥 배열 형태 대응
-  if (Array.isArray(poster)) {
-    poster = poster.length > 0 ? poster[0] : null;
-  }
-
-  // 🔥 객체 형태 대응
-  if (poster && typeof poster === "object") {
-    poster = poster.origin || poster.thumb || Object.values(poster)[0] || null;
-  }
-
-  // 🔥 poster가 null이면 기본 이미지
-  if (!poster) {
+  if (typeof poster !== "string" || poster.trim() === "") {
     poster = DEFAULT_POSTER;
   }
 
-  // 🔥 http → https 강제 (KOPIS 혼합 콘텐츠 방지)
-  if (poster.startsWith("http://")) {
-    poster = poster.replace("http://", "https://");
-  }
+  // 2) 장르: genrenm → genre로 표준화
+  const genre =
+    item.genrenm ??
+    item.genre ??
+    item.performanceType ??
+    "기타";
 
   return {
     id: item.performanceId,
@@ -33,14 +25,9 @@ export const normalizePerformance = (item) => {
     endDate: item.endDate,
     rating: item.rating ?? 0,
     reviewCount: item.reviewCount ?? 0,
-
-    // 🔥 여기!!! 'poster' 필드를 명확히 추가!!!!
-    poster: poster,
-
-    // 🔥 동일한 값 image에도 넣어서 호환성 유지
     image: poster,
-
     keywords: item.keywords ?? [],
     aiSummary: item.aiSummary ?? "",
+    genre,
   };
 };

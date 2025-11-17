@@ -2,7 +2,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    min-width: 0;   /* 🔥 grid collapsing 방지 */
+    min-width: 0;
     cursor: pointer;
     transition: transform 0.2s ease;
   }
@@ -13,16 +13,30 @@
   
   .posterWrapper {
     width: 100%;
-    height: 240px;
+    height: 240px;    /* 🔥 유지: 포스터 비율 그대로 */
     border-radius: 8px;
     overflow: hidden;
-    flex-shrink: 0; /* 🔥 이미지 높이 collapse 방지 */
+    flex-shrink: 0;
+    position: relative;  /* ⭐ 장르 배지 위치를 위해 필요 */
   }
   
   .poster {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+  
+  /* ⭐ 장르 배지 */
+  .genreBadge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 3px 8px;
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    font-size: 11px;
+    border-radius: 6px;
+    backdrop-filter: blur(3px);
   }
   
   /* Info */
@@ -92,4 +106,21 @@
     color: #333;
     line-height: 1.3;
   }
+
+
+  .genreBadge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 6px;
+    z-index: 5;
+  }
+
   
+
+
+
