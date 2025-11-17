@@ -10,10 +10,13 @@ import MainHomePage from '../pages/home/MainHomePage';
 import LoginPage from '../pages/user/auth/LoginPage';
 import SignupPage from '../pages/user/auth/SignupPage';
 import WelcomePage from '../pages/user/auth/WelcomePage';
+import NewPasswordPage from '../pages/user/auth/NewPasswordPage';
+import SuccessedNewPasswordPage from '../pages/user/auth/SuccessedNewPasswordPage';
 
 // 마이페이지 관련
 import MainMyPage from '../pages/user/mypage/MainMyPage';
 import UpdateMyInfoPage from '../pages/user/mypage/UpdateMyInfoPage';
+import ChangePasswordPage from '../pages/user/mypage/ChangePasswordPage';
 import FavoriteCulturePerformancePage from '../pages/user/mypage/FavoriteCulturePerformancePage';
 import BookingPerformancePage from '../pages/user/mypage/BookingPerformancePage';
 import BookingPerformanceRegistrationPage from '../pages/user/mypage/BookingPerformanceRegistrationPage';
@@ -54,6 +57,8 @@ const AppRouter = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/signup/welcome" element={<WelcomePage />} />
+        <Route path="/new-password" element={<NewPasswordPage />} />
+        <Route path="/new-password/success" element={<SuccessedNewPasswordPage />} />
         <Route path="*" element={<ErrorPage />} />
 
         {/* 메인 레이아웃이 적용되는 라우트들 */}
@@ -63,6 +68,7 @@ const AppRouter = () => {
           {/* 마이페이지 관련 */}
           <Route path="my" element={<MainMyPage />} />
           <Route path="my/update-info" element={<UpdateMyInfoPage />} />
+          <Route path="my/change-password" element={<ChangePasswordPage />} />
           <Route path="my/favorite-performances" element={<FavoriteCulturePerformancePage />} />
           <Route path="my/booking-performances" element={<BookingPerformancePage />} />
           <Route path="my/booking-performances/register" element={<BookingPerformanceRegistrationPage />} />
