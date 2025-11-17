@@ -258,11 +258,19 @@ const MainHomePage = () => {
 
       {/* CTA Sections */}
       <section className={styles.ctaSection}>
-        <div className={styles.ctaButton} style={{ backgroundColor: '#EAF0F5' }}>
+        <div 
+          className={styles.ctaButton} 
+          style={{ backgroundColor: '#EAF0F5' }}
+          onClick={() => navigate('/place')}
+        >
           <div className={styles.ctaText}>나랑 가까운 공연 바로가기</div>
         </div>
         
-        <div className={styles.ctaButton} style={{ backgroundColor: '#EAF5E0' }}>
+        <div 
+          className={styles.ctaButton} 
+          style={{ backgroundColor: '#EAF5E0' }}
+          onClick={() => navigate('/recommend/signal')}
+        >
           <div className={styles.ctaTitle}>나와 맞는 공연은?</div>
           <div className={styles.ctaSubtitle}>나랑 찰떡콩떡 공연 찾으러 가기</div>
         </div>
