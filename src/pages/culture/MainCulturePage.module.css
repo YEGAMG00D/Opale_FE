@@ -192,10 +192,10 @@
   transform: translateY(0);
 }
 
-.performanceCard * {
+/* .performanceCard * {
   pointer-events: none;
   user-select: none;
-}
+} */
 
 .posterCard {
   width: 100%;
