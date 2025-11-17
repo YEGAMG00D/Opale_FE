@@ -10,7 +10,9 @@ import OpenChatSection from '../../components/culture/OpenChatSection';
 import ReviewCard from '../../components/culture/ReviewCard';
 import PerformanceInfoImages from '../../components/culture/PerformanceInfoImages';
 import { fetchPerformanceBasic } from '../../api/performanceApi';
+import { fetchPerformanceReviewsByPerformance } from '../../api/reviewApi';
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
+import { normalizePerformanceReviews } from '../../services/normalizePerformanceReview';
 import { usePerformanceRelations } from '../../hooks/usePerformanceRelations';
 import { usePerformanceInfoImages } from '../../hooks/usePerformanceInfoImages';
 import { usePerformanceBooking } from '../../hooks/usePerformanceBooking';
@@ -36,6 +38,12 @@ const DetailPerformancePage = () => {
   const [performance, setPerformance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // 리뷰 데이터 상태
+  const [reviews, setReviews] = useState([]);
+  const [expectations, setExpectations] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState(null);
 
   // 예매처 목록 조회
   const performanceId = performance?.id || performance?.performanceId || id;
@@ -47,47 +55,6 @@ const DetailPerformancePage = () => {
   // 공연 예매 정보 조회
   const { bookingInfo, loading: bookingLoading } = usePerformanceBooking(performanceId);
 
-  // 샘플 후기 데이터
-  const sampleReviews = [
-    {
-      id: 1,
-      title: '위키드 관람 후기',
-      content: '중력을 거슬러 저도 올라가고 싶어지네요. 엘파바의 목소리가 정말 감동적이었고, 글린다와의 우정도 아름다웠습니다. 특히 Defying Gravity 장면에서는 정말 소름이 돋았어요. 13년 만의 내한 공연이라 더욱 특별했던 것 같습니다. 외국인 관객들도 많아서 국제적인 분위기도 느낄 수 있었고, 뮤지컬을 통해 새로운 친구들도 만날 수 있어서 정말 좋았습니다.',
-      rating: 4.5,
-      author: '닉네임',
-      date: '2025.11.20',
-      performanceDate: '2025.11.05 19:00',
-      seat: '1층-15열-중간'
-    },
-    {
-      id: 2,
-      title: '위키드 2차 관람 후기',
-      content: '두 번째 관람이었는데도 여전히 감동적이었습니다. 이번에는 다른 배우분들의 연기를 보게 되어서 더욱 흥미로웠어요. 특히 글린다 역할의 배우분이 정말 귀여우면서도 깊이가 있었습니다.',
-      rating: 5,
-      author: '뮤지컬러버',
-      date: '2025.11.18',
-      performanceDate: '2025.11.10 14:00',
-      seat: '2층-8열-왼쪽'
-    }
-  ];
-
-  // 샘플 기대평 데이터
-  const sampleExpectations = [
-    {
-      id: 1,
-      title: '위키드 너무 기다렸어...',
-      content: '위키드 너무 기다렸어... 중력을 거슬러 저도 올라가고 싶어지네요. It\'s time to fly defying gravity--- 정말 오랜만에 한국에서 공연한다고 해서 벌써부터 설레요. 원작 위키드를 한국에서 볼 수 있다니 꿈만 같아요. 엘파바와 글린다의 이야기가 어떻게 펼쳐질지 정말 기대됩니다!',
-      author: '위키드팬',
-      date: '2025.11.20'
-    },
-    {
-      id: 2,
-      title: '13년 만의 내한 공연!',
-      content: '13년 만의 내한 공연이라니! 이번 기회를 놓치면 언제 또 볼 수 있을지 모르니까 꼭 가야겠어요. 특히 Defying Gravity 장면을 직접 보고 싶어요.',
-      author: '뮤지컬매니아',
-      date: '2025.11.19'
-    }
-  ];
 
   // 모든 공연 데이터
   const allPerformances = {
@@ -827,6 +794,47 @@ const DetailPerformancePage = () => {
     loadPerformanceData();
   }, [id]);
 
+  // 리뷰 데이터 로드
+  useEffect(() => {
+    const loadReviews = async () => {
+      if (!performanceId) return;
+
+      try {
+        setReviewsLoading(true);
+        setReviewsError(null);
+
+        // 현재 활성화된 탭에 따라 reviewType 설정
+        const reviewType = activeReviewTab === 'review' ? 'AFTER' : 'EXPECTATION';
+        
+        const apiData = await fetchPerformanceReviewsByPerformance(performanceId, reviewType);
+        
+        // API 응답 구조 처리: apiData는 { reviews: [...], totalCount: ... } 형태 또는 빈 배열
+        const reviewsData = Array.isArray(apiData) ? { reviews: [] } : apiData;
+
+        const normalizedReviews = normalizePerformanceReviews(reviewsData);
+
+        if (activeReviewTab === 'review') {
+          setReviews(normalizedReviews);
+        } else {
+          setExpectations(normalizedReviews);
+        }
+      } catch (err) {
+        console.error('리뷰 조회 실패:', err);
+        setReviewsError(err.message || '리뷰를 불러오는 중 오류가 발생했습니다.');
+        // 에러 발생 시 빈 배열로 설정
+        if (activeReviewTab === 'review') {
+          setReviews([]);
+        } else {
+          setExpectations([]);
+        }
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    loadReviews();
+  }, [performanceId, activeReviewTab]);
+
   const tabs = [
     { id: 'reservation', label: '예매정보' },
     { id: 'detail', label: '상세정보' },
@@ -1112,19 +1120,31 @@ const DetailPerformancePage = () => {
                     <span className={styles.sortOption}>인기순</span>
                   </div>
                   
-                  {sampleReviews.map(review => (
-                    <ReviewCard
-                      key={review.id}
-                      id={review.id}
-                      title={review.title}
-                      performanceDate={review.performanceDate}
-                      seat={review.seat}
-                      rating={review.rating}
-                      content={review.content}
-                      author={review.author}
-                      date={review.date}
-                    />
-                  ))}
+                  {reviewsLoading ? (
+                    <div style={{ padding: '2rem', textAlign: 'center' }}>로딩 중...</div>
+                  ) : reviewsError ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                      {reviewsError}
+                    </div>
+                  ) : reviews.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                      등록된 후기가 없습니다.
+                    </div>
+                  ) : (
+                    reviews.map(review => (
+                      <ReviewCard
+                        key={review.id}
+                        id={review.id}
+                        title={review.title}
+                        performanceDate={review.performanceDate}
+                        seat={review.seat}
+                        rating={review.rating}
+                        content={review.content}
+                        author={review.author}
+                        date={review.date}
+                      />
+                    ))
+                  )}
                 </div>
               )}
 
@@ -1135,37 +1155,49 @@ const DetailPerformancePage = () => {
                     <h4>기대평 목록</h4>
                   </div>
                   
-                  {sampleExpectations.map(expectation => (
-                    <div key={expectation.id} className={styles.expectationItem}>
-                      <div className={styles.expectationHeader}>
-                        <h5 className={styles.expectationTitle}>{expectation.title}</h5>
-                      </div>
-                      
-                      <div className={styles.expectationContent}>
-                        <p className={styles.expectationText}>
-                          {expandedExpectations[expectation.id] 
-                            ? expectation.content 
-                            : expectation.content.length > 100 
-                              ? expectation.content.substring(0, 100) + '...' 
-                              : expectation.content
-                        }
-                      </p>
-                        {expectation.content.length > 100 && (
-                          <button 
-                            className={styles.expandButton}
-                            onClick={() => toggleExpectationExpansion(expectation.id)}
-                          >
-                            {expandedExpectations[expectation.id] ? '닫기' : '더보기'}
-                          </button>
-                        )}
-                      </div>
-                      
-                      <div className={styles.expectationFooter}>
-                        <button className={styles.likeButton}>♡</button>
-                        <span className={styles.expectationAuthor}>{expectation.author} | {expectation.date}</span>
-                      </div>
+                  {reviewsLoading ? (
+                    <div style={{ padding: '2rem', textAlign: 'center' }}>로딩 중...</div>
+                  ) : reviewsError ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                      {reviewsError}
                     </div>
-                  ))}
+                  ) : expectations.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                      등록된 기대평이 없습니다.
+                    </div>
+                  ) : (
+                    expectations.map(expectation => (
+                      <div key={expectation.id} className={styles.expectationItem}>
+                        <div className={styles.expectationHeader}>
+                          <h5 className={styles.expectationTitle}>{expectation.title}</h5>
+                        </div>
+                        
+                        <div className={styles.expectationContent}>
+                          <p className={styles.expectationText}>
+                            {expandedExpectations[expectation.id] 
+                              ? expectation.content 
+                              : expectation.content.length > 100 
+                                ? expectation.content.substring(0, 100) + '...' 
+                                : expectation.content
+                          }
+                        </p>
+                          {expectation.content.length > 100 && (
+                            <button 
+                              className={styles.expandButton}
+                              onClick={() => toggleExpectationExpansion(expectation.id)}
+                            >
+                              {expandedExpectations[expectation.id] ? '닫기' : '더보기'}
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className={styles.expectationFooter}>
+                          <button className={styles.likeButton}>♡</button>
+                          <span className={styles.expectationAuthor}>{expectation.author} | {expectation.date}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>
