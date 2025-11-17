@@ -194,6 +194,12 @@
   font-weight: 500;
 }
 
+.disabledSeats {
+  color: #6b7280;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
 /* 관련공연 섹션 */
 .performanceList {
   display: flex;

@@ -5,12 +5,14 @@ import PlaceShowHistory from '../../components/place/PlaceShowHistory';
 import PlaceReviewCard from '../../components/place/PlaceReviewCard';
 import { usePlaceDetail } from '../../hooks/usePlaceDetail';
 import { usePlaceFacilities } from '../../hooks/usePlaceFacilities';
+import { usePlaceStages } from '../../hooks/usePlaceStages';
 
 const DetailPlacePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { place, loading, error } = usePlaceDetail(id);
   const { convenienceFacilities, parkingFacilities } = usePlaceFacilities(id);
+  const { stages } = usePlaceStages(id);
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [writeForm, setWriteForm] = useState({ title: '', content: '', rating: 5 });
 
@@ -148,22 +150,32 @@ const DetailPlacePage = () => {
             </tr>
           </thead>
           <tbody>
-            {place.stages.map((stage) => (
-              <tr key={stage.id}>
-                <td>
-                  {stage.name}
-                  {stage.registered && <span className={styles.registered}> [등록]</span>}
-                </td>
-                <td>총 {stage.seats.toLocaleString()}석</td>
-                <td>
-                  {stage.stageFacilities.length > 0 ? (
-                    <span className={styles.facilityItem}>√ {stage.stageFacilities.join(', ')}</span>
-                  ) : (
-                    <span className={styles.noFacility}>-</span>
-                  )}
+            {stages.length > 0 ? (
+              stages.map((stage) => (
+                <tr key={stage.id}>
+                  <td>{stage.name}</td>
+                  <td>
+                    총 {stage.seatscale.toLocaleString()}석
+                    {stage.disabledseatscale > 0 && (
+                      <span className={styles.disabledSeats}> (장애인석 {stage.disabledseatscale}석)</span>
+                    )}
+                  </td>
+                  <td>
+                    {stage.stageFacilities.length > 0 ? (
+                      <span className={styles.facilityItem}>√ {stage.stageFacilities.join(', ')}</span>
+                    ) : (
+                      <span className={styles.noFacility}>-</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="3" className={styles.empty}>
+                  공연관 정보가 없습니다.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
