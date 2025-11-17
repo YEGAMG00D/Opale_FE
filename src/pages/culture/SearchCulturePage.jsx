@@ -10,8 +10,8 @@ const SearchCulturePage = () => {
   const [searchParams] = useSearchParams();
   const searchRef = useRef(null);
 
-  // URL에서 검색어 가져오기
-  const keywordFromUrl = searchParams.get("q") || "";
+  // URL에서 검색어 가져오기 (공백 제거)
+  const keywordFromUrl = (searchParams.get("q") || "").trim();
 
   /** 상태값 */
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -20,7 +20,7 @@ const SearchCulturePage = () => {
 
   /** URL 검색어 변경 시 검색창 업데이트 */
   useEffect(() => {
-    const keyword = searchParams.get("q") || "";
+    const keyword = (searchParams.get("q") || "").trim();
     setSearchQuery(keyword);
   }, [searchParams]);
 
@@ -33,21 +33,22 @@ const SearchCulturePage = () => {
     traditional: "한국음악(국악)",
   };
 
-  /** API 연동 - keyword 포함 */
+  /** API 연동 - keyword 포함 (공백만 있으면 null로 처리하여 전체 공연 조회) */
   const { performances, sentinelRef, loading } = usePerformanceList({
     genre:
       selectedCategory === "all"
         ? null
         : categoryMapForRequest[selectedCategory],
-    keyword: keywordFromUrl || null, // 검색어가 있으면 전달, 없으면 null
+    keyword: keywordFromUrl && keywordFromUrl.length > 0 ? keywordFromUrl : null, // 공백만 있으면 null로 전체 공연 조회
     sortType: "인기",
   });
 
   /** 검색 제출 */
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
-    navigate(`/culture/search?q=${searchQuery}`);
+    const trimmedQuery = searchQuery.trim();
+    // 공백만 있어도 검색 가능 (전체 공연 조회)
+    navigate(`/culture/search?q=${encodeURIComponent(trimmedQuery)}`);
   };
 
   /** 진행중 공연 여부 판단 */

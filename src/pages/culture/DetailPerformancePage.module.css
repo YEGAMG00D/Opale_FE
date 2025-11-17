@@ -604,6 +604,17 @@
 
 .productionImagesContainer {
   margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.productionImage {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
 }
 
 .imagePlaceholder {

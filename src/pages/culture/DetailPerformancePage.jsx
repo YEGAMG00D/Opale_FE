@@ -8,9 +8,11 @@ import PerformanceDetails from '../../components/culture/PerformanceDetails';
 import BookingLinks from '../../components/culture/BookingLinks';
 import OpenChatSection from '../../components/culture/OpenChatSection';
 import ReviewCard from '../../components/culture/ReviewCard';
+import PerformanceInfoImages from '../../components/culture/PerformanceInfoImages';
 import { fetchPerformanceBasic } from '../../api/performanceApi';
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
 import { usePerformanceRelations } from '../../hooks/usePerformanceRelations';
+import { usePerformanceInfoImages } from '../../hooks/usePerformanceInfoImages';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -37,6 +39,9 @@ const DetailPerformancePage = () => {
   // 예매처 목록 조회
   const performanceId = performance?.id || performance?.performanceId || id;
   const { bookingSites } = usePerformanceRelations(performanceId);
+  
+  // 공연 소개 이미지 조회
+  const { images: infoImages, loading: imagesLoading } = usePerformanceInfoImages(performanceId);
 
   // 샘플 후기 데이터
   const sampleReviews = [
@@ -1009,15 +1014,7 @@ const DetailPerformancePage = () => {
               </div>
               
               {/* 제작사 제공 소개 이미지 섹션 */}
-              <div className={styles.productionImagesSection}>
-                <h3 className={styles.contentTitle}>공연 소개</h3>
-                <div className={styles.productionImagesContainer}>
-                  {/* 제작사에서 제공하는 소개 이미지들이 들어갈 공간 */}
-                  <div className={styles.imagePlaceholder}>
-                    <p className={styles.placeholderText}>제작사 제공 소개 이미지가 여기에 표시됩니다</p>
-                  </div>
-                </div>
-              </div>
+              <PerformanceInfoImages images={infoImages} loading={imagesLoading} />
             </div>
           )}
           
