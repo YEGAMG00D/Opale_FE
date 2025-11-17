@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import styles from './MainPlacePage.module.css';
 import RegionFilter from '../../components/place/RegionFilter';
@@ -7,12 +8,22 @@ import { usePlaceList } from '../../hooks/usePlaceList';
 import { setActiveTab } from '../../store/placeSlice';
 
 const MainPlacePage = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const searchRef = useRef(null);
   const activeTab = useSelector((state) => state.place.activeTab);
   const [selected, setSelected] = useState({ region: '서울', district: '전체' });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleTabChange = (tab) => {
     dispatch(setActiveTab(tab));
+  };
+
+  /** 검색 제출 */
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    navigate(`/place/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   /** API 연동 */
@@ -56,6 +67,22 @@ const MainPlacePage = () => {
       {/* 지역목록 탭 내용 */}
       {activeTab === 'list' && (
         <div className={styles.listContainer}>
+          {/* 검색창 */}
+          <div className={styles.searchSection} ref={searchRef}>
+            <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
+              <input
+                type="text"
+                className={styles.searchInput}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="극장명을 입력해주세요"
+              />
+              <button type="submit" className={styles.searchIcon}>
+                🔍
+              </button>
+            </form>
+          </div>
+
           <RegionFilter onChange={setSelected} />
 
           <div className={styles.resultHeader}>

@@ -45,11 +45,6 @@ export default function RegionFilter({ onChange }) {
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.searchRow}>
-        <input className={styles.searchInput} placeholder="극장명을 입력해주세요" />
-        <button className={styles.searchBtn} aria-label="search">🔍</button>
-      </div>
-
       <div className={styles.filterBox}>
         <ul className={styles.leftTabs}>
           {LEFT_REGIONS.map((region) => (

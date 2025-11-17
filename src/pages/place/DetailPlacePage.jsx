@@ -133,9 +133,6 @@ const DetailPlacePage = () => {
             </tr>
           </tbody>
         </table>
-        <button onClick={() => navigate('/place')} className={styles.listBtn}>
-          목록 보기
-        </button>
       </div>
 
       {/* 공연장 정보 */}
