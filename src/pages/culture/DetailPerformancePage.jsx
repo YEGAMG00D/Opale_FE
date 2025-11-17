@@ -11,6 +11,7 @@ import ReviewCard from '../../components/culture/ReviewCard';
 import PerformanceInfoImages from '../../components/culture/PerformanceInfoImages';
 import { fetchPerformanceBasic } from '../../api/performanceApi';
 import { fetchPerformanceReviewsByPerformance } from '../../api/reviewApi';
+import { isPerformanceLiked, togglePerformanceFavorite, isPerformanceReviewLiked, togglePerformanceReviewFavorite } from '../../api/favoriteApi';
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
 import { normalizePerformanceReviews } from '../../services/normalizePerformanceReview';
 import { usePerformanceRelations } from '../../hooks/usePerformanceRelations';
@@ -44,6 +45,7 @@ const DetailPerformancePage = () => {
   const [expectations, setExpectations] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState(null);
+  const [expectationLikes, setExpectationLikes] = useState({}); // 기대평 관심 상태
 
   // 예매처 목록 조회
   const performanceId = performance?.id || performance?.performanceId || id;
@@ -794,6 +796,23 @@ const DetailPerformancePage = () => {
     loadPerformanceData();
   }, [id]);
 
+  // 공연 관심 여부 조회
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      if (!performanceId) return;
+      
+      try {
+        const liked = await isPerformanceLiked(performanceId);
+        setIsFavorite(liked);
+      } catch (err) {
+        console.error('공연 관심 여부 조회 실패:', err);
+        setIsFavorite(false);
+      }
+    };
+
+    loadFavoriteStatus();
+  }, [performanceId]);
+
   // 리뷰 데이터 로드
   useEffect(() => {
     const loadReviews = async () => {
@@ -817,6 +836,18 @@ const DetailPerformancePage = () => {
           setReviews(normalizedReviews);
         } else {
           setExpectations(normalizedReviews);
+          // 기대평 관심 여부 조회
+          const likesMap = {};
+          for (const expectation of normalizedReviews) {
+            try {
+              const liked = await isPerformanceReviewLiked(expectation.id);
+              likesMap[expectation.id] = liked;
+            } catch (err) {
+              console.error(`기대평 ${expectation.id} 관심 여부 조회 실패:`, err);
+              likesMap[expectation.id] = false;
+            }
+          }
+          setExpectationLikes(likesMap);
         }
       } catch (err) {
         console.error('리뷰 조회 실패:', err);
@@ -843,8 +874,15 @@ const DetailPerformancePage = () => {
   ];
 
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+  const toggleFavorite = async () => {
+    if (!performanceId) return;
+    
+    try {
+      const result = await togglePerformanceFavorite(performanceId);
+      setIsFavorite(result);
+    } catch (err) {
+      console.error('공연 관심 토글 실패:', err);
+    }
   };
 
   const toggleExpectationExpansion = (expectationId) => {
@@ -1192,7 +1230,22 @@ const DetailPerformancePage = () => {
                         </div>
                         
                         <div className={styles.expectationFooter}>
-                          <button className={styles.likeButton}>♡</button>
+                          <button 
+                            className={`${styles.likeButton} ${expectationLikes[expectation.id] ? styles.liked : ''}`}
+                            onClick={async () => {
+                              try {
+                                const result = await togglePerformanceReviewFavorite(expectation.id);
+                                setExpectationLikes(prev => ({
+                                  ...prev,
+                                  [expectation.id]: result
+                                }));
+                              } catch (err) {
+                                console.error('기대평 관심 토글 실패:', err);
+                              }
+                            }}
+                          >
+                            {expectationLikes[expectation.id] ? '♥' : '♡'}
+                          </button>
                           <span className={styles.expectationAuthor}>{expectation.author} | {expectation.date}</span>
                         </div>
                       </div>

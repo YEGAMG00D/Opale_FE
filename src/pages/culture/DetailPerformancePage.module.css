@@ -849,6 +849,10 @@
   color: #FF69B4;
 }
 
+.likeButton.liked {
+  color: #FF69B4;
+}
+
 .reviewAuthor,
 .expectationAuthor {
   font-size: 12px;

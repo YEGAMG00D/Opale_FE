@@ -6,6 +6,7 @@ import { setSelectedCategory, setShowOngoingOnly } from "../../store/performance
 import styles from "./MainCulturePage.module.css";
 import { usePerformanceList } from "../../hooks/usePerformanceList";
 import PerformanceApiCard from "../../components/cards/PerformanceApiCard";
+import { fetchFavoritePerformanceIds, togglePerformanceFavorite } from "../../api/favoriteApi";
 
 const MainCulturePage = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const MainCulturePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
 
   /** ⭐ 영어 → 한국어 장르명 매핑 */
   const categoryMapForRequest = {
@@ -39,6 +41,38 @@ const MainCulturePage = () => {
         : categoryMapForRequest[selectedCategory],
     sortType: "인기",
   });
+
+  /** 관심 공연 ID 목록 조회 */
+  useEffect(() => {
+    const loadFavoriteIds = async () => {
+      try {
+        const ids = await fetchFavoritePerformanceIds();
+        setFavoriteIds(new Set(ids));
+      } catch (err) {
+        console.error("관심 공연 ID 목록 조회 실패:", err);
+        setFavoriteIds(new Set());
+      }
+    };
+    loadFavoriteIds();
+  }, []);
+
+  /** 관심 토글 핸들러 */
+  const handleFavoriteToggle = async (performanceId) => {
+    try {
+      const result = await togglePerformanceFavorite(performanceId);
+      setFavoriteIds((prev) => {
+        const newSet = new Set(prev);
+        if (result) {
+          newSet.add(performanceId);
+        } else {
+          newSet.delete(performanceId);
+        }
+        return newSet;
+      });
+    } catch (err) {
+      console.error("관심 토글 실패:", err);
+    }
+  };
 
   /** 검색 기능 */
   useEffect(() => {
@@ -138,6 +172,8 @@ const MainCulturePage = () => {
             <PerformanceApiCard
               key={p.id + "_" + index}
               {...p}
+              isFavorite={favoriteIds.has(p.id)}
+              onFavoriteToggle={handleFavoriteToggle}
               onClick={() => navigate(`/culture/${p.id}`)}
             />
           );

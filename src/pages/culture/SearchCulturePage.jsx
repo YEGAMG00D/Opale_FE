@@ -6,6 +6,7 @@ import { setSelectedCategory, setShowOngoingOnly, setSearchQuery as setSearchQue
 import styles from "./MainCulturePage.module.css";
 import { usePerformanceList } from "../../hooks/usePerformanceList";
 import PerformanceApiCard from "../../components/cards/PerformanceApiCard";
+import { fetchFavoritePerformanceIds, togglePerformanceFavorite } from "../../api/favoriteApi";
 
 const SearchCulturePage = () => {
   const navigate = useNavigate();
@@ -23,6 +24,39 @@ const SearchCulturePage = () => {
   
   /** 로컬 상태 */
   const [searchQuery, setSearchQuery] = useState(keywordFromUrl || reduxSearchQuery);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
+
+  /** 관심 공연 ID 목록 조회 */
+  useEffect(() => {
+    const loadFavoriteIds = async () => {
+      try {
+        const ids = await fetchFavoritePerformanceIds();
+        setFavoriteIds(new Set(ids));
+      } catch (err) {
+        console.error("관심 공연 ID 목록 조회 실패:", err);
+        setFavoriteIds(new Set());
+      }
+    };
+    loadFavoriteIds();
+  }, []);
+
+  /** 관심 토글 핸들러 */
+  const handleFavoriteToggle = async (performanceId) => {
+    try {
+      const result = await togglePerformanceFavorite(performanceId);
+      setFavoriteIds((prev) => {
+        const newSet = new Set(prev);
+        if (result) {
+          newSet.add(performanceId);
+        } else {
+          newSet.delete(performanceId);
+        }
+        return newSet;
+      });
+    } catch (err) {
+      console.error("관심 토글 실패:", err);
+    }
+  };
 
   /** URL 검색어 변경 시 검색창 업데이트 */
   useEffect(() => {
@@ -142,6 +176,8 @@ const SearchCulturePage = () => {
             <PerformanceApiCard
               key={p.id + "_" + index}
               {...p}
+              isFavorite={favoriteIds.has(p.id)}
+              onFavoriteToggle={handleFavoriteToggle}
               onClick={() => navigate(`/culture/${p.id}`)}
             />
           );
