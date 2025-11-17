@@ -7,19 +7,20 @@
     - 공연장 편의시설 정보 조회
     - 공연장별 공연 목록 조회
 ============================================================ */
+
+
+/* ============================================================
+    🏟️ Place API
+============================================================ */
 import axiosInstance from "./axiosInstance";
 
 const base = "/places";
 
-/* ============================================================
-    ✅ 1. 공연장 목록 조회 (POST /api/places)
-    dto = { area, keyword, sortType, page, size }
-============================================================ */
+/* 🔥 수정됨 */
 export const fetchPlaceList = async (dto) => {
   try {
     const res = await axiosInstance.post(`${base}`, dto);
-
-    if (res.data.success) return res.data.data;
+    if (res.data.success) return res.data.data ?? [];
     throw new Error("공연장 목록 조회 실패");
   } catch (err) {
     console.error("❌ fetchPlaceList 오류:", err);
@@ -27,15 +28,11 @@ export const fetchPlaceList = async (dto) => {
   }
 };
 
-/* ============================================================
-    ✅ 2. 좌표 기반 근처 공연장 목록 조회 (POST /places/nearby)
-    dto = { latitude, longitude, radius, sortType, page, size }
-============================================================ */
+/* 🔥 수정됨 */
 export const fetchNearbyPlaces = async (dto) => {
   try {
     const res = await axiosInstance.post(`${base}/nearby`, dto);
-
-    if (res.data.success) return res.data.data;
+    if (res.data.success) return res.data.data ?? [];
     throw new Error("근처 공연장 목록 조회 실패");
   } catch (err) {
     console.error("❌ fetchNearbyPlaces 오류:", err);
@@ -43,13 +40,9 @@ export const fetchNearbyPlaces = async (dto) => {
   }
 };
 
-/* ============================================================
-    ✅ 3. 공연장 기본 정보 조회 (GET /places/:placeId/basic)
-============================================================ */
 export const fetchPlaceBasic = async (placeId) => {
   try {
     const res = await axiosInstance.get(`${base}/${placeId}/basic`);
-
     if (res.data.success) return res.data.data;
     throw new Error("공연장 기본 정보 조회 실패");
   } catch (err) {
@@ -58,13 +51,9 @@ export const fetchPlaceBasic = async (placeId) => {
   }
 };
 
-/* ============================================================
-    ✅ 4. 공연장 내 공연관 목록 조회 (GET /places/:placeId/stages)
-============================================================ */
 export const fetchPlaceStages = async (placeId) => {
   try {
     const res = await axiosInstance.get(`${base}/${placeId}/stages`);
-
     if (res.data.success) return res.data.data;
     throw new Error("공연관 목록 조회 실패");
   } catch (err) {
@@ -73,13 +62,9 @@ export const fetchPlaceStages = async (placeId) => {
   }
 };
 
-/* ============================================================
-    ✅ 5. 공연장 편의시설 정보 조회 (GET /places/:placeId/facilities)
-============================================================ */
 export const fetchPlaceFacilities = async (placeId) => {
   try {
     const res = await axiosInstance.get(`${base}/${placeId}/facilities`);
-
     if (res.data.success) return res.data.data;
     throw new Error("공연장 편의시설 조회 실패");
   } catch (err) {
@@ -88,14 +73,11 @@ export const fetchPlaceFacilities = async (placeId) => {
   }
 };
 
-/* ============================================================
-    ✅ 6. 공연장별 공연 목록 조회 (GET /places/:placeId/performances)
-============================================================ */
+/* 🔥 수정됨 */
 export const fetchPlacePerformances = async (placeId) => {
   try {
     const res = await axiosInstance.get(`${base}/${placeId}/performances`);
-
-    if (res.data.success) return res.data.data;
+    if (res.data.success) return res.data.data ?? [];
     throw new Error("공연장별 공연 목록 조회 실패");
   } catch (err) {
     console.error("❌ fetchPlacePerformances 오류:", err);
@@ -103,9 +85,6 @@ export const fetchPlacePerformances = async (placeId) => {
   }
 };
 
-/* ============================================================
-    모듈 형태 export
-============================================================ */
 export default {
   fetchPlaceList,
   fetchNearbyPlaces,

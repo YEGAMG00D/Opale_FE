@@ -3,25 +3,20 @@
     - Performance Reviews (공연 리뷰)
     - Place Reviews (공연장 리뷰)
 ============================================================ */
+
+
+
+/* ============================================================
+    📝 Review API
+============================================================ */
 import axiosInstance from "./axiosInstance";
 
-/* -------------------------------
-    Base URLs
--------------------------------- */
 const performanceBase = "/reviews/performances";
 const placeBase = "/reviews/places";
 
-/* ============================================================
-    🎭 PERFORMANCE REVIEWS (공연 리뷰 API)
-============================================================ */
-
-/* ------------------------------------------------------------
-    ✅ 1. 공연 리뷰 단일 조회 (GET /reviews/performances/{reviewId})
------------------------------------------------------------- */
 export const fetchPerformanceReview = async (reviewId) => {
   try {
     const res = await axiosInstance.get(`${performanceBase}/${reviewId}`);
-
     if (res.data.success) return res.data.data;
     throw new Error("공연 리뷰 조회 실패");
   } catch (err) {
@@ -30,10 +25,7 @@ export const fetchPerformanceReview = async (reviewId) => {
   }
 };
 
-/* ------------------------------------------------------------
-    ✅ 2. 공연별 리뷰 목록 조회 (비로그인 가능)
-       GET /reviews/performances/performance/{performanceId}?reviewType=...
------------------------------------------------------------- */
+/* 🔥 수정됨 */
 export const fetchPerformanceReviewsByPerformance = async (
   performanceId,
   reviewType = null
@@ -45,8 +37,7 @@ export const fetchPerformanceReviewsByPerformance = async (
         params: reviewType ? { reviewType } : {},
       }
     );
-
-    if (res.data.success) return res.data.data;
+    if (res.data.success) return res.data.data ?? [];
     throw new Error("공연별 리뷰 목록 조회 실패");
   } catch (err) {
     console.error("❌ fetchPerformanceReviewsByPerformance 오류:", err);
@@ -54,16 +45,11 @@ export const fetchPerformanceReviewsByPerformance = async (
   }
 };
 
-/* ------------------------------------------------------------
-    ✅ 3. 내가 작성한 공연 리뷰 목록 조회 (로그인 필요)
-       GET /reviews/performances/me?reviewType=
------------------------------------------------------------- */
 export const fetchMyPerformanceReviews = async (reviewType = null) => {
   try {
     const res = await axiosInstance.get(`${performanceBase}/me`, {
       params: reviewType ? { reviewType } : {},
     });
-
     if (res.data.success) return res.data.data;
     throw new Error("내 공연 리뷰 목록 조회 실패");
   } catch (err) {
@@ -72,10 +58,6 @@ export const fetchMyPerformanceReviews = async (reviewType = null) => {
   }
 };
 
-/* ------------------------------------------------------------
-    ✅ 4. 특정 회원의 공연 리뷰 목록 조회 (비로그인 가능)
-       GET /reviews/performances/user/{userId}?reviewType=
------------------------------------------------------------- */
 export const fetchPerformanceReviewsByUser = async (userId, reviewType = null) => {
   try {
     const res = await axiosInstance.get(
@@ -84,7 +66,6 @@ export const fetchPerformanceReviewsByUser = async (userId, reviewType = null) =
         params: reviewType ? { reviewType } : {},
       }
     );
-
     if (res.data.success) return res.data.data;
     throw new Error("회원 공연 리뷰 목록 조회 실패");
   } catch (err) {
@@ -93,13 +74,9 @@ export const fetchPerformanceReviewsByUser = async (userId, reviewType = null) =
   }
 };
 
-/* ------------------------------------------------------------
-    ✅ 5. 공연 리뷰 작성 (POST)
------------------------------------------------------------- */
 export const createPerformanceReview = async (dto) => {
   try {
     const res = await axiosInstance.post(`${performanceBase}`, dto);
-
     if (res.data.success) return res.data.data;
     throw new Error("공연 리뷰 작성 실패");
   } catch (err) {
@@ -108,16 +85,12 @@ export const createPerformanceReview = async (dto) => {
   }
 };
 
-/* ------------------------------------------------------------
-    ✅ 6. 공연 리뷰 수정 (PUT /{reviewId})
------------------------------------------------------------- */
 export const updatePerformanceReview = async (reviewId, dto) => {
   try {
     const res = await axiosInstance.put(
       `${performanceBase}/${reviewId}`,
       dto
     );
-
     if (res.data.success) return res.data.data;
     throw new Error("공연 리뷰 수정 실패");
   } catch (err) {
@@ -126,15 +99,9 @@ export const updatePerformanceReview = async (reviewId, dto) => {
   }
 };
 
-/* ------------------------------------------------------------
-    ✅ 7. 공연 리뷰 삭제 (DELETE /{reviewId})
------------------------------------------------------------- */
 export const deletePerformanceReview = async (reviewId) => {
   try {
-    const res = await axiosInstance.delete(
-      `${performanceBase}/${reviewId}`
-    );
-
+    const res = await axiosInstance.delete(`${performanceBase}/${reviewId}`);
     if (res.data.success) return true;
     throw new Error("공연 리뷰 삭제 실패");
   } catch (err) {
@@ -143,18 +110,9 @@ export const deletePerformanceReview = async (reviewId) => {
   }
 };
 
-/* ============================================================
-    🏟️ PLACE REVIEWS (공연장 리뷰 API)
-============================================================ */
-
-/* ------------------------------------------------------------
-    ✅ 1. 공연장 리뷰 단일 조회
-       GET /reviews/places/{reviewId}
------------------------------------------------------------- */
 export const fetchPlaceReview = async (reviewId) => {
   try {
     const res = await axiosInstance.get(`${placeBase}/${reviewId}`);
-
     if (res.data.success) return res.data.data;
     throw new Error("공연장 리뷰 조회 실패");
   } catch (err) {
@@ -163,10 +121,7 @@ export const fetchPlaceReview = async (reviewId) => {
   }
 };
 
-/* ------------------------------------------------------------
-    ✅ 2. 공연장별 리뷰 목록 조회 (비로그인 가능)
-       GET /reviews/places/place/{placeId}?reviewType=
------------------------------------------------------------- */
+/* 🔥 수정됨 */
 export const fetchPlaceReviewsByPlace = async (placeId, reviewType = null) => {
   try {
     const res = await axiosInstance.get(
@@ -175,8 +130,7 @@ export const fetchPlaceReviewsByPlace = async (placeId, reviewType = null) => {
         params: reviewType ? { reviewType } : {},
       }
     );
-
-    if (res.data.success) return res.data.data;
+    if (res.data.success) return res.data.data ?? [];
     throw new Error("공연장별 리뷰 목록 조회 실패");
   } catch (err) {
     console.error("❌ fetchPlaceReviewsByPlace 오류:", err);
@@ -184,16 +138,11 @@ export const fetchPlaceReviewsByPlace = async (placeId, reviewType = null) => {
   }
 };
 
-/* ------------------------------------------------------------
-    ⚠️ 3. 내가 작성한 공연장 리뷰 목록 조회 (로그인 필요)
-       GET /reviews/places/me
------------------------------------------------------------- */
 export const fetchMyPlaceReviews = async (reviewType = null) => {
   try {
     const res = await axiosInstance.get(`${placeBase}/me`, {
       params: reviewType ? { reviewType } : {},
     });
-
     if (res.data.success) return res.data.data;
     throw new Error("내 공연장 리뷰 목록 조회 실패");
   } catch (err) {
@@ -202,10 +151,6 @@ export const fetchMyPlaceReviews = async (reviewType = null) => {
   }
 };
 
-/* ------------------------------------------------------------
-    ✅ 4. 특정 회원의 공연장 리뷰 목록 조회 (비로그인 가능)
-       GET /reviews/places/user/{userId}?reviewType=
------------------------------------------------------------- */
 export const fetchPlaceReviewsByUser = async (userId, reviewType = null) => {
   try {
     const res = await axiosInstance.get(
@@ -214,7 +159,6 @@ export const fetchPlaceReviewsByUser = async (userId, reviewType = null) => {
         params: reviewType ? { reviewType } : {},
       }
     );
-
     if (res.data.success) return res.data.data;
     throw new Error("회원 공연장 리뷰 목록 조회 실패");
   } catch (err) {
@@ -223,13 +167,9 @@ export const fetchPlaceReviewsByUser = async (userId, reviewType = null) => {
   }
 };
 
-/* ------------------------------------------------------------
-    🎯 5. 공연장 리뷰 작성 (POST)
------------------------------------------------------------- */
 export const createPlaceReview = async (dto) => {
   try {
     const res = await axiosInstance.post(`${placeBase}`, dto);
-
     if (res.data.success) return res.data.data;
     throw new Error("공연장 리뷰 작성 실패");
   } catch (err) {
@@ -238,13 +178,9 @@ export const createPlaceReview = async (dto) => {
   }
 };
 
-/* ------------------------------------------------------------
-    🎯 6. 공연장 리뷰 수정 (PUT /{reviewId})
------------------------------------------------------------- */
 export const updatePlaceReview = async (reviewId, dto) => {
   try {
     const res = await axiosInstance.put(`${placeBase}/${reviewId}`, dto);
-
     if (res.data.success) return res.data.data;
     throw new Error("공연장 리뷰 수정 실패");
   } catch (err) {
@@ -253,13 +189,9 @@ export const updatePlaceReview = async (reviewId, dto) => {
   }
 };
 
-/* ------------------------------------------------------------
-    🎯 7. 공연장 리뷰 삭제 (DELETE /{reviewId})
------------------------------------------------------------- */
 export const deletePlaceReview = async (reviewId) => {
   try {
     const res = await axiosInstance.delete(`${placeBase}/${reviewId}`);
-
     if (res.data.success) return true;
     throw new Error("공연장 리뷰 삭제 실패");
   } catch (err) {
@@ -267,6 +199,7 @@ export const deletePlaceReview = async (reviewId) => {
     throw err;
   }
 };
+
 
 /* ============================================================
     모듈형 export 묶음

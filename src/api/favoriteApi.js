@@ -5,6 +5,12 @@
     - 공연장 리뷰 관심 (Place Review Favorite)
 ============================================================ */
 
+
+
+/* ============================================================
+    💛 Favorite API (관심/좋아요 관련 전체)
+============================================================ */
+
 import axiosInstance from "./axiosInstance";
 
 /* -------------------------------
@@ -18,13 +24,10 @@ const placeReviewBase = "/favorites/place-reviews";
     🎭 PERFORMANCE FAVORITE (공연 관심)
 ============================================================ */
 
-/* ------------------------------------------------------------
-    1) 공연 관심 토글 (POST /favorites/performances/{performanceId})
------------------------------------------------------------- */
 export const togglePerformanceFavorite = async (performanceId) => {
   try {
     const res = await axiosInstance.post(`${performanceBase}/${performanceId}`);
-    if (res.data.success) return res.data.data; // true/false
+    if (res.data.success) return res.data.data;
     throw new Error("공연 관심 토글 실패");
   } catch (err) {
     console.error("❌ togglePerformanceFavorite 오류:", err);
@@ -32,13 +35,10 @@ export const togglePerformanceFavorite = async (performanceId) => {
   }
 };
 
-/* ------------------------------------------------------------
-    2) 공연 관심 여부 조회 (GET /favorites/performances/{performanceId})
------------------------------------------------------------- */
 export const isPerformanceLiked = async (performanceId) => {
   try {
     const res = await axiosInstance.get(`${performanceBase}/${performanceId}`);
-    if (res.data.success) return res.data.data; // true/false
+    if (res.data.success) return res.data.data;
     throw new Error("공연 관심 여부 조회 실패");
   } catch (err) {
     console.error("❌ isPerformanceLiked 오류:", err);
@@ -46,13 +46,11 @@ export const isPerformanceLiked = async (performanceId) => {
   }
 };
 
-/* ------------------------------------------------------------
-    3) 내가 좋아요한 공연 ID 목록 (GET /favorites/performances/ids)
------------------------------------------------------------- */
+/* 🔥 수정됨: 배열 null-safe */
 export const fetchFavoritePerformanceIds = async () => {
   try {
     const res = await axiosInstance.get(`${performanceBase}/ids`);
-    if (res.data.success) return res.data.data; // 리스트
+    if (res.data.success) return res.data.data ?? [];
     throw new Error("관심 공연 ID 목록 조회 실패");
   } catch (err) {
     console.error("❌ fetchFavoritePerformanceIds 오류:", err);
@@ -60,9 +58,6 @@ export const fetchFavoritePerformanceIds = async () => {
   }
 };
 
-/* ------------------------------------------------------------
-    4) 마이페이지 공연 관심 상세 목록 조회 (GET /favorites/performances)
------------------------------------------------------------- */
 export const fetchFavoritePerformances = async () => {
   try {
     const res = await axiosInstance.get(`${performanceBase}`);
@@ -78,16 +73,12 @@ export const fetchFavoritePerformances = async () => {
     📝 PERFORMANCE REVIEW FAVORITE (공연 리뷰 관심)
 ============================================================ */
 
-/* ------------------------------------------------------------
-    1) 공연 리뷰 관심 토글 (POST /favorites/performance-reviews/{reviewId})
------------------------------------------------------------- */
 export const togglePerformanceReviewFavorite = async (performanceReviewId) => {
   try {
     const res = await axiosInstance.post(
       `${performanceReviewBase}/${performanceReviewId}`
     );
-
-    if (res.data.success) return res.data.data; // true/false
+    if (res.data.success) return res.data.data;
     throw new Error("공연 리뷰 관심 토글 실패");
   } catch (err) {
     console.error("❌ togglePerformanceReviewFavorite 오류:", err);
@@ -95,15 +86,11 @@ export const togglePerformanceReviewFavorite = async (performanceReviewId) => {
   }
 };
 
-/* ------------------------------------------------------------
-    2) 공연 리뷰 관심 여부 조회 (GET /favorites/performance-reviews/{reviewId})
------------------------------------------------------------- */
 export const isPerformanceReviewLiked = async (performanceReviewId) => {
   try {
     const res = await axiosInstance.get(
       `${performanceReviewBase}/${performanceReviewId}`
     );
-
     if (res.data.success) return res.data.data;
     throw new Error("공연 리뷰 관심 여부 조회 실패");
   } catch (err) {
@@ -112,13 +99,11 @@ export const isPerformanceReviewLiked = async (performanceReviewId) => {
   }
 };
 
-/* ------------------------------------------------------------
-    3) 내가 좋아요한 공연 리뷰 ID 목록 (GET /favorites/performance-reviews/ids)
------------------------------------------------------------- */
+/* 🔥 수정됨 */
 export const fetchFavoritePerformanceReviewIds = async () => {
   try {
     const res = await axiosInstance.get(`${performanceReviewBase}/ids`);
-    if (res.data.success) return res.data.data;
+    if (res.data.success) return res.data.data ?? [];
     throw new Error("관심 공연 리뷰 ID 목록 조회 실패");
   } catch (err) {
     console.error("❌ fetchFavoritePerformanceReviewIds 오류:", err);
@@ -126,9 +111,6 @@ export const fetchFavoritePerformanceReviewIds = async () => {
   }
 };
 
-/* ------------------------------------------------------------
-    4) 내가 좋아요한 공연 리뷰 상세 목록 조회 (GET /favorites/performance-reviews)
------------------------------------------------------------- */
 export const fetchFavoritePerformanceReviews = async () => {
   try {
     const res = await axiosInstance.get(`${performanceReviewBase}`);
@@ -144,15 +126,9 @@ export const fetchFavoritePerformanceReviews = async () => {
     🏟️ PLACE REVIEW FAVORITE (공연장 리뷰 관심)
 ============================================================ */
 
-/* ------------------------------------------------------------
-    1) 공연장 리뷰 관심 토글 (POST /favorites/place-reviews/{placeReviewId})
------------------------------------------------------------- */
 export const togglePlaceReviewFavorite = async (placeReviewId) => {
   try {
-    const res = await axiosInstance.post(
-      `${placeReviewBase}/${placeReviewId}`
-    );
-
+    const res = await axiosInstance.post(`${placeReviewBase}/${placeReviewId}`);
     if (res.data.success) return res.data.data;
     throw new Error("공연장 리뷰 관심 토글 실패");
   } catch (err) {
@@ -161,15 +137,9 @@ export const togglePlaceReviewFavorite = async (placeReviewId) => {
   }
 };
 
-/* ------------------------------------------------------------
-    2) 공연장 리뷰 관심 여부 조회 (GET /favorites/place-reviews/{placeReviewId})
------------------------------------------------------------- */
 export const isPlaceReviewLiked = async (placeReviewId) => {
   try {
-    const res = await axiosInstance.get(
-      `${placeReviewBase}/${placeReviewId}`
-    );
-
+    const res = await axiosInstance.get(`${placeReviewBase}/${placeReviewId}`);
     if (res.data.success) return res.data.data;
     throw new Error("공연장 리뷰 관심 여부 조회 실패");
   } catch (err) {
@@ -178,13 +148,11 @@ export const isPlaceReviewLiked = async (placeReviewId) => {
   }
 };
 
-/* ------------------------------------------------------------
-    3) 내가 좋아요한 공연장 리뷰 ID 목록 (GET /favorites/place-reviews/ids)
------------------------------------------------------------- */
+/* 🔥 수정됨 */
 export const fetchFavoritePlaceReviewIds = async () => {
   try {
     const res = await axiosInstance.get(`${placeReviewBase}/ids`);
-    if (res.data.success) return res.data.data;
+    if (res.data.success) return res.data.data ?? [];
     throw new Error("관심 공연장 리뷰 ID 목록 조회 실패");
   } catch (err) {
     console.error("❌ fetchFavoritePlaceReviewIds 오류:", err);
@@ -192,9 +160,6 @@ export const fetchFavoritePlaceReviewIds = async () => {
   }
 };
 
-/* ------------------------------------------------------------
-    4) 공연장 리뷰 관심 상세 목록 조회 (GET /favorites/place-reviews)
------------------------------------------------------------- */
 export const fetchFavoritePlaceReviews = async () => {
   try {
     const res = await axiosInstance.get(`${placeReviewBase}`);
@@ -205,6 +170,8 @@ export const fetchFavoritePlaceReviews = async () => {
     throw err;
   }
 };
+
+
 
 /* ============================================================
     모듈 종합 export
