@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import styles from './MainPlacePage.module.css';
 import RegionFilter from '../../components/place/RegionFilter';
 import PlaceApiCard from '../../components/cards/PlaceApiCard';
 import { usePlaceList } from '../../hooks/usePlaceList';
+import { setActiveTab } from '../../store/placeSlice';
 
 const MainPlacePage = () => {
-  const [activeTab, setActiveTab] = useState('map');
+  const dispatch = useDispatch();
+  const activeTab = useSelector((state) => state.place.activeTab);
   const [selected, setSelected] = useState({ region: '서울', district: '전체' });
+
+  const handleTabChange = (tab) => {
+    dispatch(setActiveTab(tab));
+  };
 
   /** API 연동 */
   const { places, sentinelRef, loading, totalCount } = usePlaceList({
@@ -23,13 +30,13 @@ const MainPlacePage = () => {
       <div className={styles.tabContainer}>
         <button 
           className={`${styles.tab} ${activeTab === 'map' ? styles.active : ''}`}
-          onClick={() => setActiveTab('map')}
+          onClick={() => handleTabChange('map')}
         >
           지도
         </button>
         <button 
           className={`${styles.tab} ${activeTab === 'list' ? styles.active : ''}`}
-          onClick={() => setActiveTab('list')}
+          onClick={() => handleTabChange('list')}
         >
           지역목록
         </button>

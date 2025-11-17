@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { setSelectedCategory, setShowOngoingOnly } from "../../store/performanceSlice";
 
 import styles from "./MainCulturePage.module.css";
 import { usePerformanceList } from "../../hooks/usePerformanceList";
@@ -7,14 +9,17 @@ import PerformanceApiCard from "../../components/cards/PerformanceApiCard";
 
 const MainCulturePage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const searchRef = useRef(null);
 
-  /** 상태값 */
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  /** Redux 상태 */
+  const selectedCategory = useSelector((state) => state.performance.selectedCategory);
+  const showOngoingOnly = useSelector((state) => state.performance.showOngoingOnly);
+  
+  /** 로컬 상태 */
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
-  const [showOngoingOnly, setShowOngoingOnly] = useState(false);
 
   /** ⭐ 영어 → 한국어 장르명 매핑 */
   const categoryMapForRequest = {
@@ -106,7 +111,7 @@ const MainCulturePage = () => {
               className={`${styles.categoryTab} ${
                 selectedCategory === c.id ? styles.activeCategory : ""
               }`}
-              onClick={() => setSelectedCategory(c.id)}
+              onClick={() => dispatch(setSelectedCategory(c.id))}
             >
               {c.label}
             </button>
@@ -118,7 +123,7 @@ const MainCulturePage = () => {
             <input
               type="checkbox"
               checked={showOngoingOnly}
-              onChange={(e) => setShowOngoingOnly(e.target.checked)}
+              onChange={(e) => dispatch(setShowOngoingOnly(e.target.checked))}
               className={styles.checkbox}
             />
             <span className={styles.checkboxText}>진행중인 공연만 보기</span>

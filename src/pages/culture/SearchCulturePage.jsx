@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { setSelectedCategory, setShowOngoingOnly, setSearchQuery as setSearchQueryAction } from "../../store/performanceSlice";
 
 import styles from "./MainCulturePage.module.css";
 import { usePerformanceList } from "../../hooks/usePerformanceList";
@@ -7,22 +9,27 @@ import PerformanceApiCard from "../../components/cards/PerformanceApiCard";
 
 const SearchCulturePage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const searchRef = useRef(null);
 
   // URL에서 검색어 가져오기 (공백 제거)
   const keywordFromUrl = (searchParams.get("q") || "").trim();
 
-  /** 상태값 */
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState(keywordFromUrl);
-  const [showOngoingOnly, setShowOngoingOnly] = useState(false);
+  /** Redux 상태 */
+  const selectedCategory = useSelector((state) => state.performance.selectedCategory);
+  const showOngoingOnly = useSelector((state) => state.performance.showOngoingOnly);
+  const reduxSearchQuery = useSelector((state) => state.performance.searchQuery);
+  
+  /** 로컬 상태 */
+  const [searchQuery, setSearchQuery] = useState(keywordFromUrl || reduxSearchQuery);
 
   /** URL 검색어 변경 시 검색창 업데이트 */
   useEffect(() => {
     const keyword = (searchParams.get("q") || "").trim();
     setSearchQuery(keyword);
-  }, [searchParams]);
+    dispatch(setSearchQueryAction(keyword));
+  }, [searchParams, dispatch]);
 
   /** ⭐ 영어 → 한국어 장르명 매핑 */
   const categoryMapForRequest = {
@@ -108,7 +115,7 @@ const SearchCulturePage = () => {
               className={`${styles.categoryTab} ${
                 selectedCategory === c.id ? styles.activeCategory : ""
               }`}
-              onClick={() => setSelectedCategory(c.id)}
+              onClick={() => dispatch(setSelectedCategory(c.id))}
             >
               {c.label}
             </button>
@@ -120,7 +127,7 @@ const SearchCulturePage = () => {
             <input
               type="checkbox"
               checked={showOngoingOnly}
-              onChange={(e) => setShowOngoingOnly(e.target.checked)}
+              onChange={(e) => dispatch(setShowOngoingOnly(e.target.checked))}
               className={styles.checkbox}
             />
             <span className={styles.checkboxText}>진행중인 공연만 보기</span>
