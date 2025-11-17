@@ -10,6 +10,7 @@ import OpenChatSection from '../../components/culture/OpenChatSection';
 import ReviewCard from '../../components/culture/ReviewCard';
 import { fetchPerformanceBasic } from '../../api/performanceApi';
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
+import { usePerformanceRelations } from '../../hooks/usePerformanceRelations';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -32,6 +33,10 @@ const DetailPerformancePage = () => {
   const [performance, setPerformance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // 예매처 목록 조회
+  const performanceId = performance?.id || performance?.performanceId || id;
+  const { bookingSites } = usePerformanceRelations(performanceId);
 
   // 샘플 후기 데이터
   const sampleReviews = [
@@ -820,12 +825,6 @@ const DetailPerformancePage = () => {
     { id: 'venue', label: '공연장 정보' }
   ];
 
-  const bookingSites = [
-    { name: "티켓링크", logo: "TL" },
-    { name: "네이버 예약", logo: "N", color: "#03C75A" },
-    { name: "yes24", logo: "Y" },
-    { name: "NOL", logo: "N" }
-  ];
 
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
