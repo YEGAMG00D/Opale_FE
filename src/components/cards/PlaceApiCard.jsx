@@ -1,7 +1,7 @@
 // src/components/cards/PlaceApiCard.jsx
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "./PlaceApiCard.module.css";
 
 const PlaceApiCard = ({
@@ -13,8 +13,18 @@ const PlaceApiCard = ({
   stageCount,
   onClick
 }) => {
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick(id);
+    } else {
+      navigate(`/place/${id}`);
+    }
+  };
+
   return (
-    <li className={styles.placeItem} onClick={() => onClick?.(id)}>
+    <li className={styles.placeItem} onClick={handleCardClick}>
       <div className={styles.placeMeta}>
         <span className={styles.placeName}>{name}</span>
         <div className={styles.placeDetails}>

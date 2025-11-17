@@ -3,12 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styles from './DetailPlacePage.module.css';
 import PlaceShowHistory from '../../components/place/PlaceShowHistory';
 import PlaceReviewCard from '../../components/place/PlaceReviewCard';
-import { getPlaceById } from '../../data/placeData';
+import { usePlaceDetail } from '../../hooks/usePlaceDetail';
+import { usePlaceFacilities } from '../../hooks/usePlaceFacilities';
 
 const DetailPlacePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const place = getPlaceById(Number(id));
+  const { place, loading, error } = usePlaceDetail(id);
+  const { convenienceFacilities, parkingFacilities } = usePlaceFacilities(id);
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [writeForm, setWriteForm] = useState({ title: '', content: '', rating: 5 });
 
@@ -32,11 +34,21 @@ const DetailPlacePage = () => {
     }
   ];
 
-  if (!place) {
+  if (loading) {
     return (
       <div className={styles.container}>
         <div className={styles.error}>
-          <p>공연장 정보를 찾을 수 없습니다.</p>
+          <p>공연장 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !place) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.error}>
+          <p>{error || '공연장 정보를 찾을 수 없습니다.'}</p>
           <button onClick={() => navigate('/place')} className={styles.backBtn}>
             목록으로 돌아가기
           </button>
@@ -100,16 +112,16 @@ const DetailPlacePage = () => {
                 <div className={styles.facilities}>
                   <div className={styles.facilityGroup}>
                     <span className={styles.facilityLabel}>편의시설:</span>
-                    {place.convenienceFacilities.length > 0 ? (
-                      <span className={styles.facilityItem}>√ {place.convenienceFacilities.join(', ')}</span>
+                    {convenienceFacilities.length > 0 ? (
+                      <span className={styles.facilityItem}>√ {convenienceFacilities.join(', ')}</span>
                     ) : (
                       <span className={styles.noFacility}>-</span>
                     )}
                   </div>
                   <div className={styles.facilityGroup}>
                     <span className={styles.facilityLabel}>주차시설:</span>
-                    {place.parkingFacilities.length > 0 ? (
-                      <span className={styles.facilityItem}>√ {place.parkingFacilities.join(', ')}</span>
+                    {parkingFacilities.length > 0 ? (
+                      <span className={styles.facilityItem}>√ {parkingFacilities.join(', ')}</span>
                     ) : (
                       <span className={styles.noFacility}>-</span>
                     )}
