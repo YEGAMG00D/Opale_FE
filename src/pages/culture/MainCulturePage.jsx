@@ -9,6 +9,7 @@ const MainCulturePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
+  const [showOngoingOnly, setShowOngoingOnly] = useState(false);
   const searchRef = useRef(null);
 
   const performances = [
@@ -323,7 +324,7 @@ const MainCulturePage = () => {
       rating: 4.8,
       reviewCount: 342,
       keywords: ["콘서트", "K-pop", "NCT"],
-      category: "concert",
+      category: "popular",
       status: "ended"
     },
     {
@@ -337,7 +338,7 @@ const MainCulturePage = () => {
       rating: 0,
       reviewCount: 0,
       keywords: ["콘서트", "페스티벌", "K-pop"],
-      category: "concert",
+      category: "popular",
       status: "upcoming"
     },
     {
@@ -351,7 +352,7 @@ const MainCulturePage = () => {
       rating: 0,
       reviewCount: 0,
       keywords: ["콘서트", "K-pop", "아이유"],
-      category: "concert",
+      category: "popular",
       status: "upcoming"
     },
     {
@@ -365,7 +366,7 @@ const MainCulturePage = () => {
       rating: 4.9,
       reviewCount: 567,
       keywords: ["콘서트", "K-pop", "BTS"],
-      category: "concert",
+      category: "popular",
       status: "ended"
     },
     {
@@ -379,7 +380,7 @@ const MainCulturePage = () => {
       rating: 0,
       reviewCount: 0,
       keywords: ["콘서트", "K-pop", "뉴진스"],
-      category: "concert",
+      category: "popular",
       status: "upcoming"
     },
     {
@@ -393,7 +394,7 @@ const MainCulturePage = () => {
       rating: 4.7,
       reviewCount: 289,
       keywords: ["콘서트", "K-pop", "세븐틴"],
-      category: "concert",
+      category: "popular",
       status: "ended"
     },
     {
@@ -407,8 +408,251 @@ const MainCulturePage = () => {
       rating: 0,
       reviewCount: 0,
       keywords: ["콘서트", "K-pop", "르세라핌"],
-      category: "concert",
+      category: "popular",
       status: "upcoming"
+    },
+    // 클래식/오페라 추가
+    {
+      id: 29,
+      title: "베토벤 교향곡 9번",
+      subtitle: "BEETHOVEN SYMPHONY NO.9",
+      description: "베토벤의 불멸의 명작",
+      date: "2025.03.15 ~ 2025.03.16",
+      venue: "예술의전당 콘서트홀",
+      image: "wicked", // 임시 이미지
+      rating: 4.6,
+      reviewCount: 178,
+      keywords: ["클래식", "교향곡", "베토벤"],
+      category: "classical",
+      status: "upcoming"
+    },
+    {
+      id: 30,
+      title: "카르멘",
+      subtitle: "CARMEN",
+      description: "비제의 대표 오페라",
+      date: "2025.04.10 ~ 2025.04.13",
+      venue: "예술의전당 오페라하우스",
+      image: "moulin-rouge", // 임시 이미지
+      rating: 4.7,
+      reviewCount: 201,
+      keywords: ["오페라", "비제", "클래식"],
+      category: "classical",
+      status: "upcoming"
+    },
+    {
+      id: 31,
+      title: "모차르트 레퀴엠",
+      subtitle: "MOZART REQUIEM",
+      description: "모차르트의 마지막 작품",
+      date: "2025.05.20 ~ 2025.05.21",
+      venue: "세종문화회관 대극장",
+      image: "kinky-boots", // 임시 이미지
+      rating: 4.8,
+      reviewCount: 156,
+      keywords: ["클래식", "모차르트", "레퀴엠"],
+      category: "classical",
+      status: "upcoming"
+    },
+    {
+      id: 32,
+      title: "차이콥스키 발레 갈라",
+      subtitle: "TCHAIKOVSKY BALLET GALA",
+      description: "차이콥스키의 발레 명작 모음",
+      date: "2024.12.10 ~ 2024.12.12",
+      venue: "예술의전당 오페라하우스",
+      image: "hanbok-man", // 임시 이미지
+      rating: 4.9,
+      reviewCount: 234,
+      keywords: ["발레", "차이콥스키", "클래식"],
+      category: "classical",
+      status: "ended"
+    },
+    // 댄스/발레 추가
+    {
+      id: 33,
+      title: "호두까기 인형",
+      subtitle: "THE NUTCRACKER",
+      description: "크리스마스의 대표 발레",
+      date: "2025.12.15 ~ 2025.12.25",
+      venue: "세종문화회관 대극장",
+      image: "death-note", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["발레", "크리스마스", "차이콥스키"],
+      category: "classical",
+      status: "upcoming"
+    },
+    {
+      id: 34,
+      title: "백조의 호수",
+      subtitle: "SWAN LAKE",
+      description: "차이콥스키의 대표 발레",
+      date: "2025.06.01 ~ 2025.06.08",
+      venue: "예술의전당 오페라하우스",
+      image: "rent", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["발레", "차이콥스키", "클래식"],
+      category: "classical",
+      status: "upcoming"
+    },
+    {
+      id: 35,
+      title: "현대무용 갈라",
+      subtitle: "MODERN DANCE GALA",
+      description: "한국 현대무용의 정수",
+      date: "2025.03.20 ~ 2025.03.22",
+      venue: "국립극장 달오름극장",
+      image: "wicked", // 임시 이미지
+      rating: 4.5,
+      reviewCount: 123,
+      keywords: ["현대무용", "댄스", "한국"],
+      category: "traditional",
+      status: "upcoming"
+    },
+    // 코미디 추가
+    {
+      id: 36,
+      title: "코미디 페스티벌",
+      subtitle: "COMEDY FESTIVAL 2025",
+      description: "한국 최고의 코미디언들이 모인다",
+      date: "2025.04.01 ~ 2025.04.06",
+      venue: "올림픽공원 올림픽홀",
+      image: "moulin-rouge", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["코미디", "스탠드업", "페스티벌"],
+      category: "play",
+      status: "upcoming"
+    },
+    {
+      id: 37,
+      title: "개그콘서트 라이브",
+      subtitle: "GAG CONCERT LIVE",
+      description: "TV에서 만나던 개그콘서트를 무대에서",
+      date: "2025.05.10 ~ 2025.05.11",
+      venue: "잠실실내체육관",
+      image: "kinky-boots", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["코미디", "개그", "라이브"],
+      category: "play",
+      status: "upcoming"
+    },
+    {
+      id: 38,
+      title: "웃찾사 라이브",
+      subtitle: "LAUGH OUT LOUD LIVE",
+      description: "웃음이 터지는 스탠드업 코미디",
+      date: "2024.11.20 ~ 2024.11.22",
+      venue: "디큐브 링크아트센터",
+      image: "hanbok-man", // 임시 이미지
+      rating: 4.6,
+      reviewCount: 189,
+      keywords: ["코미디", "스탠드업", "웃음"],
+      category: "play",
+      status: "ended"
+    },
+    // 전통/국악 추가
+    {
+      id: 39,
+      title: "판소리 명창 갈라",
+      subtitle: "PANSORI MASTER GALA",
+      description: "한국 전통 판소리의 정수",
+      date: "2025.03.25 ~ 2025.03.26",
+      venue: "국립국악원 예악당",
+      image: "death-note", // 임시 이미지
+      rating: 4.7,
+      reviewCount: 145,
+      keywords: ["국악", "판소리", "전통"],
+      category: "traditional",
+      status: "upcoming"
+    },
+    {
+      id: 40,
+      title: "사물놀이 페스티벌",
+      subtitle: "SAMULNORI FESTIVAL",
+      description: "한국 전통 타악기의 화려한 연주",
+      date: "2025.05.15 ~ 2025.05.17",
+      venue: "세종문화회관 대극장",
+      image: "rent", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["국악", "사물놀이", "타악기"],
+      category: "traditional",
+      status: "upcoming"
+    },
+    {
+      id: 41,
+      title: "국악 오케스트라",
+      subtitle: "KOREAN TRADITIONAL ORCHESTRA",
+      description: "전통과 현대가 만나는 국악",
+      date: "2024.10.15 ~ 2024.10.16",
+      venue: "예술의전당 콘서트홀",
+      image: "wicked", // 임시 이미지
+      rating: 4.5,
+      reviewCount: 167,
+      keywords: ["국악", "오케스트라", "전통"],
+      category: "traditional",
+      status: "ended"
+    },
+    // 어린이/가족 추가
+    {
+      id: 42,
+      title: "인어공주 뮤지컬",
+      subtitle: "THE LITTLE MERMAID MUSICAL",
+      description: "어린이를 위한 뮤지컬",
+      date: "2025.06.10 ~ 2025.08.31",
+      venue: "디큐브 링크아트센터",
+      image: "moulin-rouge", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["어린이", "가족", "뮤지컬"],
+      category: "musical",
+      status: "upcoming"
+    },
+    {
+      id: 43,
+      title: "피터팬 어드벤처",
+      subtitle: "PETER PAN ADVENTURE",
+      description: "네버랜드로 떠나는 모험",
+      date: "2025.07.01 ~ 2025.08.15",
+      venue: "충무아트센터 대극장",
+      image: "kinky-boots", // 임시 이미지
+      rating: 0,
+      reviewCount: 0,
+      keywords: ["어린이", "가족", "모험"],
+      category: "musical",
+      status: "upcoming"
+    },
+    {
+      id: 44,
+      title: "뽀로로와 친구들",
+      subtitle: "PORORO AND FRIENDS",
+      description: "뽀롱뽀롱 뽀로로의 무대",
+      date: "2025.05.01 ~ 2025.05.31",
+      venue: "올림픽공원 올림픽홀",
+      image: "hanbok-man", // 임시 이미지
+      rating: 4.8,
+      reviewCount: 312,
+      keywords: ["어린이", "가족", "뽀로로"],
+      category: "musical",
+      status: "upcoming"
+    },
+    {
+      id: 45,
+      title: "신데렐라 뮤지컬",
+      subtitle: "CINDERELLA MUSICAL",
+      description: "어린이를 위한 클래식 뮤지컬",
+      date: "2024.12.20 ~ 2025.01.05",
+      venue: "세종문화회관 대극장",
+      image: "death-note", // 임시 이미지
+      rating: 4.6,
+      reviewCount: 234,
+      keywords: ["어린이", "가족", "뮤지컬"],
+      category: "musical",
+      status: "ongoing"
     }
   ];
 
@@ -438,7 +682,9 @@ const MainCulturePage = () => {
     { id: 'all', label: '전체' },
     { id: 'musical', label: '뮤지컬' },
     { id: 'play', label: '연극' },
-    { id: 'concert', label: '콘서트' }
+    { id: 'popular', label: '대중음악' },
+    { id: 'classical', label: '서양음악(클래식)' },
+    { id: 'traditional', label: '한국음악(국악)' }
   ];
 
   // 검색어 변경 시 제안 필터링
@@ -486,9 +732,101 @@ const MainCulturePage = () => {
     navigate(`/culture/search?q=${encodeURIComponent(suggestion.title)}`);
   };
 
-  const filteredPerformances = selectedCategory === 'all' 
-    ? performances 
-    : performances.filter(performance => performance.category === selectedCategory);
+  // 날짜 기반으로 진행중인 공연인지 확인하는 함수
+  const isOngoingPerformance = (performance) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // 날짜 문자열 파싱 (예: "2025.11.27~2026.02.22" 또는 "2025.7.12 Flying Soon")
+    const dateStr = performance.date;
+    
+    // "Flying Soon" 같은 경우는 upcoming으로 처리
+    if (dateStr.includes('Flying Soon') || dateStr.toLowerCase().includes('upcoming')) {
+      return false;
+    }
+    
+    // 날짜 범위 추출 (공백이나 - 로도 구분 가능)
+    const separators = ['~', '-', ' '];
+    let dateRange = [];
+    
+    for (const sep of separators) {
+      if (dateStr.includes(sep)) {
+        dateRange = dateStr.split(sep).map(d => d.trim()).filter(d => d.length > 0);
+        if (dateRange.length >= 2) break;
+      }
+    }
+    
+    // 구분자가 없으면 단일 날짜로 처리
+    if (dateRange.length === 0) {
+      dateRange = [dateStr.trim()];
+    }
+    
+    let startDate = null;
+    let endDate = null;
+    
+    // 날짜 파싱 함수
+    const parseDate = (dateString) => {
+      // 점(.)을 제거하고 숫자만 추출
+      const cleaned = dateString.replace(/[^\d]/g, '');
+      if (cleaned.length < 6) return null;
+      
+      // YYYYMMDD 형식으로 변환
+      let year, month, day;
+      
+      if (cleaned.length === 8) {
+        // YYYYMMDD
+        year = parseInt(cleaned.substring(0, 4));
+        month = parseInt(cleaned.substring(4, 6)) - 1;
+        day = parseInt(cleaned.substring(6, 8));
+      } else if (cleaned.length >= 6) {
+        // YYYYMM 또는 YYYYMMD
+        year = parseInt(cleaned.substring(0, 4));
+        month = parseInt(cleaned.substring(4, 6)) - 1;
+        day = cleaned.length >= 7 ? parseInt(cleaned.substring(6)) : 1;
+      } else {
+        return null;
+      }
+      
+      return new Date(year, month, day);
+    };
+    
+    if (dateRange.length >= 2) {
+      // 범위가 있는 경우
+      startDate = parseDate(dateRange[0]);
+      endDate = parseDate(dateRange[1]);
+    } else if (dateRange.length === 1) {
+      // 단일 날짜인 경우
+      startDate = parseDate(dateRange[0]);
+      endDate = startDate ? new Date(startDate) : null;
+    }
+    
+    if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      // 날짜 파싱 실패 시 status 필드 사용
+      return performance.status === 'ongoing';
+    }
+    
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+    
+    // 오늘이 시작일과 종료일 사이에 있는지 확인
+    return today >= startDate && today <= endDate;
+  };
+
+  const filteredPerformances = useMemo(() => {
+    let filtered = performances;
+    
+    // 카테고리 필터링
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(performance => performance.category === selectedCategory);
+    }
+    
+    // 진행중인 공연만 보기 필터링
+    if (showOngoingOnly) {
+      filtered = filtered.filter(performance => isOngoingPerformance(performance));
+    }
+    
+    return filtered;
+  }, [selectedCategory, showOngoingOnly, performances]);
 
   return (
     <div className={styles.container}>
@@ -558,6 +896,19 @@ const MainCulturePage = () => {
               {category.label}
             </button>
           ))}
+        </div>
+        
+        {/* 진행중인 공연만 보기 체크박스 */}
+        <div className={styles.ongoingFilter}>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={showOngoingOnly}
+              onChange={(e) => setShowOngoingOnly(e.target.checked)}
+              className={styles.checkbox}
+            />
+            <span className={styles.checkboxText}>진행중인 공연만 보기</span>
+          </label>
         </div>
       </div>
 
