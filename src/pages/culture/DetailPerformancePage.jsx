@@ -8,6 +8,8 @@ import PerformanceDetails from '../../components/culture/PerformanceDetails';
 import BookingLinks from '../../components/culture/BookingLinks';
 import OpenChatSection from '../../components/culture/OpenChatSection';
 import ReviewCard from '../../components/culture/ReviewCard';
+import { fetchPerformanceBasic } from '../../api/performanceApi';
+import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -25,6 +27,11 @@ const DetailPerformancePage = () => {
   const [writeType, setWriteType] = useState('review'); // 'review' or 'expectation'
   const [writeForm, setWriteForm] = useState({ title: '', content: '', rating: 5 });
   const [activeReviewTab, setActiveReviewTab] = useState('review'); // 'review' or 'expectation'
+  
+  // API 데이터 상태
+  const [performance, setPerformance] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // 샘플 후기 데이터
   const sampleReviews = [
@@ -744,11 +751,7 @@ const DetailPerformancePage = () => {
     }
   };
 
-  // ID를 숫자로 변환하고 공연 데이터 찾기
-  const performanceId = parseInt(id, 10);
-  const performance = allPerformances[performanceId] || allPerformances[1];
-  
-  // 포스터 이미지 매핑
+  // 포스터 이미지 매핑 (fallback용)
   const posterImages = {
     'wicked': wickedPoster,
     'moulin-rouge': moulinRougePoster,
@@ -758,14 +761,56 @@ const DetailPerformancePage = () => {
     'rent': rentPoster
   };
   
-  // 포스터 이미지가 없는 경우 기본 이미지 사용
-  const getPosterImage = (imageName) => {
+  // 포스터 이미지 가져오기 (API에서 받은 URL 우선, 없으면 fallback)
+  const getPosterImage = () => {
+    if (performance?.poster) {
+      return performance.poster;
+    }
+    // fallback: 기존 로직 유지
+    const imageName = performance?.image || 'wicked';
     return posterImages[imageName] || wickedPoster;
   };
   
-  // 페이지 로드 시 로그 (디버깅용)
+  // API로 공연 기본 정보 조회
   useEffect(() => {
-    console.log('DetailPerformancePage mounted with id:', id);
+    const loadPerformanceData = async () => {
+      if (!id) {
+        setError('공연 ID가 없습니다.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // API 호출
+        const apiData = await fetchPerformanceBasic(id);
+        
+        // 데이터 정규화
+        const normalizedData = normalizePerformanceDetail(apiData);
+        
+        if (normalizedData) {
+          setPerformance(normalizedData);
+        } else {
+          throw new Error('공연 정보를 불러올 수 없습니다.');
+        }
+      } catch (err) {
+        console.error('공연 정보 조회 실패:', err);
+        setError(err.message || '공연 정보를 불러오는 중 오류가 발생했습니다.');
+        
+        // 에러 발생 시 fallback 데이터 사용
+        const performanceId = parseInt(id, 10);
+        const fallbackData = allPerformances[performanceId] || allPerformances[1];
+        if (fallbackData) {
+          setPerformance(fallbackData);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPerformanceData();
   }, [id]);
 
   const tabs = [
@@ -811,10 +856,39 @@ const DetailPerformancePage = () => {
     setWriteForm({ title: '', content: '', rating: 5 });
   };
 
+  // 로딩 중이거나 데이터가 없을 때
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>로딩 중...</div>
+      </div>
+    );
+  }
+
+  if (error && !performance) {
+    return (
+      <div className={styles.container}>
+        <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (!performance) {
+    return (
+      <div className={styles.container}>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          공연 정보를 찾을 수 없습니다.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <PerformancePoster
-        imageUrl={getPosterImage(performance.image)}
+        imageUrl={getPosterImage()}
         isFavorite={isFavorite}
         onFavoriteToggle={toggleFavorite}
       />
@@ -833,7 +907,7 @@ const DetailPerformancePage = () => {
       <PerformanceTrailer
         englishTitle={performance.englishTitle}
         title={performance.title}
-        trailerImage={performance.trailerImage}
+        trailerImage={performance.trailerImage || performance.image}
       />
 
       <PerformanceDetails
@@ -856,7 +930,7 @@ const DetailPerformancePage = () => {
         </button>
       </div>
 
-      <OpenChatSection performanceId={performanceId} />
+      <OpenChatSection performanceId={performance.id || performance.performanceId} />
 
       {/* Tabs */}
       <div className={styles.tabSection}>
@@ -878,12 +952,18 @@ const DetailPerformancePage = () => {
             <div className={styles.reservationContent}>
               <h3 className={styles.contentTitle}>가격</h3>
               <div className={styles.priceList}>
-                {performance.prices.map((price, index) => (
-                  <div key={index} className={styles.priceItem}>
-                    <span className={styles.seatType}>{price.seat}</span>
-                    <span className={styles.seatPrice}>{price.price}</span>
+                {performance.prices && performance.prices.length > 0 ? (
+                  performance.prices.map((price, index) => (
+                    <div key={index} className={styles.priceItem}>
+                      <span className={styles.seatType}>{price.seat}</span>
+                      <span className={styles.seatPrice}>{price.price}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.priceItem}>
+                    <span className={styles.seatType}>가격 정보 없음</span>
                   </div>
-                ))}
+                )}
               </div>
               
               {/* 할인정보 섹션 */}
