@@ -1,29 +1,19 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import styles from './MainPlacePage.module.css';
 import RegionFilter from '../../components/place/RegionFilter';
-import PlaceCard from '../../components/place/PlaceCard';
-import { PLACE_DATA, getPlacesByDistrict } from '../../data/placeData';
+import PlaceApiCard from '../../components/cards/PlaceApiCard';
+import { usePlaceList } from '../../hooks/usePlaceList';
 
 const MainPlacePage = () => {
   const [activeTab, setActiveTab] = useState('map');
   const [selected, setSelected] = useState({ region: '서울', district: '전체' });
 
-  const filteredPlaces = useMemo(() => {
-    // 서울시가 선택된 경우 관할구역 필터링
-    if (selected.region === '서울') {
-      if (selected.district === '전체') {
-        // 서울 전체 공연장 반환
-        return Object.values(PLACE_DATA).filter(p => p.district.includes('구'));
-      } else {
-        // 선택된 관할구역의 공연장만 반환
-        return getPlacesByDistrict(selected.district);
-      }
-    }
-    
-    // 다른 지역 선택 시 (향후 확장용)
-    // 실제 API 연동 시 여기에 다른 지역 데이터 필터링 로직 추가
-    return [];
-  }, [selected]);
+  /** API 연동 */
+  const { places, sentinelRef, loading, totalCount } = usePlaceList({
+    area: null, // 전체 조회
+    keyword: null,
+    sortType: "이름순",
+  });
 
   return (
     <div className={styles.container}>
@@ -63,22 +53,22 @@ const MainPlacePage = () => {
 
           <div className={styles.resultHeader}>
             <span className={styles.resultFilter}>
-              {selected.region} {selected.district !== '전체' ? `> ${selected.district}` : ''}
+              전체
             </span>
-            <span className={styles.resultCount}>총 {filteredPlaces.length}곳</span>
+            <span className={styles.resultCount}>총 {totalCount}곳</span>
           </div>
 
           <ul className={styles.placeList}>
-            {filteredPlaces.map((place) => (
-              <PlaceCard
-                key={place.id}
-                id={place.id}
-                name={place.name}
-                region="서울"
-                district={place.district}
+            {places.map((place, index) => (
+              <PlaceApiCard
+                key={place.id + "_" + index}
+                {...place}
               />
             ))}
           </ul>
+
+          <div ref={sentinelRef} style={{ height: 40 }} />
+          {loading && <p style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>불러오는 중...</p>}
         </div>
       )}
 
