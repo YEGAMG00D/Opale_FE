@@ -7,7 +7,14 @@
   position: relative;
   padding-bottom: 61px; /* Footer 높이만큼 (1px border + 60px min-height) */
   overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
   box-sizing: border-box;
+}
+
+.container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 
@@ -19,7 +26,7 @@
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
-  overflow-y: visible;
+  overflow-y: hidden;
   box-sizing: border-box;
 }
 
@@ -36,7 +43,6 @@
 
 .carouselTrack {
   display: flex;
-  width: 600%;
   height: 100%;
   transition: transform 0.5s ease;
   will-change: transform;
@@ -44,7 +50,7 @@
 }
 
 .carouselSlide {
-  width: 16.666%;
+  width: 100%;
   height: 100%;
   flex-shrink: 0;
   overflow: hidden;
@@ -96,47 +102,61 @@
 
 
 .posterContent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   text-align: center;
-  padding: 20px;
-  max-width: 90%;
-  position: relative;
+  padding: 24px 20px;
+  max-width: 100%;
   z-index: 2;
+  color: white;
 }
 
 .posterTagline {
-  font-size: 12px;
-  margin-bottom: 8px;
-  opacity: 0.9;
+  font-size: 11px;
+  margin-bottom: 6px;
+  opacity: 0.95;
+  font-weight: 500;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
 
 .posterTitle {
-  font-size: 32px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+  line-height: 1.2;
+  letter-spacing: -0.5px;
 }
 
 .posterSubtitle {
   font-size: 14px;
   margin-bottom: 8px;
-  opacity: 0.9;
+  opacity: 0.95;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  font-weight: 500;
 }
 
 .posterDescription {
   font-size: 12px;
-  margin-bottom: 8px;
-  opacity: 0.8;
+  margin-bottom: 10px;
+  opacity: 0.9;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  line-height: 1.4;
 }
 
 .posterDate {
-  font-size: 12px;
+  font-size: 13px;
   margin-bottom: 4px;
-  font-weight: 500;
+  font-weight: 600;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
 
 .posterVenue {
-  font-size: 11px;
-  opacity: 0.8;
+  font-size: 12px;
+  opacity: 0.9;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
 
 .carouselIndicators {
@@ -144,6 +164,13 @@
   justify-content: center;
   gap: 8px;
   margin-top: 16px;
+  padding: 8px;
+  cursor: grab;
+  user-select: none;
+}
+
+.carouselIndicators:active {
+  cursor: grabbing;
 }
 
 .indicator {
