@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styles from './DetailPlacePage.module.css';
 import PlaceShowHistory from '../../components/place/PlaceShowHistory';
 import PlaceReviewCard from '../../components/place/PlaceReviewCard';
+import PlaceMap from '../../components/place/PlaceMap';
 import { usePlaceDetail } from '../../hooks/usePlaceDetail';
 import { usePlaceFacilities } from '../../hooks/usePlaceFacilities';
 import { usePlaceStages } from '../../hooks/usePlaceStages';
@@ -93,6 +94,19 @@ const DetailPlacePage = () => {
           <span className={styles.count}>({place.reviewCount || 0})</span>
         </div>
       </div>
+
+      {/* 공연장 지도 */}
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>위치</h2>
+        <PlaceMap 
+          latitude={place.latitude} 
+          longitude={place.longitude}
+          placeName={place.name}
+        />
+      </div>
+
+
+
 
       {/* 공연시설 정보 */}
       <div className={styles.section}>
