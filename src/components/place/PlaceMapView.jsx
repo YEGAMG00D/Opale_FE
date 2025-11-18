@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import styles from './PlaceMapView.module.css';
 import { loadNaverMapScript } from '../../utils/loadNaverMap';
+import PlaceApiCard from '../cards/PlaceApiCard';
 
 /**
  * 여러 공연장 위치를 표시하는 네이버 지도 컴포넌트
@@ -22,6 +23,14 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
   const scaleControlRef = useRef(null);
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
+  
+  // 하단 시트 상태
+  const [sheetHeight, setSheetHeight] = useState(180); // 기본 높이 (px) - 드래그 핸들 + 헤더 + 일부 카드가 보이도록
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStateRef = useRef({ startY: 0, startHeight: 0 });
+  const sheetRef = useRef(null);
+  
+  const MIN_SHEET_HEIGHT = 150; // 최소 높이 - 드래그 핸들과 헤더가 확실히 보이도록
 
   // 지도 초기화 (한 번만 실행)
   useEffect(() => {
@@ -516,6 +525,73 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
     return `${radius}m`;
   };
 
+  // 하단 시트 드래그 시작
+  const handleSheetMouseDown = useCallback((e) => {
+    setIsDragging(true);
+    dragStateRef.current.startY = e.clientY;
+    dragStateRef.current.startHeight = sheetHeight;
+    e.preventDefault();
+  }, [sheetHeight]);
+
+  // 하단 시트 드래그 중
+  const handleSheetMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    
+    const deltaY = dragStateRef.current.startY - e.clientY; // 위로 드래그하면 양수
+    let newHeight = dragStateRef.current.startHeight + deltaY;
+    
+    // 최소/최대 높이 제한
+    const maxHeight = window.innerHeight * 0.8;
+    newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
+    
+    setSheetHeight(newHeight);
+  }, [isDragging]);
+
+  // 하단 시트 드래그 종료
+  const handleSheetMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // 터치 이벤트 핸들러
+  const handleSheetTouchStart = useCallback((e) => {
+    setIsDragging(true);
+    dragStateRef.current.startY = e.touches[0].clientY;
+    dragStateRef.current.startHeight = sheetHeight;
+  }, [sheetHeight]);
+
+  const handleSheetTouchMove = useCallback((e) => {
+    if (!isDragging) return;
+    
+    const deltaY = dragStateRef.current.startY - e.touches[0].clientY;
+    let newHeight = dragStateRef.current.startHeight + deltaY;
+    
+    const maxHeight = window.innerHeight * 0.8;
+    newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
+    
+    setSheetHeight(newHeight);
+  }, [isDragging]);
+
+  const handleSheetTouchEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // 전역 마우스/터치 이벤트 리스너
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleSheetMouseMove);
+      document.addEventListener('mouseup', handleSheetMouseUp);
+      document.addEventListener('touchmove', handleSheetTouchMove, { passive: false });
+      document.addEventListener('touchend', handleSheetTouchEnd);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleSheetMouseMove);
+        document.removeEventListener('mouseup', handleSheetMouseUp);
+        document.removeEventListener('touchmove', handleSheetTouchMove);
+        document.removeEventListener('touchend', handleSheetTouchEnd);
+      };
+    }
+  }, [isDragging, handleSheetMouseMove, handleSheetMouseUp, handleSheetTouchMove, handleSheetTouchEnd]);
+
   return (
     <div className={styles.mapContainer}>
       <div ref={mapRef} className={styles.map} />
@@ -575,6 +651,41 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       {mapError && !mapLoading && (
         <div className={styles.errorOverlay}>
           {mapError}
+        </div>
+      )}
+      
+      {/* 하단 시트 - 공연장 목록 */}
+      {places.length > 0 && (
+        <div 
+          ref={sheetRef}
+          className={styles.bottomSheet}
+          style={{ height: `${sheetHeight}px` }}
+        >
+          {/* 드래그 핸들 */}
+          <div 
+            className={styles.sheetHandle}
+            onMouseDown={handleSheetMouseDown}
+            onTouchStart={handleSheetTouchStart}
+          >
+            <div className={styles.sheetHandleBar} />
+          </div>
+          
+          {/* 시트 헤더 */}
+          <div className={styles.sheetHeader}>
+            <h3 className={styles.sheetTitle}>근처 공연장 {places.length}곳</h3>
+          </div>
+          
+          {/* 공연장 목록 */}
+          <div className={styles.sheetContent}>
+            <ul className={styles.placeList}>
+              {places.map((place, index) => (
+                <PlaceApiCard
+                  key={place.id + "_" + index}
+                  {...place}
+                />
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </div>
