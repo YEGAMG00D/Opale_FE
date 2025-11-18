@@ -17,6 +17,7 @@ import { normalizePerformanceReviews } from '../../services/normalizePerformance
 import { usePerformanceRelations } from '../../hooks/usePerformanceRelations';
 import { usePerformanceInfoImages } from '../../hooks/usePerformanceInfoImages';
 import { usePerformanceBooking } from '../../hooks/usePerformanceBooking';
+import { usePlaceBasic } from '../../hooks/usePlaceBasic';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -56,6 +57,10 @@ const DetailPerformancePage = () => {
   
   // 공연 예매 정보 조회
   const { bookingInfo, loading: bookingLoading } = usePerformanceBooking(performanceId);
+  
+  // 공연장 정보 조회
+  const placeId = performance?.placeId;
+  const { placeInfo, loading: placeLoading } = usePlaceBasic(placeId);
 
 
   // 모든 공연 데이터
@@ -965,7 +970,7 @@ const DetailPerformancePage = () => {
       />
 
       <PerformanceDetails
-        rating={performance.rating}
+        rating={performance.rating ? parseFloat(performance.rating).toFixed(1) : '0.0'}
         reviewCount={performance.reviewCount}
         hashtags={performance.hashtags}
         genre={performance.genre}
@@ -1259,11 +1264,52 @@ const DetailPerformancePage = () => {
           {activeTab === 'venue' && (
             <div className={styles.venueContent}>
               <h3 className={styles.contentTitle}>공연장 정보</h3>
-              <div className={styles.venueInfo}>
-                <p><strong>공연장명:</strong> {performance.venue}</p>
-                <p><strong>주소:</strong> {performance.address}</p>
-                <p><strong>교통편:</strong> 지하철 및 버스 이용 가능</p>
-              </div>
+              {placeLoading ? (
+                <div className={styles.venueLoading}>
+                  <p>공연장 정보를 불러오는 중...</p>
+                </div>
+              ) : (
+                <div className={styles.venueCard}>
+                  <div className={styles.venueInfoItem}>
+                    <div className={styles.venueInfoIcon}>🏛️</div>
+                    <div className={styles.venueInfoContent}>
+                      <div className={styles.venueInfoLabel}>공연장명</div>
+                      <div className={styles.venueInfoValue}>
+                        {placeInfo?.placeName || performance?.venue || '정보 없음'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.venueInfoItem}>
+                    <div className={styles.venueInfoIcon}>📍</div>
+                    <div className={styles.venueInfoContent}>
+                      <div className={styles.venueInfoLabel}>주소</div>
+                      <div className={styles.venueInfoValue}>
+                        {placeInfo?.placeAddress || performance?.address || '정보 없음'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.venueInfoItem}>
+                    <div className={styles.venueInfoIcon}>🚇</div>
+                    <div className={styles.venueInfoContent}>
+                      <div className={styles.venueInfoLabel}>교통편</div>
+                      <div className={styles.venueInfoValue}>
+                        {placeInfo?.transportation || '지하철 및 버스 이용 가능'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {placeId && (
+                    <button
+                      onClick={() => navigate(`/place/${placeId}`)}
+                      className={styles.venueDetailButton}
+                    >
+                      공연장 상세 정보 보기
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

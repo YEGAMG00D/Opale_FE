@@ -78,6 +78,7 @@ export const normalizePerformanceDetail = (apiData) => {
   return {
     id: apiData.performanceId,
     performanceId: apiData.performanceId,
+    placeId: apiData.placeId || null, // 공연장 ID (내부적으로 사용)
     category: apiData.genrenm || '공연',
     title: apiData.title || '',
     englishTitle: apiData.title || '', // 영어 제목은 별도 필드가 없으면 title 사용
