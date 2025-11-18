@@ -188,3 +188,14 @@ button {
     background-color: #f9f9f9;
   }
 }
+
+/* 네이버 지도 줌 컨트롤 위치 조정 (탭 아래 중간 정도) */
+.nmap_zoom_control,
+[class*="zoom"],
+[class*="Zoom"] {
+  top: 80px !important; /* 탭 아래 위치 */
+  right: 12px !important;
+  bottom: auto !important;
+  position: absolute !important;
+  z-index: 1000 !important;
+}

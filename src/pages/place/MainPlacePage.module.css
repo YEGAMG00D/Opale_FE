@@ -143,6 +143,33 @@ h1 {
   overflow: hidden;
 }
 
+.errorMessage,
+.loadingMessage {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  max-width: calc(100% - 40px);
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.errorMessage {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.loadingMessage {
+  background-color: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
 /* 목록 컨테이너 */
 .listContainer {
   margin-bottom: 20px;
