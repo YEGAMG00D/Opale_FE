@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './UpdateMyInfoPage.module.css';
 import FormInputField from '../../../components/signup/FormInputField';
+import FormInputWithButton from '../../../components/signup/FormInputWithButton';
 import { validateNickname, validatePhone, validateAddress, validateDetailAddress } from '../../../utils/validation';
+import { fetchMyInfo, updateMyInfo, checkNicknameDuplicate } from '../../../api/userApi';
 
 const UpdateMyInfoPage = () => {
   const navigate = useNavigate();
@@ -13,6 +15,90 @@ const UpdateMyInfoPage = () => {
     detailAddress: '',
   });
   const [validationMessages, setValidationMessages] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [originalNickname, setOriginalNickname] = useState(''); // 원래 닉네임 저장 (중복 확인 스킵용)
+
+  // 페이지 진입 시 본인 정보 조회
+  useEffect(() => {
+    const loadMyInfo = async () => {
+      try {
+        setLoading(true);
+        const userInfo = await fetchMyInfo();
+        
+        const loadedData = {
+          nickname: userInfo.nickname || '',
+          phone: userInfo.phone || '',
+          address: userInfo.address1 || '',
+          detailAddress: userInfo.address2 || '',
+        };
+        
+        setFormData(loadedData);
+        setOriginalNickname(userInfo.nickname || '');
+        
+        // 모든 필드에 대해 유효성 검사 실행 (원래 값이므로 모두 유효한 것으로 처리)
+        setValidationMessages({
+          nickname: { isValid: true, message: '현재 사용 중인 닉네임입니다.' },
+          phone: validatePhone(loadedData.phone),
+          address: validateAddress(loadedData.address),
+          detailAddress: validateDetailAddress(loadedData.detailAddress),
+        });
+      } catch (err) {
+        console.error('본인 정보 조회 실패:', err);
+        alert('본인 정보를 불러오는데 실패했습니다.');
+        navigate('/my');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMyInfo();
+  }, [navigate]);
+
+  // 닉네임 중복 확인 핸들러
+  const handleCheckNickname = async () => {
+    const nickname = formData.nickname.trim();
+    
+    // 유효성 검사 먼저 실행
+    const nicknameValidation = validateNickname(nickname);
+    if (!nicknameValidation.isValid) {
+      setValidationMessages(prev => ({
+        ...prev,
+        nickname: nicknameValidation
+      }));
+      return;
+    }
+
+    // 원래 닉네임과 같으면 중복 확인 스킵
+    if (nickname === originalNickname) {
+      setValidationMessages(prev => ({
+        ...prev,
+        nickname: { isValid: true, message: '현재 사용 중인 닉네임입니다.' }
+      }));
+      return;
+    }
+
+    try {
+      const result = await checkNicknameDuplicate(nickname);
+      
+      if (result.available) {
+        setValidationMessages(prev => ({
+          ...prev,
+          nickname: { isValid: true, message: '사용 가능한 닉네임입니다.' }
+        }));
+      } else {
+        setValidationMessages(prev => ({
+          ...prev,
+          nickname: { isValid: false, message: '이미 사용 중인 닉네임입니다.' }
+        }));
+      }
+    } catch (err) {
+      console.error('닉네임 중복 확인 실패:', err);
+      setValidationMessages(prev => ({
+        ...prev,
+        nickname: { isValid: false, message: '닉네임 중복 확인에 실패했습니다.' }
+      }));
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,6 +131,14 @@ const UpdateMyInfoPage = () => {
       ...prev,
       [name]: validationResult
     }));
+
+    // 닉네임이 변경되면 중복 확인 상태 초기화 (원래 닉네임이 아닌 경우)
+    if (name === 'nickname' && value !== originalNickname) {
+      setValidationMessages(prev => ({
+        ...prev,
+        nickname: { isValid: null, message: '' }
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -61,24 +155,27 @@ const UpdateMyInfoPage = () => {
       return;
     }
 
-    // TODO: 실제 API 호출로 교체
-    // const response = await updateMyInfo({
-    //   nickname: formData.nickname,
-    //   phone: formData.phone,
-    //   address: formData.address,
-    //   detailAddress: formData.detailAddress
-    // });
+    // 닉네임이 변경되었는데 중복 확인을 안 한 경우
+    if (formData.nickname !== originalNickname && validationMessages?.nickname?.isValid !== true) {
+      alert('닉네임 중복 확인을 해주세요.');
+      return;
+    }
 
-    // 개발용: 성공 가정
-    console.log('개인 정보 변경 요청:', {
-      nickname: formData.nickname,
-      phone: formData.phone,
-      address: formData.address,
-      detailAddress: formData.detailAddress
-    });
+    try {
+      const updateData = {
+        nickname: formData.nickname,
+        phone: formData.phone,
+        address1: formData.address,
+        address2: formData.detailAddress
+      };
 
-    alert('개인 정보가 변경되었습니다.');
-    navigate('/my');
+      await updateMyInfo(updateData);
+      alert('개인 정보가 변경되었습니다.');
+      navigate('/my');
+    } catch (err) {
+      console.error('개인 정보 변경 실패:', err);
+      alert(err.message || '개인 정보 변경에 실패했습니다.');
+    }
   };
 
   const isFormValid = 
@@ -86,6 +183,17 @@ const UpdateMyInfoPage = () => {
     validationMessages?.phone?.isValid === true &&
     validationMessages?.address?.isValid === true &&
     validationMessages?.detailAddress?.isValid === true;
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.title}>
+          <h1>개인 정보 변경</h1>
+        </div>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>로딩 중...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -96,7 +204,7 @@ const UpdateMyInfoPage = () => {
       <div className={styles.content}>
         <div className={styles.card}>
           <div className={styles.stepContent}>
-            <FormInputField
+            <FormInputWithButton
               label="닉네임"
               required
               name="nickname"
@@ -104,6 +212,8 @@ const UpdateMyInfoPage = () => {
               placeholder="닉네임을 입력해주세요 (2-10자)"
               value={formData.nickname}
               onChange={handleInputChange}
+              buttonText="닉네임 중복확인"
+              onButtonClick={handleCheckNickname}
               validation={validationMessages?.nickname || { isValid: null, message: '' }}
             />
 

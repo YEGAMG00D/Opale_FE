@@ -1,29 +1,37 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import styles from './MainPlacePage.module.css';
 import RegionFilter from '../../components/place/RegionFilter';
-import PlaceCard from '../../components/place/PlaceCard';
-import { PLACE_DATA, getPlacesByDistrict } from '../../data/placeData';
+import PlaceApiCard from '../../components/cards/PlaceApiCard';
+import { usePlaceList } from '../../hooks/usePlaceList';
+import { setActiveTab } from '../../store/placeSlice';
 
 const MainPlacePage = () => {
-  const [activeTab, setActiveTab] = useState('map');
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const searchRef = useRef(null);
+  const activeTab = useSelector((state) => state.place.activeTab);
   const [selected, setSelected] = useState({ region: '서울', district: '전체' });
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredPlaces = useMemo(() => {
-    // 서울시가 선택된 경우 관할구역 필터링
-    if (selected.region === '서울') {
-      if (selected.district === '전체') {
-        // 서울 전체 공연장 반환
-        return Object.values(PLACE_DATA).filter(p => p.district.includes('구'));
-      } else {
-        // 선택된 관할구역의 공연장만 반환
-        return getPlacesByDistrict(selected.district);
-      }
-    }
-    
-    // 다른 지역 선택 시 (향후 확장용)
-    // 실제 API 연동 시 여기에 다른 지역 데이터 필터링 로직 추가
-    return [];
-  }, [selected]);
+  const handleTabChange = (tab) => {
+    dispatch(setActiveTab(tab));
+  };
+
+  /** 검색 제출 */
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    navigate(`/place/search?q=${encodeURIComponent(searchQuery.trim())}`);
+  };
+
+  /** API 연동 */
+  const { places, sentinelRef, loading, totalCount } = usePlaceList({
+    area: null, // 전체 조회
+    keyword: null,
+    sortType: "이름순",
+  });
 
   return (
     <div className={styles.container}>
@@ -33,13 +41,13 @@ const MainPlacePage = () => {
       <div className={styles.tabContainer}>
         <button 
           className={`${styles.tab} ${activeTab === 'map' ? styles.active : ''}`}
-          onClick={() => setActiveTab('map')}
+          onClick={() => handleTabChange('map')}
         >
           지도
         </button>
         <button 
           className={`${styles.tab} ${activeTab === 'list' ? styles.active : ''}`}
-          onClick={() => setActiveTab('list')}
+          onClick={() => handleTabChange('list')}
         >
           지역목록
         </button>
@@ -59,26 +67,42 @@ const MainPlacePage = () => {
       {/* 지역목록 탭 내용 */}
       {activeTab === 'list' && (
         <div className={styles.listContainer}>
+          {/* 검색창 */}
+          <div className={styles.searchSection} ref={searchRef}>
+            <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
+              <input
+                type="text"
+                className={styles.searchInput}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="극장명을 입력해주세요"
+              />
+              <button type="submit" className={styles.searchIcon}>
+                🔍
+              </button>
+            </form>
+          </div>
+
           <RegionFilter onChange={setSelected} />
 
           <div className={styles.resultHeader}>
             <span className={styles.resultFilter}>
-              {selected.region} {selected.district !== '전체' ? `> ${selected.district}` : ''}
+              전체
             </span>
-            <span className={styles.resultCount}>총 {filteredPlaces.length}곳</span>
+            <span className={styles.resultCount}>총 {totalCount}곳</span>
           </div>
 
           <ul className={styles.placeList}>
-            {filteredPlaces.map((place) => (
-              <PlaceCard
-                key={place.id}
-                id={place.id}
-                name={place.name}
-                region="서울"
-                district={place.district}
+            {places.map((place, index) => (
+              <PlaceApiCard
+                key={place.id + "_" + index}
+                {...place}
               />
             ))}
           </ul>
+
+          <div ref={sentinelRef} style={{ height: 40 }} />
+          {loading && <p style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>불러오는 중...</p>}
         </div>
       )}
 

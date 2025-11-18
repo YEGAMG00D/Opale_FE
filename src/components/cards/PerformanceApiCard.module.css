@@ -1,0 +1,158 @@
+.card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-2px);
+  }
+  
+  .posterWrapper {
+    width: 100%;
+    height: 240px;    /* 🔥 유지: 포스터 비율 그대로 */
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;  /* ⭐ 장르 배지 위치를 위해 필요 */
+  }
+  
+  .poster {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  /* ⭐ 장르 배지 */
+  .genreBadge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 3px 8px;
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    font-size: 11px;
+    border-radius: 6px;
+    backdrop-filter: blur(3px);
+  }
+  
+  /* Info */
+  .info {
+    padding: 8px 4px 0;
+  }
+  
+  .title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  
+  .venue {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  
+  .date {
+    font-size: 12px;
+    color: #222;
+    margin-bottom: 6px;
+  }
+  
+  .ratingRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  
+  .star {
+    color: #FF69B4;
+    font-size: 12px;
+  }
+  
+  .rating {
+    font-size: 12px;
+  }
+  
+  .count {
+    font-size: 11px;
+    color: #444;
+  }
+  
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  
+  .tag {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+  
+  .summary {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 12px;
+    color: #333;
+    line-height: 1.3;
+  }
+
+
+  .genreBadge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 6px;
+    z-index: 5;
+  }
+
+  /* 하트 버튼 */
+  .favoriteButton {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(3px);
+  }
+
+  .favoriteButton:hover {
+    background: rgba(0, 0, 0, 0.6);
+    transform: scale(1.1);
+  }
+
+  .favoriteButton:active {
+    transform: scale(0.95);
+  }
+
+  .favoriteButton svg {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+  }
+
+  
+
+
+

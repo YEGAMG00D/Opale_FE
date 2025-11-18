@@ -7,27 +7,27 @@ import './MainLayout.css';
 const MainLayout = () => {
   const location = useLocation();
 
-  // 경로에 따라 Header props 결정
-  const getHeaderProps = () => {
-    const pathname = location.pathname;
-    
-    // 공연 상세 페이지 - 숫자 ID 패턴
-    const cultureDetailMatch = pathname.match(/^\/culture\/(\d+)/);
-    if (cultureDetailMatch && !pathname.includes('/culture/search') && pathname !== '/culture/review') {
-      return { showBackButton: true, title: '공연' };
-    }
-    
-    // 공연장 상세 페이지
-    const placeDetailMatch = pathname.match(/^\/place\/(\d+)/);
-    if (placeDetailMatch && !pathname.includes('/place/search')) {
-      return { showBackButton: true, title: '공연장' };
-    }
-    
-    // 채팅방 페이지
-    const chatDetailMatch = pathname.match(/^\/chat\/(\d+)/);
-    if (chatDetailMatch && !pathname.includes('/chat/search')) {
-      return { showBackButton: true, title: '채팅' };
-    }
+    // 경로에 따라 Header props 결정
+    const getHeaderProps = () => {
+      const pathname = location.pathname;
+      
+      // 공연 상세 페이지 - 모든 ID 패턴 (숫자, 문자열 포함)
+      const cultureDetailMatch = pathname.match(/^\/culture\/([^/]+)$/);
+      if (cultureDetailMatch && !pathname.includes('/culture/search') && pathname !== '/culture/review') {
+        return { showBackButton: true, title: null };
+      }
+      
+      // 공연장 상세 페이지 - 모든 ID 패턴 (숫자, 문자열 포함)
+      const placeDetailMatch = pathname.match(/^\/place\/([^/]+)$/);
+      if (placeDetailMatch && !pathname.includes('/place/search')) {
+        return { showBackButton: true, title: null };
+      }
+      
+      // 채팅방 페이지 - 모든 ID 패턴 (숫자, 문자열 포함)
+      const chatDetailMatch = pathname.match(/^\/chat\/([^/]+)$/);
+      if (chatDetailMatch && !pathname.includes('/chat/search')) {
+        return { showBackButton: true, title: null };
+      }
     
     // 기타 상세 페이지들 (마이페이지, 검색 페이지 등)
     if (pathname.startsWith('/my/') || 

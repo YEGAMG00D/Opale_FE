@@ -127,17 +127,10 @@
 
 .categoryTabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 4px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.categoryTabs::-webkit-scrollbar {
-  display: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .categoryTab {
@@ -150,6 +143,8 @@
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  min-width: fit-content;
 }
 
 .categoryTab:hover {
@@ -159,6 +154,35 @@
 .activeCategory {
   background-color: #000000;
   color: #FFFFFF;
+}
+
+/* 진행중인 공연만 보기 필터 */
+.ongoingFilter {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #E5E5E5;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #000000;
+  flex-shrink: 0;
+}
+
+.checkboxText {
+  font-size: 14px;
+  color: #000000;
+  font-weight: 500;
 }
 
 /* Performance Grid */
@@ -192,10 +216,10 @@
   transform: translateY(0);
 }
 
-.performanceCard * {
+/* .performanceCard * {
   pointer-events: none;
   user-select: none;
-}
+} */
 
 .posterCard {
   width: 100%;

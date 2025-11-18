@@ -15,7 +15,7 @@ const PerformanceInfoCard = ({
     <div className={styles.infoCard}>
       <div className={styles.categoryTag}>{category}</div>
       <h1 className={styles.performanceTitle}>
-        {title} <span className={styles.englishTitle}>({englishTitle})</span>
+        {title}
       </h1>
       <div className={styles.infoRow}>
         <div className={styles.infoLabel}>공연장</div>

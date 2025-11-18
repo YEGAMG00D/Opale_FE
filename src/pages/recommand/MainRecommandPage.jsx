@@ -5,24 +5,7 @@ import styles from './MainRecommandPage.module.css';
 
 const MainRecommandPage = () => {
   const navigate = useNavigate();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [startX, setStartX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const sliderRef = useRef(null);
   
-  // 티켓 등록 모달 상태
-  const [showTicketModal, setShowTicketModal] = useState(false);
-  const [ticketStep, setTicketStep] = useState('scan'); // 'scan' or 'manual'
-  const [ticketData, setTicketData] = useState({
-    performanceName: '',
-    performanceDate: '',
-    performanceTime: '',
-    section: '',
-    row: '',
-    number: ''
-  });
-  const [isScanning, setIsScanning] = useState(false);
-
   // 추천 영화 시리즈 데이터
   const recommendedSeries = [
     {
@@ -101,16 +84,81 @@ const MainRecommandPage = () => {
     }
   ];
 
-  // 슬라이드 이동 함수
+  // 상태 관리
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [displayIndex, setDisplayIndex] = useState(recommendedSeries.length * 2); // 두 번째 복제본 영역에서 시작
+  const [startX, setStartX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(true);
+  const sliderRef = useRef(null);
+  
+  // 티켓 등록 모달 상태
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [ticketStep, setTicketStep] = useState('scan'); // 'scan' or 'manual'
+  const [ticketData, setTicketData] = useState({
+    performanceName: '',
+    performanceDate: '',
+    performanceTime: '',
+    section: '',
+    row: '',
+    number: ''
+  });
+  const [isScanning, setIsScanning] = useState(false);
+
+  // 슬라이드 이동 함수 (무한 루프)
   const goToSlide = (index) => {
+    setIsTransitioning(true);
+    
+    let targetIndex = index;
+    
+    // 경계 처리
     if (index < 0) {
-      setCurrentIndex(recommendedSeries.length - 1);
+      targetIndex = recommendedSeries.length - 1;
     } else if (index >= recommendedSeries.length) {
-      setCurrentIndex(0);
-    } else {
-      setCurrentIndex(index);
+      targetIndex = 0;
     }
+    
+    const seriesLength = recommendedSeries.length;
+    
+    // 현재 displayIndex를 기준으로 자연스럽게 이동
+    let newDisplayIndex = displayIndex;
+    const direction = index - currentIndex;
+    
+    if (direction < 0) {
+      // 뒤로 이동
+      newDisplayIndex = displayIndex - 1;
+    } else if (direction > 0) {
+      // 앞으로 이동
+      newDisplayIndex = displayIndex + 1;
+    }
+    // direction === 0이면 같은 위치이므로 newDisplayIndex 유지
+    
+    // 경계를 넘어가면 자연스럽게 다른 복제본 영역으로 이동
+    // 슬라이드가 충분히 복제되어 있으므로 경계를 넘어가도 계속 이동 가능
+    // 다만 너무 멀리 가면 중간 영역으로 조정
+    const maxIndex = seriesLength * 5 - 1; // 전체 슬라이드 개수 - 1
+    const minIndex = 0;
+    
+    if (newDisplayIndex < minIndex) {
+      // 음수 방향으로 너무 가면 마지막으로
+      newDisplayIndex = maxIndex;
+    } else if (newDisplayIndex > maxIndex) {
+      // 양수 방향으로 너무 가면 처음으로
+      newDisplayIndex = minIndex;
+    }
+    
+    setDisplayIndex(newDisplayIndex);
+    setCurrentIndex(targetIndex);
   };
+
+  // 무한 루프를 위한 슬라이드 배열 생성 (충분히 복제하여 자연스러운 루프 구현)
+  const infiniteSlides = [
+    ...recommendedSeries, // 원본 슬라이드들 (0-5)
+    ...recommendedSeries, // 첫 번째 복제본 (6-11)
+    ...recommendedSeries, // 두 번째 복제본 (12-17)
+    ...recommendedSeries, // 세 번째 복제본 (18-23)
+    ...recommendedSeries  // 네 번째 복제본 (24-29)
+  ];
 
   // 터치/드래그 이벤트 핸들러
   const handleStart = (e) => {
@@ -222,7 +270,7 @@ const MainRecommandPage = () => {
 
       {/* 추천 영화 시리즈 슬라이드 섹션 */}
       <section className={styles.seriesSection}>
-        <h2 className={styles.sectionTitle}>공연 추천 서비스</h2>
+        <h2 className={styles.sectionTitle}>추천하는 공연</h2>
         <div 
           className={styles.sliderContainer}
           ref={sliderRef}
@@ -236,10 +284,30 @@ const MainRecommandPage = () => {
         >
           <div 
             className={styles.sliderTrack}
-            style={{ transform: `translateX(-${currentIndex * (100 / 2.5)}%)` }}
+            style={{ 
+              transform: `translateX(-${displayIndex * (100 / 2.5)}%)`,
+              transition: isTransitioning ? 'transform 0.3s ease' : 'none'
+            }}
+            onTransitionEnd={() => {
+              // transition이 끝난 후 경계를 넘어갔는지 확인하고 조정
+              const seriesLength = recommendedSeries.length;
+              const totalSlides = seriesLength * 5;
+              
+              // 경계를 넘어가면 자연스럽게 다른 복제본 영역으로 이동
+              // 하지만 너무 멀리 가면 중간 영역으로 조정하여 메모리 효율성 유지
+              if (displayIndex < seriesLength) {
+                // 원본 영역에 있으면 두 번째 복제본 영역으로 이동 (transition 없이)
+                setIsTransitioning(false);
+                setDisplayIndex(seriesLength * 2 + currentIndex);
+              } else if (displayIndex >= seriesLength * 4) {
+                // 네 번째 복제본 영역 이상이면 두 번째 복제본 영역으로 이동 (transition 없이)
+                setIsTransitioning(false);
+                setDisplayIndex(seriesLength * 2 + currentIndex);
+              }
+            }}
           >
-            {recommendedSeries.map((series) => (
-              <div key={series.id} className={styles.slideCard}>
+            {infiniteSlides.map((series, index) => (
+              <div key={`${series.id}-${index}`} className={styles.slideCard}>
                 <PerformanceCard
                   id={series.id}
                   title={series.title}
