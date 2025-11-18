@@ -10,6 +10,7 @@ const PlaceApiCard = ({
   address,
   telno,
   rating,
+  reviewCount,
   stageCount,
   onClick
 }) => {
@@ -35,12 +36,13 @@ const PlaceApiCard = ({
           {stageCount !== undefined && (
             <span className={styles.stageCount}>공연관 {stageCount}개</span>
           )}
-          {rating !== undefined && rating > 0 && (
-            <div className={styles.ratingRow}>
-              <span className={styles.star}>★</span>
-              <span className={styles.rating}>{rating.toFixed(1)}</span>
-            </div>
-          )}
+          <div className={styles.ratingRow}>
+            <span className={styles.star}>★</span>
+            <span className={styles.rating}>
+              {typeof rating === 'number' ? rating.toFixed(1) : parseFloat(rating || 0).toFixed(1)}
+            </span>
+            <span className={styles.count}>({reviewCount || 0})</span>
+          </div>
         </div>
       </div>
       <Link 

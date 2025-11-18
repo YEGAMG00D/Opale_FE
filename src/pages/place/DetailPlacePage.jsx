@@ -85,6 +85,13 @@ const DetailPlacePage = () => {
             🔗
           </a>
         </h1>
+        <div className={styles.ratingRow}>
+          <span className={styles.star}>★</span>
+          <span className={styles.rating}>
+            {typeof place.rating === 'number' ? place.rating.toFixed(1) : parseFloat(place.rating || 0).toFixed(1)}
+          </span>
+          <span className={styles.count}>({place.reviewCount || 0})</span>
+        </div>
       </div>
 
       {/* 공연시설 정보 */}

@@ -10,6 +10,7 @@ export const normalizePlace = (item) => {
     longitude: item.longitude ?? null,
     stageCount: item.stageCount ?? 0,
     rating: item.rating ?? 0,
+    reviewCount: item.reviewCount ?? 0,
   };
 };
 

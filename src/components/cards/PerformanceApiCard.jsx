@@ -65,8 +65,10 @@ const PerformanceApiCard = ({
 
         <div className={styles.ratingRow}>
           <span className={styles.star}>★</span>
-          <span className={styles.rating}>{rating.toFixed(1)}</span>
-          <span className={styles.count}>({reviewCount})</span>
+          <span className={styles.rating}>
+            {typeof rating === 'number' ? rating.toFixed(1) : parseFloat(rating || 0).toFixed(1)}
+          </span>
+          <span className={styles.count}>({reviewCount || 0})</span>
         </div>
 
         {keywords?.length > 0 && (
