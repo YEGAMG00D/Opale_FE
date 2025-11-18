@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import styles from './MainPlacePage.module.css';
 import RegionFilter from '../../components/place/RegionFilter';
 import PlaceApiCard from '../../components/cards/PlaceApiCard';
+import PlaceMapView from '../../components/place/PlaceMapView';
 import { usePlaceList } from '../../hooks/usePlaceList';
 import { setActiveTab } from '../../store/placeSlice';
 
@@ -34,8 +35,8 @@ const MainPlacePage = () => {
   });
 
   return (
-    <div className={styles.container}>
-      <h1>공연장</h1>
+    <div className={`${styles.container} ${activeTab === 'map' ? styles.mapMode : ''}`}>
+      {activeTab === 'list' && <h1>공연장</h1>}
       
       {/* 탭 네비게이션 */}
       <div className={styles.tabContainer}>
@@ -55,12 +56,8 @@ const MainPlacePage = () => {
 
       {/* 지도 탭 내용 */}
       {activeTab === 'map' && (
-        <div className={styles.mapContainer}>
-          <div className={styles.mapPlaceholder}>
-            <div className={styles.mapIcon}>🗺️</div>
-            <p className={styles.mapText}>지도 서비스 준비 중</p>
-            <p className={styles.mapSubText}>곧 공연장 위치를 확인할 수 있습니다</p>
-          </div>
+        <div className={styles.mapWrapper}>
+          <PlaceMapView places={places} />
         </div>
       )}
 
