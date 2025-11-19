@@ -154,26 +154,24 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
 
     // cleanup 함수
     return () => {
-      if (userMarkerRef.current) {
-        userMarkerRef.current.setMap(null);
-        userMarkerRef.current = null;
-      }
-      if (searchCenterMarkerRef.current) {
-        searchCenterMarkerRef.current.setMap(null);
-        searchCenterMarkerRef.current = null;
-      }
+      // 마커는 마커 업데이트 useEffect의 cleanup에서 처리하므로 여기서는 제거하지 않음
+      // (탭 전환 시 마커가 사라지는 문제 방지)
       if (scaleControlRef.current) {
         scaleControlRef.current = null;
       }
       if (window.navermap_authFailure) {
         delete window.navermap_authFailure;
       }
+      // 지도 인스턴스는 유지 (탭 전환 시 재사용)
+      // mapInstanceRef.current는 다음 마운트 시 재사용되거나 새로 생성됨
     };
   }, [clientId]); // clientId만 의존성으로 (지도는 한 번만 초기화)
 
   // places와 userLocation이 변경될 때 마커 업데이트 및 지도 조정
+  // mapLoading이 false일 때만 실행 (지도 초기화 완료 후)
   useEffect(() => {
-    if (!mapInstanceRef.current || !window.naver || !window.naver.maps) {
+    if (!mapInstanceRef.current || !window.naver || !window.naver.maps || mapLoading) {
+      // 지도가 아직 로딩 중이면 마커 생성하지 않음
       return;
     }
 
@@ -422,7 +420,34 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
     });
 
     console.log('✅ 마커 생성 완료:', markersRef.current.length, '개');
-  }, [places, userLocation, searchCenter, searchRadius]); // searchRadius도 의존성에 추가
+  }, [places, userLocation, searchCenter, searchRadius, mapLoading]); // mapLoading도 의존성에 추가하여 지도 초기화 완료 후 실행
+
+  // 컴포넌트 언마운트 시 마커 정리
+  useEffect(() => {
+    return () => {
+      // 컴포넌트가 언마운트될 때만 마커 정리
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setMap(null);
+        userMarkerRef.current = null;
+      }
+      if (searchCenterMarkerRef.current) {
+        searchCenterMarkerRef.current.setMap(null);
+        searchCenterMarkerRef.current = null;
+      }
+      if (searchRadiusCircleRef.current) {
+        searchRadiusCircleRef.current.setMap(null);
+        searchRadiusCircleRef.current = null;
+      }
+      markersRef.current.forEach(marker => {
+        if (marker) marker.setMap(null);
+      });
+      infoWindowsRef.current.forEach(infoWindow => {
+        if (infoWindow) infoWindow.close();
+      });
+      markersRef.current = [];
+      infoWindowsRef.current = [];
+    };
+  }, []); // 컴포넌트 언마운트 시에만 실행
 
   // 현재 위치에서 검색 버튼 클릭 핸들러
   const handleSearchAtCenter = () => {

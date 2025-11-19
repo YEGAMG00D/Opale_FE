@@ -29,7 +29,7 @@
 .buttonGroup {
   position: absolute;
   top: 80px; /* 탭 바로 아래 위치 */
-  left: 50%;
+  left: 20%;
   transform: translateX(-50%);
   z-index: 1000;
   display: flex;
