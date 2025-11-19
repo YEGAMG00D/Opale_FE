@@ -84,6 +84,63 @@ export const sendMessageRest = async (roomId, message) => {
   }
 };
 
+
+
+/* ============================================================
+    ✅ 채팅방 검색 (roomType, performanceId, keyword)
+============================================================ */
+export const searchChatRooms = async (dto) => {
+  try {
+    const res = await axiosInstance.post(`${base}/rooms/search`, dto);
+
+    if (res.data.success) return res.data.data.rooms || [];
+    throw new Error("채팅방 검색 실패");
+  } catch (err) {
+    console.error("❌ searchChatRooms 오류:", err);
+    throw err;
+  }
+};
+
+
+
+/* ============================================================
+    ✅ 공연별 PUBLIC 채팅방 조회
+============================================================ */
+export const fetchPublicRoomByPerformance = async (performanceId) => {
+  try {
+    const res = await axiosInstance.get(
+      `${base}/rooms/public/performance/${performanceId}`
+    );
+
+    if (!res.data.success) throw new Error("공연별 채팅방 조회 실패");
+
+    // exists + room 구조 그대로 반환
+    return res.data.data;
+  } catch (err) {
+    console.error("❌ fetchPublicRoomByPerformance 오류:", err);
+    return { exists: false, room: null };
+  }
+};
+
+
+/* ============================================================
+    ✅ 7. 채팅방 생성 (POST /chat/rooms)
+============================================================ */
+export const createChatRoom = async (dto) => {
+  try {
+    const res = await axiosInstance.post(`${base}/rooms`, dto);
+
+    if (!res.data.success) throw new Error("채팅방 생성 실패");
+    return res.data.data; // ChatRoomResponseDto 반환
+  } catch (err) {
+    console.error("❌ createChatRoom 오류:", err);
+    throw err;
+  }
+};
+
+
+
+
 export default {
   fetchChatRooms,
   fetchChatRoom,

@@ -24,9 +24,6 @@ const ChatRoomHeader = ({
       <div className={styles.headerMeta}>
         <div className={styles.headerTop}>
           <strong className={styles.roomTitle}>{title}</strong>
-          <span className={active ? styles.badgeOn : styles.badgeOff}>
-            {active ? '활성' : '비활성'}
-          </span>
         </div>
         <div className={styles.headerSub}>
           <span 
@@ -36,9 +33,9 @@ const ChatRoomHeader = ({
             {performanceName}
           </span>
           {/* <span className={styles.dot}>·</span>
-          <span>{visitors ?? participants}명 방문</span> */}
+          <span>{visitors ?? participants}명 방문</span> 
           <span className={styles.dot}>·</span>
-          <span>개설자 {creatorNickname}</span>
+          <span>개설자 {creatorNickname}</span>*/}
         </div>
       </div>
     </header>

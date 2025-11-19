@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import styles from './PlaceMapView.module.css';
 import { loadNaverMapScript } from '../../utils/loadNaverMap';
-import PlaceApiCard from '../cards/PlaceApiCard';
+import PlaceWithPerformancesCard from '../cards/PlaceWithPerformancesCard';
+import { createPlaceMarkerHTML } from './PlaceMarker';
 
 /**
  * 여러 공연장 위치를 표시하는 네이버 지도 컴포넌트
@@ -12,7 +13,7 @@ import PlaceApiCard from '../cards/PlaceApiCard';
  * @param {Function} onSearchAtCenter - 현재 지도 중심 좌표로 검색하는 콜백 함수
  * @param {string} clientId - 네이버 지도 API Client ID (선택사항, 환경변수에서 가져옴)
  */
-const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, searchRadius = 0, onSearchAtCenter, clientId }) => {
+const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCenter = null, searchRadius = 0, onSearchAtCenter, clientId }, ref) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -24,13 +25,31 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
   
+  // 선택된 공연장 상태 (마커 클릭 시)
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [selectedPlaceCardHeight, setSelectedPlaceCardHeight] = useState(0); // 선택된 카드 시트 높이 (0 또는 'max-content')
+  const [isCardVisible, setIsCardVisible] = useState(false); // 카드 표시 여부 (애니메이션용)
+  const selectedPlaceInfoWindowRef = useRef(null); // 선택된 공연장의 인포윈도우 ref
+  const selectedPlaceMarkerRef = useRef(null); // 선택된 공연장의 마커 ref
+  
   // 하단 시트 상태
   const [sheetHeight, setSheetHeight] = useState(180); // 기본 높이 (px) - 드래그 핸들 + 헤더 + 일부 카드가 보이도록
   const [isDragging, setIsDragging] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false); // 스냅 애니메이션 중인지
   const dragStateRef = useRef({ startY: 0, startHeight: 0 });
   const sheetRef = useRef(null);
+  const sheetContentRef = useRef(null); // 시트 내용 영역 ref
+  const animationFrameRef = useRef(null);
+  const scrollStateRef = useRef({ startY: 0, isScrolling: false, isDraggingSheet: false });
+  const globalTouchHandlersRef = useRef({ move: null, end: null });
   
   const MIN_SHEET_HEIGHT = 150; // 최소 높이 - 드래그 핸들과 헤더가 확실히 보이도록
+  const HEADER_HEIGHT = 61; // Header 높이 (MainLayout.css의 --header-height와 동일)
+  
+  // 최대 높이 계산 (header 밑까지)
+  const getMaxSheetHeight = useCallback(() => {
+    return window.innerHeight - HEADER_HEIGHT;
+  }, []);
 
   // 지도 초기화 (한 번만 실행)
   useEffect(() => {
@@ -167,7 +186,51 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
     };
   }, [clientId]); // clientId만 의존성으로 (지도는 한 번만 초기화)
 
-  // places와 userLocation이 변경될 때 마커 업데이트 및 지도 조정
+  // 마커 제거 함수 (외부에서 호출 가능하도록)
+  const clearMarkers = useCallback(async () => {
+    if (!mapInstanceRef.current || !window.naver || !window.naver.maps) {
+      return;
+    }
+
+    console.log('🧹 [마커 제거] 기존 공연장 마커 모두 제거 시작');
+    
+    // 모든 마커를 동기적으로 제거
+    const markersToRemove = [...markersRef.current];
+    markersToRemove.forEach(marker => {
+      if (marker) {
+        marker.setMap(null);
+        if (window.naver && window.naver.maps && window.naver.maps.Event) {
+          window.naver.maps.Event.clearInstanceListeners(marker);
+        }
+      }
+    });
+    
+    const infoWindowsToRemove = [...infoWindowsRef.current];
+    infoWindowsToRemove.forEach(infoWindow => {
+      if (infoWindow) {
+        infoWindow.close();
+        if (window.naver && window.naver.maps && window.naver.maps.Event) {
+          window.naver.maps.Event.clearInstanceListeners(infoWindow);
+        }
+      }
+    });
+    
+    // ref를 즉시 비움
+    markersRef.current = [];
+    infoWindowsRef.current = [];
+    
+    // 지도 재렌더링을 위한 약간의 지연
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    console.log('✅ [마커 제거] 기존 공연장 마커 제거 완료');
+  }, []);
+
+  // ref를 통해 clearMarkers 함수 노출
+  useImperativeHandle(ref, () => ({
+    clearMarkers
+  }), [clearMarkers]);
+
+  // places가 변경될 때 마커 생성 (4단계: 전역 상태에 저장된 목록으로 마커 생성)
   // mapLoading이 false일 때만 실행 (지도 초기화 완료 후)
   useEffect(() => {
     if (!mapInstanceRef.current || !window.naver || !window.naver.maps || mapLoading) {
@@ -176,19 +239,34 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
     }
 
     const map = mapInstanceRef.current;
-    console.log('🗺️ 마커 업데이트 시작, places 개수:', places.length);
-
-    // 기존 마커와 정보창 정리
-    markersRef.current.forEach(marker => {
-      if (marker) marker.setMap(null);
+    console.log('🗺️ [4단계] 마커 생성 시작:', {
+      placesCount: places.length,
+      userLocation,
+      searchCenter,
+      searchRadius,
+      mapReady: !!map
     });
-    infoWindowsRef.current.forEach(infoWindow => {
-      if (infoWindow) infoWindow.close();
-    });
-    markersRef.current = [];
-    infoWindowsRef.current = [];
 
-    // 기존 마커 제거
+    // places가 비어있으면 마커 생성하지 않음 (목록이 비워진 상태)
+    if (!places || places.length === 0) {
+      console.log('📭 [4단계] 공연장 목록이 비어있음 - 마커 생성하지 않음');
+      return;
+    }
+
+    // 유효한 위치 정보가 있는 공연장만 필터링
+    const validPlaces = places.filter(
+      place => place.latitude && place.longitude && 
+      !isNaN(parseFloat(place.latitude)) && 
+      !isNaN(parseFloat(place.longitude))
+    );
+
+    console.log('✅ [디버깅] 유효한 공연장 개수:', validPlaces.length);
+    if (validPlaces.length === 0 && places.length > 0) {
+      console.warn('⚠️ [디버깅] places는 있지만 유효한 공연장이 없습니다. 원본 places:', places);
+      return;
+    }
+
+    // 기존 마커 제거 (GPS, 검색 기준 마커는 유지)
     if (userMarkerRef.current) {
       userMarkerRef.current.setMap(null);
       userMarkerRef.current = null;
@@ -201,15 +279,6 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       searchRadiusCircleRef.current.setMap(null);
       searchRadiusCircleRef.current = null;
     }
-
-    // 유효한 위치 정보가 있는 공연장만 필터링
-    const validPlaces = places.filter(
-      place => place.latitude && place.longitude && 
-      !isNaN(parseFloat(place.latitude)) && 
-      !isNaN(parseFloat(place.longitude))
-    );
-
-    console.log('✅ 유효한 공연장 개수:', validPlaces.length);
 
     // GPS 위치 마커 생성 (파란색) - 항상 표시
     let gpsPosition = null;
@@ -280,10 +349,13 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       searchCenterMarkerRef.current = searchMarker;
       console.log('📍 검색 기준 좌표 마커 생성:', { latitude: searchCenter.latitude, longitude: searchCenter.longitude });
 
-      // 검색 반경 원 생성 (searchRadius가 있을 때만, 최소 반경 체크)
-      // 너무 작은 반경은 Circle 생성 시 에러 발생 가능
+      // 검색 반경 원 생성 (searchRadius가 있을 때만, 최소/최대 반경 체크)
+      // 너무 작거나 큰 반경은 Circle 생성 시 에러 발생 가능
       const MIN_CIRCLE_RADIUS = 50; // 최소 50m
-      if (searchRadius && searchRadius >= MIN_CIRCLE_RADIUS) {
+      const MAX_CIRCLE_RADIUS = 50000; // 최대 50km (너무 크면 Circle 에러 발생)
+      
+      // 반경이 비정상적으로 크면 원을 생성하지 않음
+      if (searchRadius && searchRadius >= MIN_CIRCLE_RADIUS && searchRadius <= MAX_CIRCLE_RADIUS) {
         try {
           const circle = new window.naver.maps.Circle({
             map: map,
@@ -304,29 +376,67 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
           searchRadiusCircleRef.current = null;
         }
       } else if (searchRadius && searchRadius > 0 && searchRadius < MIN_CIRCLE_RADIUS) {
-        console.log('ℹ️ 반경이 너무 작아서 원을 표시하지 않습니다:', searchRadius);
+        console.log('ℹ️ [디버깅] 반경이 너무 작아서 원을 표시하지 않습니다:', searchRadius);
+      } else if (searchRadius && searchRadius > MAX_CIRCLE_RADIUS) {
+        console.warn('⚠️ [디버깅] 반경이 너무 커서 원을 표시하지 않습니다:', {
+          radius: searchRadius,
+          radiusKm: (searchRadius / 1000).toFixed(2) + 'km',
+          maxRadius: MAX_CIRCLE_RADIUS,
+          maxRadiusKm: (MAX_CIRCLE_RADIUS / 1000).toFixed(2) + 'km'
+        });
       }
     }
 
     // 지도 중심 좌표 결정 (검색 기준 좌표 우선, 없으면 GPS 위치)
     const centerPosition = searchCenterPosition || gpsPosition;
 
+    // 반경 원의 bounds 계산 함수
+    const calculateCircleBounds = (centerLat, centerLng, radius) => {
+      // 위도/경도 1도당 미터 (위도는 일정, 경도는 위도에 따라 다름)
+      const latPerMeter = 1 / 111000; // 위도 1도 ≈ 111km
+      const lngPerMeter = 1 / (111000 * Math.cos(centerLat * Math.PI / 180)); // 경도는 위도에 따라 다름
+      
+      // 반경 원의 bounds 계산 (반경을 절반으로 줄여서 더 가깝게 보이도록)
+      const padding = 0.3; // 반경을 절반으로 줄임 (반경 원이 화면에 더 가깝게)
+      const radiusInDegrees = {
+        lat: (radius * latPerMeter) * padding,
+        lng: (radius * lngPerMeter) * padding
+      };
+      
+      return new window.naver.maps.LatLngBounds(
+        new window.naver.maps.LatLng(centerLat - radiusInDegrees.lat, centerLng - radiusInDegrees.lng), // 남서쪽
+        new window.naver.maps.LatLng(centerLat + radiusInDegrees.lat, centerLng + radiusInDegrees.lng)  // 북동쪽
+      );
+    };
+
     // 지도 중심 및 줌 조정
     if (centerPosition && validPlaces.length > 0) {
-      // 검색 기준 좌표(또는 GPS 위치)를 정중앙에 두고, 모든 공연장 마커가 보이도록 조정
-      // fitBounds를 사용하여 모든 마커가 보이도록 하고, 중심 위치를 정중앙에 배치
+      // 검색 기준 좌표(또는 GPS 위치)를 정중앙에 두고, 모든 공연장 마커와 반경 원이 보이도록 조정
       const allBounds = new window.naver.maps.LatLngBounds();
       allBounds.extend(centerPosition);
       validPlaces.forEach(place => {
         allBounds.extend(new window.naver.maps.LatLng(place.latitude, place.longitude));
       });
+      
+      // 반경 원이 있으면 반경 원의 bounds도 포함
+      if (searchCenter && searchRadius && searchRadiusCircleRef.current) {
+        const circleBounds = calculateCircleBounds(
+          searchCenter.latitude,
+          searchCenter.longitude,
+          searchRadius
+        );
+        // 반경 원의 bounds를 allBounds에 병합
+        allBounds.extend(circleBounds.getSW());
+        allBounds.extend(circleBounds.getNE());
+      }
 
-      // fitBounds로 모든 마커가 보이도록 설정 (padding 추가)
+      // fitBounds로 모든 마커와 반경 원이 보이도록 설정 (최소한의 padding만, 부드러운 애니메이션)
+      // 반경 원이 화면에 최대한 가깝게 보이도록 padding을 최소화 (조금 잘려도 OK)
       map.fitBounds(allBounds, {
-        top: 100,   // 상단 여유 (탭과 버튼 공간)
-        right: 50,
-        bottom: 100, // 하단 여유
-        left: 50,
+        top: 40,   // 상단 여유 (탭과 버튼 공간) - 최소화
+        right: 10, // 최소화
+        bottom: 40, // 하단 여유 - 최소화
+        left: 10, // 최소화
       });
 
       // 중심 위치를 정중앙에 배치하기 위해 약간의 지연 후 재조정
@@ -360,11 +470,46 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
         }
       }, 100);
     } else if (centerPosition) {
-      // 중심 위치만 있고 공연장이 없는 경우 - 조금만 줌 아웃
-      map.setCenter(centerPosition);
-      const currentZoom = map.getZoom();
-      // 현재 줌 레벨보다 1-2단계만 낮춤 (너무 멀지 않게)
-      map.setZoom(Math.max(currentZoom - 2, 12));
+      // 중심 위치만 있고 공연장이 없는 경우
+      // GPS 위치인 경우 줌 레벨 15로 설정 (GPS 버튼과 동일)
+      if (gpsPosition && centerPosition.equals(gpsPosition)) {
+        map.setCenter(centerPosition);
+        map.setZoom(15);
+        console.log('📍 [디버깅] 초기 GPS 위치로 지도 설정 (줌 레벨 15):', {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude
+        });
+      } else {
+        // 검색 기준 좌표만 있는 경우
+        // 반경 원이 있으면 반경 원이 화면에 다 들어오도록 조정
+        if (searchCenter && searchRadius && searchRadiusCircleRef.current) {
+          const circleBounds = calculateCircleBounds(
+            searchCenter.latitude,
+            searchCenter.longitude,
+            searchRadius
+          );
+          
+          // 반경 원이 화면에 다 들어오도록 fitBounds (부드러운 애니메이션)
+          // 반경 원이 화면에 최대한 가깝게 보이도록 padding을 최소화 (조금 잘려도 OK)
+          map.fitBounds(circleBounds, {
+            top: 40,   // 상단 여유 (탭과 버튼 공간) - 최소화
+            right: 10, // 최소화
+            bottom: 40, // 하단 여유 - 최소화
+            left: 10, // 최소화
+          });
+          
+          console.log('🔍 [디버깅] 반경 원이 화면에 다 들어오도록 뷰포트 조정:', {
+            center: { lat: searchCenter.latitude, lng: searchCenter.longitude },
+            radius: searchRadius,
+            radiusKm: (searchRadius / 1000).toFixed(2) + 'km'
+          });
+        } else {
+          // 반경 원이 없으면 조금만 줌 아웃
+          map.setCenter(centerPosition);
+          const currentZoom = map.getZoom();
+          map.setZoom(Math.max(currentZoom - 2, 12));
+        }
+      }
     } else if (validPlaces.length > 0) {
       // 중심 위치가 없고 공연장만 있는 경우
       if (validPlaces.length > 1) {
@@ -385,42 +530,107 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       }
     }
 
-    // 각 공연장에 마커 생성
-    validPlaces.forEach((place) => {
+    // 새로운 공연장 마커 생성 (비동기로 포스터 포함 마커 생성)
+    const createMarkers = async () => {
+      console.log('📍 [4단계] 새로운 공연장 마커 생성 시작:', validPlaces.length, '개');
+      
+      // 기존 마커가 남아있으면 제거 (안전장치)
+      if (markersRef.current.length > 0) {
+        console.warn('⚠️ [4단계] 기존 마커가 남아있습니다. 제거합니다.');
+        const remainingMarkers = [...markersRef.current];
+        remainingMarkers.forEach(marker => {
+          if (marker) {
+            marker.setMap(null);
+            if (window.naver && window.naver.maps && window.naver.maps.Event) {
+              window.naver.maps.Event.clearInstanceListeners(marker);
+            }
+          }
+        });
+        markersRef.current = [];
+      }
+
+      // 새로운 마커 생성
+      const newMarkers = [];
+      const newInfoWindows = [];
+
+      for (const place of validPlaces) {
       const position = new window.naver.maps.LatLng(place.latitude, place.longitude);
       
+        // 커스텀 마커 HTML 생성 (포스터 포함)
+        const { html: markerHTML, anchor } = await createPlaceMarkerHTML(place);
+        
+        // 마커 생성
       const marker = new window.naver.maps.Marker({
         position: position,
         map: map,
         title: place.name,
+          icon: {
+            content: markerHTML,
+            anchor: new window.naver.maps.Point(anchor.x, anchor.y),
+          },
+          zIndex: 100,
       });
-      markersRef.current.push(marker);
+        newMarkers.push(marker);
 
       // 정보창 생성
       const infoWindow = new window.naver.maps.InfoWindow({
         content: `<div style="padding: 10px; font-weight: 600;">${place.name}</div>`,
       });
-      infoWindowsRef.current.push(infoWindow);
+        newInfoWindows.push(infoWindow);
 
-      // 마커 클릭 시 정보창 표시
+        // 마커 클릭 시 공연장 카드 표시
       window.naver.maps.Event.addListener(marker, 'click', () => {
         // 다른 정보창 닫기
-        infoWindowsRef.current.forEach(iw => {
+          newInfoWindows.forEach(iw => {
           if (iw && iw !== infoWindow && iw.getMap()) {
             iw.close();
           }
         });
-        // 현재 정보창 토글
-        if (infoWindow.getMap()) {
-          infoWindow.close();
-        } else {
+          
+          // 선택된 공연장 설정
+          setSelectedPlace(place);
+          selectedPlaceInfoWindowRef.current = infoWindow;
+          selectedPlaceMarkerRef.current = marker;
+          
+          // 인포윈도우 열기
           infoWindow.open(map, marker);
-        }
-      });
+          
+          // 지도 중심을 해당 마커로 이동
+          map.setCenter(position);
+          map.setZoom(Math.max(map.getZoom(), 15)); // 최소 줌 레벨 15
+          
+          // 카드 시트 높이를 max-content로 설정 (내용에 맞게 자동 조정)
+          setSelectedPlaceCardHeight('max-content');
+          
+          // 애니메이션을 위해 약간의 지연 후 표시
+          setTimeout(() => {
+            setIsCardVisible(true);
+          }, 10);
+        });
+      }
+      
+      // 모든 마커 생성이 완료된 후에만 ref에 추가
+      markersRef.current = newMarkers;
+      infoWindowsRef.current = newInfoWindows;
+      
+      console.log('✅ [4단계] 새로운 공연장 마커 생성 완료:', markersRef.current.length, '개');
+    };
+
+    // await로 기다려서 마커 생성이 완료되도록 보장
+    createMarkers().catch(error => {
+      console.error('❌ [4단계] 마커 생성 중 오류 발생:', error);
     });
 
-    console.log('✅ 마커 생성 완료:', markersRef.current.length, '개');
-  }, [places, userLocation, searchCenter, searchRadius, mapLoading]); // mapLoading도 의존성에 추가하여 지도 초기화 완료 후 실행
+    console.log('✅ [디버깅] 마커 생성 완료:', {
+      totalMarkers: markersRef.current.length,
+      placeMarkers: markersRef.current.length - (userMarkerRef.current ? 1 : 0) - (searchCenterMarkerRef.current ? 1 : 0),
+      hasUserMarker: !!userMarkerRef.current,
+      hasSearchCenterMarker: !!searchCenterMarkerRef.current,
+      hasSearchRadiusCircle: !!searchRadiusCircleRef.current,
+      validPlacesCount: validPlaces.length
+    });
+
+  }, [places, userLocation, searchCenter, searchRadius, mapLoading]); // places가 변경될 때만 마커 생성
 
   // 컴포넌트 언마운트 시 마커 정리
   useEffect(() => {
@@ -542,6 +752,26 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
     });
   };
 
+  // 선택된 공연장 카드 닫기 핸들러
+  const handleCloseSelectedPlaceCard = () => {
+    // 먼저 애니메이션으로 닫기
+    setIsCardVisible(false);
+    setSelectedPlaceCardHeight(0);
+    
+    // 애니메이션 완료 후 상태 정리
+    setTimeout(() => {
+      // 인포윈도우 닫기
+      if (selectedPlaceInfoWindowRef.current) {
+        selectedPlaceInfoWindowRef.current.close();
+        selectedPlaceInfoWindowRef.current = null;
+      }
+      
+      // 선택 해제
+      setSelectedPlace(null);
+      selectedPlaceMarkerRef.current = null;
+    }, 300); // transition 시간과 동일
+  };
+
   // 반경 표시 텍스트 포맷팅
   const formatRadius = (radius) => {
     if (radius >= 1000) {
@@ -550,36 +780,88 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
     return `${radius}m`;
   };
 
+  // 스냅 포인트 계산 (최소, 중간, 최대)
+  const getSnapHeight = useCallback((currentHeight) => {
+    const maxHeight = getMaxSheetHeight();
+    const midHeight = (MIN_SHEET_HEIGHT + maxHeight) / 2;
+    
+    // 현재 높이에서 가장 가까운 스냅 포인트 찾기
+    const snapPoints = [MIN_SHEET_HEIGHT, midHeight, maxHeight];
+    const closest = snapPoints.reduce((prev, curr) => {
+      return Math.abs(curr - currentHeight) < Math.abs(prev - currentHeight) ? curr : prev;
+    });
+    
+    return closest;
+  }, [getMaxSheetHeight]);
+
+  // 시트가 최대 높이이고 스크롤이 맨 위에 있는지 확인
+  const isAtTopAndMaxHeight = useCallback(() => {
+    const maxHeight = getMaxSheetHeight();
+    const isMaxHeight = Math.abs(sheetHeight - maxHeight) < 5; // 5px 오차 허용
+    
+    if (!isMaxHeight) return false;
+    
+    const contentEl = sheetContentRef.current;
+    if (!contentEl) return false;
+    
+    return contentEl.scrollTop === 0;
+  }, [sheetHeight, getMaxSheetHeight]);
+
   // 하단 시트 드래그 시작
   const handleSheetMouseDown = useCallback((e) => {
     setIsDragging(true);
+    setIsTransitioning(false); // 드래그 시작 시 transition 비활성화
     dragStateRef.current.startY = e.clientY;
     dragStateRef.current.startHeight = sheetHeight;
     e.preventDefault();
   }, [sheetHeight]);
 
-  // 하단 시트 드래그 중
+  // 하단 시트 드래그 중 (requestAnimationFrame으로 부드럽게)
   const handleSheetMouseMove = useCallback((e) => {
     if (!isDragging) return;
     
-    const deltaY = dragStateRef.current.startY - e.clientY; // 위로 드래그하면 양수
-    let newHeight = dragStateRef.current.startHeight + deltaY;
+    // 이전 애니메이션 프레임 취소
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
     
-    // 최소/최대 높이 제한
-    const maxHeight = window.innerHeight * 0.8;
-    newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
-    
-    setSheetHeight(newHeight);
-  }, [isDragging]);
+    // requestAnimationFrame으로 부드러운 업데이트
+    animationFrameRef.current = requestAnimationFrame(() => {
+      const deltaY = dragStateRef.current.startY - e.clientY; // 위로 드래그하면 양수
+      let newHeight = dragStateRef.current.startHeight + deltaY;
+      
+      // 최소/최대 높이 제한 (header 밑까지)
+      const maxHeight = getMaxSheetHeight();
+      newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
+      
+      setSheetHeight(newHeight);
+    });
+  }, [isDragging, getMaxSheetHeight]);
 
-  // 하단 시트 드래그 종료
+  // 하단 시트 드래그 종료 (스냅 포인트로 이동)
   const handleSheetMouseUp = useCallback(() => {
     setIsDragging(false);
-  }, []);
+    
+    // 애니메이션 프레임 취소
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    // 스냅 포인트로 부드럽게 이동
+    setIsTransitioning(true);
+    const snapHeight = getSnapHeight(sheetHeight);
+    setSheetHeight(snapHeight);
+    
+    // transition 완료 후 transition 상태 해제
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 200);
+  }, [sheetHeight, getSnapHeight]);
 
   // 터치 이벤트 핸들러
   const handleSheetTouchStart = useCallback((e) => {
     setIsDragging(true);
+    setIsTransitioning(false);
     dragStateRef.current.startY = e.touches[0].clientY;
     dragStateRef.current.startHeight = sheetHeight;
   }, [sheetHeight]);
@@ -587,18 +869,41 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
   const handleSheetTouchMove = useCallback((e) => {
     if (!isDragging) return;
     
-    const deltaY = dragStateRef.current.startY - e.touches[0].clientY;
-    let newHeight = dragStateRef.current.startHeight + deltaY;
+    // 이전 애니메이션 프레임 취소
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
     
-    const maxHeight = window.innerHeight * 0.8;
-    newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
-    
-    setSheetHeight(newHeight);
-  }, [isDragging]);
+    // requestAnimationFrame으로 부드러운 업데이트
+    animationFrameRef.current = requestAnimationFrame(() => {
+      const deltaY = dragStateRef.current.startY - e.touches[0].clientY;
+      let newHeight = dragStateRef.current.startHeight + deltaY;
+      
+      const maxHeight = getMaxSheetHeight();
+      newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
+      
+      setSheetHeight(newHeight);
+    });
+  }, [isDragging, getMaxSheetHeight]);
 
   const handleSheetTouchEnd = useCallback(() => {
     setIsDragging(false);
-  }, []);
+    
+    // 애니메이션 프레임 취소
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    // 스냅 포인트로 부드럽게 이동
+    setIsTransitioning(true);
+    const snapHeight = getSnapHeight(sheetHeight);
+    setSheetHeight(snapHeight);
+    
+    // transition 완료 후 transition 상태 해제
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 200);
+  }, [sheetHeight, getSnapHeight]);
 
   // 전역 마우스/터치 이벤트 리스너
   useEffect(() => {
@@ -613,9 +918,23 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
         document.removeEventListener('mouseup', handleSheetMouseUp);
         document.removeEventListener('touchmove', handleSheetTouchMove);
         document.removeEventListener('touchend', handleSheetTouchEnd);
+        
+        // 애니메이션 프레임 정리
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
       };
     }
   }, [isDragging, handleSheetMouseMove, handleSheetMouseUp, handleSheetTouchMove, handleSheetTouchEnd]);
+  
+  // 컴포넌트 언마운트 시 애니메이션 프레임 정리
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className={styles.mapContainer}>
@@ -679,12 +998,54 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
         </div>
       )}
       
+      {/* 선택된 공연장 카드 시트 (목록 위에 표시) */}
+      {selectedPlace && (
+        <div 
+          className={`${styles.selectedPlaceCard} ${isCardVisible ? styles.cardVisible : ''}`}
+          style={{ 
+            height: selectedPlaceCardHeight === 'max-content' ? 'max-content' : `${selectedPlaceCardHeight}px`,
+            maxHeight: selectedPlaceCardHeight === 'max-content' ? 'calc(100vh - 61px - 76px)' : 'none' // header와 footer 제외한 최대 높이
+          }}
+        >
+          {/* 닫기 버튼 */}
+          <button 
+            className={styles.closeButton}
+            onClick={handleCloseSelectedPlaceCard}
+            type="button"
+            aria-label="닫기"
+          >
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path 
+                d="M18 6L6 18M6 6L18 18" 
+                stroke="#6b7280" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          
+          {/* 공연장 카드 내용 */}
+          <div className={styles.selectedPlaceCardContent}>
+            <PlaceWithPerformancesCard
+              {...selectedPlace}
+            />
+          </div>
+        </div>
+      )}
+      
       {/* 하단 시트 - 공연장 목록 */}
       {places.length > 0 && (
         <div 
           ref={sheetRef}
-          className={styles.bottomSheet}
-          style={{ height: `${sheetHeight}px` }}
+          className={`${styles.bottomSheet} ${isTransitioning ? styles.transitioning : ''} ${isDragging ? styles.dragging : ''} ${selectedPlace ? styles.sheetHidden : ''}`}
+          style={{ height: selectedPlace ? '0px' : `${sheetHeight}px` }}
         >
           {/* 드래그 핸들 */}
           <div 
@@ -701,10 +1062,109 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
           </div>
           
           {/* 공연장 목록 */}
-          <div className={styles.sheetContent}>
+          <div 
+            ref={sheetContentRef}
+            className={styles.sheetContent}
+            onTouchStart={(e) => {
+              // 시트가 최대 높이이고 스크롤이 맨 위일 때만 드래그 시작
+              if (isAtTopAndMaxHeight()) {
+                scrollStateRef.current.startY = e.touches[0].clientY;
+                scrollStateRef.current.isScrolling = false;
+              }
+            }}
+            onTouchMove={(e) => {
+              if (!isAtTopAndMaxHeight() || scrollStateRef.current.isDraggingSheet) return;
+              
+              const deltaY = e.touches[0].clientY - scrollStateRef.current.startY;
+              
+              // 아래로 드래그하면 (양수) 시트를 내리기
+              if (deltaY > 10 && !scrollStateRef.current.isScrolling) {
+                e.preventDefault();
+                e.stopPropagation();
+                scrollStateRef.current.isScrolling = true;
+                scrollStateRef.current.isDraggingSheet = true;
+                
+                // 시트를 드래그로 내리기
+                setIsDragging(true);
+                setIsTransitioning(false);
+                dragStateRef.current.startY = e.touches[0].clientY;
+                dragStateRef.current.startHeight = sheetHeight;
+                
+                // 기존 핸들러 제거
+                if (globalTouchHandlersRef.current.move) {
+                  document.removeEventListener('touchmove', globalTouchHandlersRef.current.move);
+                }
+                if (globalTouchHandlersRef.current.end) {
+                  document.removeEventListener('touchend', globalTouchHandlersRef.current.end);
+                }
+                
+                // 전역 터치 이벤트로 전환
+                const handleGlobalTouchMove = (globalE) => {
+                  if (!scrollStateRef.current.isDraggingSheet) return;
+                  
+                  if (animationFrameRef.current) {
+                    cancelAnimationFrame(animationFrameRef.current);
+                  }
+                  
+                  animationFrameRef.current = requestAnimationFrame(() => {
+                    const globalDeltaY = dragStateRef.current.startY - globalE.touches[0].clientY;
+                    let newHeight = dragStateRef.current.startHeight + globalDeltaY;
+                    
+                    const maxHeight = getMaxSheetHeight();
+                    newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
+                    
+                    setSheetHeight(newHeight);
+                  });
+                };
+                
+                const handleGlobalTouchEnd = () => {
+                  scrollStateRef.current.isDraggingSheet = false;
+                  setIsDragging(false);
+                  
+                  if (animationFrameRef.current) {
+                    cancelAnimationFrame(animationFrameRef.current);
+                  }
+                  
+                  setIsTransitioning(true);
+                  const snapHeight = getSnapHeight(sheetHeight);
+                  setSheetHeight(snapHeight);
+                  
+                  setTimeout(() => {
+                    setIsTransitioning(false);
+                    document.removeEventListener('touchmove', handleGlobalTouchMove);
+                    document.removeEventListener('touchend', handleGlobalTouchEnd);
+                    globalTouchHandlersRef.current.move = null;
+                    globalTouchHandlersRef.current.end = null;
+                  }, 300);
+                };
+                
+                globalTouchHandlersRef.current.move = handleGlobalTouchMove;
+                globalTouchHandlersRef.current.end = handleGlobalTouchEnd;
+                
+                document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+                document.addEventListener('touchend', handleGlobalTouchEnd);
+              }
+            }}
+            onTouchEnd={() => {
+              // 터치 종료 시 스크롤 상태 리셋
+              if (!scrollStateRef.current.isDraggingSheet) {
+                scrollStateRef.current.isScrolling = false;
+              }
+            }}
+            onWheel={(e) => {
+              // 시트가 최대 높이이고 스크롤이 맨 위일 때 위로 스크롤하면 시트 내리기
+              if (isAtTopAndMaxHeight() && e.deltaY < 0) {
+                e.preventDefault();
+                const midHeight = (MIN_SHEET_HEIGHT + getMaxSheetHeight()) / 2;
+                setIsTransitioning(true);
+                setSheetHeight(midHeight);
+                setTimeout(() => setIsTransitioning(false), 300);
+              }
+            }}
+          >
             <ul className={styles.placeList}>
               {places.map((place, index) => (
-                <PlaceApiCard
+                <PlaceWithPerformancesCard
                   key={place.id + "_" + index}
                   {...place}
                 />
@@ -715,7 +1175,9 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       )}
     </div>
   );
-};
+});
+
+PlaceMapView.displayName = 'PlaceMapView';
 
 export default PlaceMapView;
 
