@@ -11,7 +11,8 @@ import {
   setActiveTab, 
   setGpsLocation, 
   setSearchCenter, 
-  setSearchRadius 
+  setSearchRadius,
+  setMaxSearchRadius
 } from '../../store/placeSlice';
 
 const MainPlacePage = () => {
@@ -22,6 +23,7 @@ const MainPlacePage = () => {
   const gpsLocation = useSelector((state) => state.place.gpsLocation);
   const searchCenter = useSelector((state) => state.place.searchCenter);
   const searchRadius = useSelector((state) => state.place.searchRadius);
+  const maxSearchRadius = useSelector((state) => state.place.maxSearchRadius);
   const [selected, setSelected] = useState({ region: '서울', district: '전체' });
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -41,6 +43,14 @@ const MainPlacePage = () => {
     // center에 radius가 포함되어 있으면 반경도 업데이트
     if (center.radius) {
       dispatch(setSearchRadius(center.radius));
+      // 현재 줌 레벨 기반 반경에 500m를 더한 값을 최대 반경으로 설정
+      const maxRadius = center.radius + 500; // 500m 추가
+      dispatch(setMaxSearchRadius(maxRadius));
+      console.log('📏 [디버깅] 최대 반경 설정:', {
+        currentRadius: center.radius,
+        maxRadius: maxRadius,
+        maxRadiusKm: (maxRadius / 1000).toFixed(2) + 'km'
+      });
     }
     dispatch(setSearchCenter({ latitude: center.latitude, longitude: center.longitude }));
   };
@@ -65,29 +75,107 @@ const MainPlacePage = () => {
 
   // 검색 결과가 없으면 반경을 늘려서 재검색 (에러가 아닌 경우만)
   useEffect(() => {
+    console.log('🔍 [디버깅] 반경 확장 로직 체크:', {
+      activeTab,
+      searchCenter: searchCenter ? { lat: searchCenter.latitude, lng: searchCenter.longitude } : null,
+      nearbyLoading,
+      nearbyPlacesCount: nearbyPlaces.length,
+      nearbyError,
+      searchAttempts,
+      searchRadius,
+      lastSearchCenter: lastSearchCenter ? { lat: lastSearchCenter.latitude, lng: lastSearchCenter.longitude } : null
+    });
+
     // 에러가 있으면 재검색하지 않음
     if (nearbyError) {
-      console.log('⚠️ 검색 중 에러 발생, 재검색 중단');
+      console.log('⚠️ [디버깅] 검색 중 에러 발생, 재검색 중단:', nearbyError);
       return;
     }
 
-    if (activeTab === 'map' && searchCenter && !nearbyLoading && nearbyPlaces.length === 0 && searchAttempts < 3) {
-      // 검색 좌표가 변경되었으면 시도 횟수 리셋
-      if (lastSearchCenter?.latitude !== searchCenter.latitude || 
-          lastSearchCenter?.longitude !== searchCenter.longitude) {
-        setSearchAttempts(0);
-        setLastSearchCenter(searchCenter);
-        return;
+    // 지도 탭이 아니면 스킵
+    if (activeTab !== 'map') {
+      console.log('ℹ️ [디버깅] 지도 탭이 아니므로 스킵');
+      return;
+    }
+
+    // searchCenter가 없으면 스킵
+    if (!searchCenter) {
+      console.log('ℹ️ [디버깅] searchCenter가 없으므로 스킵');
+      return;
+    }
+
+    // 로딩 중이면 스킵
+    if (nearbyLoading) {
+      console.log('ℹ️ [디버깅] 로딩 중이므로 스킵');
+      return;
+    }
+
+    // 검색 좌표가 변경되었으면 시도 횟수 리셋
+    if (lastSearchCenter?.latitude !== searchCenter.latitude || 
+        lastSearchCenter?.longitude !== searchCenter.longitude) {
+      console.log('🔄 [디버깅] 검색 좌표가 변경되어 시도 횟수 리셋');
+      setSearchAttempts(0);
+      setLastSearchCenter(searchCenter);
+      return;
+    }
+
+    // 공연장을 찾았으면 시도 횟수 리셋
+    if (nearbyPlaces.length > 0) {
+      console.log('✅ [디버깅] 공연장을 찾았으므로 시도 횟수 리셋:', nearbyPlaces.length, '개');
+      setSearchAttempts(0);
+      return;
+    }
+
+    // 공연장이 없고 시도 횟수가 3 미만일 때만 반경 확장
+    const MIN_RADIUS = 100; // 최소 반경 100m
+    
+    // 최대 반경이 설정되어 있으면 그 값을 사용, 없으면 기본값 10km 사용
+    const MAX_RADIUS = maxSearchRadius || 10000;
+    
+    // 반경이 이미 최대값 이상이면 더 이상 확장하지 않음
+    if (searchRadius >= MAX_RADIUS) {
+      console.log('⚠️ [디버깅] 반경이 이미 최대값에 도달했습니다:', {
+        currentRadius: searchRadius,
+        currentRadiusKm: (searchRadius / 1000).toFixed(2) + 'km',
+        maxRadius: MAX_RADIUS,
+        maxRadiusKm: (MAX_RADIUS / 1000).toFixed(2) + 'km',
+        isViewportBased: !!maxSearchRadius
+      });
+      return;
+    }
+    
+    // 반경이 비정상적으로 크면 최대값으로 제한
+    if (searchRadius > MAX_RADIUS) {
+      console.warn('⚠️ [디버깅] 반경이 비정상적으로 큽니다. 최대값으로 제한:', {
+        currentRadius: searchRadius,
+        maxRadius: MAX_RADIUS
+      });
+      dispatch(setSearchRadius(MAX_RADIUS));
+      return;
+    }
+    
+    if (nearbyPlaces.length === 0 && searchAttempts < 3) {
+      console.log('🔄 [디버깅] 공연장이 없어서 반경 확장 시도:', {
+        currentRadius: searchRadius,
+        currentRadiusKm: (searchRadius / 1000).toFixed(2) + 'km',
+        attempts: searchAttempts,
+        maxAttempts: 3
+      });
+      
+      // 반경을 2배로 늘려서 재검색 (최대 반경 제한)
+      let newRadius = searchRadius * 2;
+      
+      // 최대 반경을 초과하지 않도록 제한
+      if (newRadius > MAX_RADIUS) {
+        newRadius = MAX_RADIUS;
+        console.log('⚠️ [디버깅] 계산된 반경이 최대값을 초과하여 최대값으로 제한:', newRadius);
       }
       
-      // 반경을 2배로 늘려서 재검색
-      const newRadius = searchRadius * 2;
       console.log(`🔄 공연장이 없어서 반경을 ${searchRadius}m → ${newRadius}m로 확장하여 재검색`);
       dispatch(setSearchRadius(newRadius));
       setSearchAttempts(prev => prev + 1);
-    } else if (nearbyPlaces.length > 0) {
-      // 공연장을 찾았으면 시도 횟수 리셋
-      setSearchAttempts(0);
+    } else if (searchAttempts >= 3) {
+      console.log('⚠️ [디버깅] 최대 시도 횟수(3회)에 도달하여 반경 확장 중단');
     }
   }, [nearbyPlaces, nearbyLoading, nearbyError, searchCenter, searchRadius, searchAttempts, lastSearchCenter, activeTab, dispatch]);
 
@@ -136,7 +224,7 @@ const MainPlacePage = () => {
 
   return (
     <div className={`${styles.container} ${activeTab === 'map' ? styles.mapMode : ''}`}>
-      {activeTab === 'list' && <h1>공연장</h1>}
+      {/* {activeTab === 'list' && <h1>공연장</h1>} */}
       
       {/* 탭 네비게이션 */}
       <div className={styles.tabContainer}>

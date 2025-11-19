@@ -139,8 +139,20 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: height 0.2s ease-out;
   min-height: 150px; /* 최소 높이 보장 */
+  /* 드래그 중에는 transition 없음 (부드러운 드래그) */
+  transition: none;
+}
+
+/* 스냅 애니메이션 중일 때만 transition 적용 */
+.bottomSheet.transitioning {
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 부드러운 easing */
+}
+
+/* 드래그 중일 때 커서 변경 */
+.bottomSheet.dragging {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* 드래그 핸들 */

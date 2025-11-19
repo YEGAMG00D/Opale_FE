@@ -95,13 +95,28 @@ export const useNearbyPlaces = (params = {}) => {
         const list = res.places?.map(normalizePlace) ?? [];
         console.log('📍 정규화된 공연장 목록:', list);
         console.log('📍 공연장 개수:', list.length);
+        console.log('📊 API 응답 상세:', {
+          totalCount: res.totalCount,
+          placesCount: res.places?.length ?? 0,
+          normalizedCount: list.length,
+          requestParams: dto
+        });
+        
         setPlaces(list);
         setTotalCount(res.totalCount ?? 0);
+        
         // 공연장이 없어도 에러가 아님 (정상적인 결과)
         if (list.length === 0) {
-          console.log('ℹ️ 해당 범위에 공연장이 없습니다.');
+          console.log('⚠️ [디버깅] 해당 범위에 공연장이 없습니다.');
+          console.log('⚠️ [디버깅] 검색 파라미터:', {
+            center: { latitude, longitude },
+            radius: radius,
+            radiusKm: (radius / 1000).toFixed(2) + 'km'
+          });
+          console.log('⚠️ [디버깅] API 응답 totalCount:', res.totalCount);
           setError(null); // 에러가 아닌 빈 결과
         } else {
+          console.log('✅ [디버깅] 공연장을 찾았습니다:', list.length, '개');
           setError(null);
         }
       } catch (err) {
