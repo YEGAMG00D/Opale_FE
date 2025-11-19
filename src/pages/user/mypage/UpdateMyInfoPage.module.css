@@ -30,8 +30,63 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 20px 20px;
+  padding: 20px;
   justify-content: flex-start;
+  gap: 20px;
+}
+
+/* 회원정보 표시 섹션 */
+.infoSection {
+  width: 100%;
+  max-width: 320px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.infoCard {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+  gap: 12px;
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.infoLabel {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.infoValue {
+  font-size: 14px;
+  color: #333;
+  font-weight: 400;
+  text-align: right;
+  word-break: break-all;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.4;
 }
 
 .card {
@@ -39,8 +94,38 @@
   max-width: 320px;
   background-color: #ffffff;
   border-radius: 12px;
-  padding: 24px 24px 40px 24px;
+  padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.passwordSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.toggleButton {
+  padding: 6px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggleButton:hover {
+  background-color: #e9ecef;
+  color: #333;
 }
 
 .stepContent {
@@ -52,9 +137,13 @@
 .buttonSection {
   width: 100%;
   max-width: 320px;
-  margin-top: 40px;
   display: flex;
   justify-content: center;
+}
+
+.passwordButtonSection {
+  width: 100%;
+  margin-top: 10px;
 }
 
 .submitButton {

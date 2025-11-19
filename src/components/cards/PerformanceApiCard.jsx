@@ -51,7 +51,17 @@ const PerformanceApiCard = ({
           </svg>
         </button>
 
-        <img src={image} alt={title} className={styles.poster} />
+        <img 
+          src={image || 'https://via.placeholder.com/300x400?text=No+Image'} 
+          alt={title} 
+          className={styles.poster}
+          onError={(e) => {
+            if (e.target.src !== 'https://via.placeholder.com/300x400?text=No+Image') {
+              e.target.src = 'https://via.placeholder.com/300x400?text=No+Image';
+            }
+          }}
+          loading="lazy"
+        />
       </div>
 
       {/* 정보 */}

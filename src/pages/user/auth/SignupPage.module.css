@@ -285,9 +285,15 @@
   color: #ff0000;
 }
 
+.inputWrapper {
+  position: relative;
+  width: 100%;
+}
+
 .input {
   width: 100%;
   padding: 12px;
+  padding-right: 40px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   background: #ffffff;
@@ -300,6 +306,30 @@
 
 .input:focus {
   border-color: #ffb6c1;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.passwordToggle:hover {
+  color: #ffb6c1;
+}
+
+.passwordToggle:active {
+  opacity: 0.7;
 }
 
 .inputWithButton {
