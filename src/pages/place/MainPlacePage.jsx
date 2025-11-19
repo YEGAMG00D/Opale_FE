@@ -27,9 +27,27 @@ const MainPlacePage = () => {
   const searchRadius = useSelector((state) => state.place.searchRadius);
   const maxSearchRadius = useSelector((state) => state.place.maxSearchRadius);
   const nearbyPlacesFromStore = useSelector((state) => state.place.nearbyPlaces);
-  const [selected, setSelected] = useState({ region: '서울', district: '전체' });
+  const [selected, setSelected] = useState({ region: '전체', district: '전체' });
   const [searchQuery, setSearchQuery] = useState('');
   const mapViewRef = useRef(null); // PlaceMapView의 마커 제거 함수를 저장할 ref
+
+  // 지역명을 API area 파라미터로 변환
+  const getAreaFromRegion = (region) => {
+    if (!region || region === '전체') return null;
+    
+    // 지역명 매핑
+    const regionMap = {
+      '서울': '서울특별시',
+      '경기': '경기도',
+      '충청': null, // 충청은 여러 도시가 있어서 null로 처리 (전체 조회)
+      '강원': '강원도',
+      '경상': null, // 경상도는 여러 도시가 있어서 null로 처리 (전체 조회)
+      '전라': null, // 전라도는 여러 도시가 있어서 null로 처리 (전체 조회)
+      '제주': '제주특별자치도',
+    };
+    
+    return regionMap[region] || null;
+  };
 
   const handleTabChange = (tab) => {
     dispatch(setActiveTab(tab));
@@ -38,6 +56,12 @@ const MainPlacePage = () => {
   /** 검색 제출 */
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    // 지역목록 탭에서는 검색어만 업데이트 (usePlaceList가 자동으로 재호출됨)
+    if (activeTab === 'list') {
+      // 검색어가 비어있어도 null로 전달되어 전체 조회됨
+      return;
+    }
+    // 다른 탭에서는 기존 동작 (검색 페이지로 이동)
     if (!searchQuery.trim()) return;
     navigate(`/place/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
@@ -233,15 +257,18 @@ const MainPlacePage = () => {
     }
   }, [activeTab, gpsLocation, dispatch]);
 
-  /** 지역목록 탭: 전체 공연장 목록 조회 */
+  /** 지역목록 탭: 공연장 목록 조회 (검색어, 지역 필터 적용) */
+  const areaForApi = getAreaFromRegion(selected.region);
+  const keywordForApi = searchQuery.trim() || null;
+  
   const {
     places: listPlaces,
     sentinelRef,
     loading: listLoading,
     totalCount,
   } = usePlaceList({
-    area: null, // 전체 조회
-    keyword: null,
+    area: areaForApi, // 지역 필터
+    keyword: keywordForApi, // 검색어
     sortType: "이름순",
     enabled: activeTab === 'list', // 지역목록 탭일 때만 활성화
   });
@@ -314,11 +341,15 @@ const MainPlacePage = () => {
             </form>
           </div>
 
-          <RegionFilter onChange={setSelected} />
+          <RegionFilter 
+            onChange={setSelected} 
+            selectedRegion={selected.region}
+          />
 
           <div className={styles.resultHeader}>
             <span className={styles.resultFilter}>
-              전체
+              {selected.region === '전체' ? '전체' : selected.region}
+              {searchQuery && ` / ${searchQuery}`}
             </span>
             <span className={styles.resultCount}>총 {totalCount}곳</span>
           </div>
