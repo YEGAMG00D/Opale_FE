@@ -20,6 +20,8 @@ import ChangePasswordPage from '../pages/user/mypage/ChangePasswordPage';
 import FavoriteCulturePerformancePage from '../pages/user/mypage/FavoriteCulturePerformancePage';
 import BookingPerformancePage from '../pages/user/mypage/BookingPerformancePage';
 import BookingPerformanceRegistrationPage from '../pages/user/mypage/BookingPerformanceRegistrationPage';
+import MyPageTicketPage from '../pages/user/mypage/MyTicketPage';
+import TicketRegisterPage from '../pages/user/mypage/TicketRegisterPage';
 
 // 공연 관련
 import MainCulturePage from '../pages/culture/MainCulturePage';
@@ -43,6 +45,7 @@ import PerformanceSignalPage from '../pages/recommand/PerformanceSignalPage';
 import TicketRegistrationPage from '../pages/recommand/TicketRegistrationPage';
 import ReviewWritingPage from '../pages/recommand/ReviewWritingPage';
 import MyTicketPage from '../pages/recommand/MyTicketPage';
+import KeywordPerformancePage from '../pages/recommand/KeywordPerformancePage';
 
 // 예외 페이지 (레이아웃 없음)
 import LaunchingPage from '../pages/exception/LaunchingPage';
@@ -72,6 +75,9 @@ const AppRouter = () => {
           <Route path="my/favorite-performances" element={<FavoriteCulturePerformancePage />} />
           <Route path="my/booking-performances" element={<BookingPerformancePage />} />
           <Route path="my/booking-performances/register" element={<BookingPerformanceRegistrationPage />} />
+          <Route path="my/tickets" element={<MyPageTicketPage />} />
+          <Route path="my/tickets/register" element={<TicketRegisterPage />} />
+          <Route path="my/tickets/edit" element={<TicketRegisterPage />} />
 
           {/* 공연 관련 */}
           <Route path="culture" element={<MainCulturePage />} />
@@ -95,6 +101,7 @@ const AppRouter = () => {
           <Route path="recommend/ticket" element={<TicketRegistrationPage />} />
           <Route path="recommend/review" element={<ReviewWritingPage />} />
           <Route path="recommend/my-ticket" element={<MyTicketPage />} />
+          <Route path="recommend/keyword" element={<KeywordPerformancePage />} />
         </Route>
 
         {/* 콘텐츠 레이아웃이 적용되는 라우트들 (푸터 없음) */}

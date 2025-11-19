@@ -23,19 +23,24 @@
 
 .header-left {
   flex: 1;
+  display: flex;
+  align-items: center;
 }
 
-.header-left .logo {
-  font-size: 22px;
-  font-weight: 700;
-  color: #000000;
-  margin: 0;
-  font-family: 'Pretendard Variable', sans-serif;
-  letter-spacing: -0.5px;
+.header-left .logo-link {
+  display: flex;
+  align-items: center;
   text-decoration: none;
+  line-height: 0;
 }
 
-.header-left .logo:hover {
+.header-left .logo-image {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+}
+
+.header-left .logo-link:hover {
   opacity: 0.7;
 }
 
