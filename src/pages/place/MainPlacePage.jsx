@@ -12,7 +12,9 @@ import {
   setGpsLocation, 
   setSearchCenter, 
   setSearchRadius,
-  setMaxSearchRadius
+  setMaxSearchRadius,
+  setNearbyPlaces,
+  clearNearbyPlaces
 } from '../../store/placeSlice';
 
 const MainPlacePage = () => {
@@ -24,8 +26,10 @@ const MainPlacePage = () => {
   const searchCenter = useSelector((state) => state.place.searchCenter);
   const searchRadius = useSelector((state) => state.place.searchRadius);
   const maxSearchRadius = useSelector((state) => state.place.maxSearchRadius);
+  const nearbyPlacesFromStore = useSelector((state) => state.place.nearbyPlaces);
   const [selected, setSelected] = useState({ region: '서울', district: '전체' });
   const [searchQuery, setSearchQuery] = useState('');
+  const mapViewRef = useRef(null); // PlaceMapView의 마커 제거 함수를 저장할 ref
 
   const handleTabChange = (tab) => {
     dispatch(setActiveTab(tab));
@@ -39,7 +43,20 @@ const MainPlacePage = () => {
   };
 
   /** 현재 지도 중심 좌표로 검색 */
-  const handleSearchAtCenter = (center) => {
+  const handleSearchAtCenter = async (center) => {
+    console.log('🔍 [1단계] 공연장 버튼 클릭 - 검색 시작');
+    
+    // 1단계: 기존 근처 공연장 목록의 마커 제거
+    if (mapViewRef.current && mapViewRef.current.clearMarkers) {
+      console.log('🧹 [1단계] 기존 마커 제거 시작');
+      await mapViewRef.current.clearMarkers();
+      console.log('✅ [1단계] 기존 마커 제거 완료');
+    }
+    
+    // 2단계: 근처 공연장 목록을 전역 상태에서 비우기
+    dispatch(clearNearbyPlaces());
+    console.log('📭 [2단계] 근처 공연장 목록 비우기 완료');
+    
     // center에 radius가 포함되어 있으면 반경도 업데이트
     if (center.radius) {
       dispatch(setSearchRadius(center.radius));
@@ -52,7 +69,10 @@ const MainPlacePage = () => {
         maxRadiusKm: (maxRadius / 1000).toFixed(2) + 'km'
       });
     }
+    
+    // 3단계: searchCenter 업데이트 (이것이 useNearbyPlaces를 트리거함)
     dispatch(setSearchCenter({ latitude: center.latitude, longitude: center.longitude }));
+    console.log('📍 [3단계] searchCenter 업데이트 완료 - API 호출 대기');
   };
 
   /** 지도 탭: 근처 공연장 조회 (GPS 기반 또는 검색 중심 좌표 기반) */
@@ -72,6 +92,14 @@ const MainPlacePage = () => {
     radius: searchRadius, // 전역 상태의 반경 사용
     sortType: "거리순",
   });
+
+  // 4단계: API 결과를 전역 상태에 저장
+  useEffect(() => {
+    if (activeTab === 'map' && nearbyPlaces.length > 0) {
+      console.log('💾 [4단계] API 결과를 전역 상태에 저장:', nearbyPlaces.length, '개');
+      dispatch(setNearbyPlaces(nearbyPlaces));
+    }
+  }, [nearbyPlaces, activeTab, dispatch]);
 
   // 검색 결과가 없으면 반경을 늘려서 재검색 (에러가 아닌 경우만)
   useEffect(() => {
@@ -219,7 +247,8 @@ const MainPlacePage = () => {
   });
 
   // 현재 탭에 따라 사용할 데이터 결정
-  const places = activeTab === 'map' ? nearbyPlaces : listPlaces;
+  // 지도 탭에서는 전역 상태의 nearbyPlaces 사용 (순서 보장을 위해)
+  const places = activeTab === 'map' ? nearbyPlacesFromStore : listPlaces;
   const loading = activeTab === 'map' ? nearbyLoading : listLoading;
 
   return (
@@ -256,6 +285,7 @@ const MainPlacePage = () => {
             </div>
           )}
           <PlaceMapView 
+            ref={mapViewRef}
             places={places} 
             userLocation={gpsLocation} 
             searchCenter={searchCenter}

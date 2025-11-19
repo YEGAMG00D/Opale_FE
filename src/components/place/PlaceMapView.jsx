@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import styles from './PlaceMapView.module.css';
 import { loadNaverMapScript } from '../../utils/loadNaverMap';
 import PlaceWithPerformancesCard from '../cards/PlaceWithPerformancesCard';
+import { createPlaceMarkerHTML } from './PlaceMarker';
 
 /**
  * 여러 공연장 위치를 표시하는 네이버 지도 컴포넌트
@@ -12,7 +13,7 @@ import PlaceWithPerformancesCard from '../cards/PlaceWithPerformancesCard';
  * @param {Function} onSearchAtCenter - 현재 지도 중심 좌표로 검색하는 콜백 함수
  * @param {string} clientId - 네이버 지도 API Client ID (선택사항, 환경변수에서 가져옴)
  */
-const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, searchRadius = 0, onSearchAtCenter, clientId }) => {
+const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCenter = null, searchRadius = 0, onSearchAtCenter, clientId }, ref) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -185,7 +186,51 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
     };
   }, [clientId]); // clientId만 의존성으로 (지도는 한 번만 초기화)
 
-  // places와 userLocation이 변경될 때 마커 업데이트 및 지도 조정
+  // 마커 제거 함수 (외부에서 호출 가능하도록)
+  const clearMarkers = useCallback(async () => {
+    if (!mapInstanceRef.current || !window.naver || !window.naver.maps) {
+      return;
+    }
+
+    console.log('🧹 [마커 제거] 기존 공연장 마커 모두 제거 시작');
+    
+    // 모든 마커를 동기적으로 제거
+    const markersToRemove = [...markersRef.current];
+    markersToRemove.forEach(marker => {
+      if (marker) {
+        marker.setMap(null);
+        if (window.naver && window.naver.maps && window.naver.maps.Event) {
+          window.naver.maps.Event.clearInstanceListeners(marker);
+        }
+      }
+    });
+    
+    const infoWindowsToRemove = [...infoWindowsRef.current];
+    infoWindowsToRemove.forEach(infoWindow => {
+      if (infoWindow) {
+        infoWindow.close();
+        if (window.naver && window.naver.maps && window.naver.maps.Event) {
+          window.naver.maps.Event.clearInstanceListeners(infoWindow);
+        }
+      }
+    });
+    
+    // ref를 즉시 비움
+    markersRef.current = [];
+    infoWindowsRef.current = [];
+    
+    // 지도 재렌더링을 위한 약간의 지연
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    console.log('✅ [마커 제거] 기존 공연장 마커 제거 완료');
+  }, []);
+
+  // ref를 통해 clearMarkers 함수 노출
+  useImperativeHandle(ref, () => ({
+    clearMarkers
+  }), [clearMarkers]);
+
+  // places가 변경될 때 마커 생성 (4단계: 전역 상태에 저장된 목록으로 마커 생성)
   // mapLoading이 false일 때만 실행 (지도 초기화 완료 후)
   useEffect(() => {
     if (!mapInstanceRef.current || !window.naver || !window.naver.maps || mapLoading) {
@@ -194,7 +239,7 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
     }
 
     const map = mapInstanceRef.current;
-    console.log('🗺️ [디버깅] 마커 업데이트 시작:', {
+    console.log('🗺️ [4단계] 마커 생성 시작:', {
       placesCount: places.length,
       userLocation,
       searchCenter,
@@ -202,28 +247,10 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       mapReady: !!map
     });
 
-    // 기존 마커와 정보창 정리
-    markersRef.current.forEach(marker => {
-      if (marker) marker.setMap(null);
-    });
-    infoWindowsRef.current.forEach(infoWindow => {
-      if (infoWindow) infoWindow.close();
-    });
-    markersRef.current = [];
-    infoWindowsRef.current = [];
-
-    // 기존 마커 제거
-    if (userMarkerRef.current) {
-      userMarkerRef.current.setMap(null);
-      userMarkerRef.current = null;
-    }
-    if (searchCenterMarkerRef.current) {
-      searchCenterMarkerRef.current.setMap(null);
-      searchCenterMarkerRef.current = null;
-    }
-    if (searchRadiusCircleRef.current) {
-      searchRadiusCircleRef.current.setMap(null);
-      searchRadiusCircleRef.current = null;
+    // places가 비어있으면 마커 생성하지 않음 (목록이 비워진 상태)
+    if (!places || places.length === 0) {
+      console.log('📭 [4단계] 공연장 목록이 비어있음 - 마커 생성하지 않음');
+      return;
     }
 
     // 유효한 위치 정보가 있는 공연장만 필터링
@@ -236,6 +263,21 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
     console.log('✅ [디버깅] 유효한 공연장 개수:', validPlaces.length);
     if (validPlaces.length === 0 && places.length > 0) {
       console.warn('⚠️ [디버깅] places는 있지만 유효한 공연장이 없습니다. 원본 places:', places);
+      return;
+    }
+
+    // 기존 마커 제거 (GPS, 검색 기준 마커는 유지)
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setMap(null);
+      userMarkerRef.current = null;
+    }
+    if (searchCenterMarkerRef.current) {
+      searchCenterMarkerRef.current.setMap(null);
+      searchCenterMarkerRef.current = null;
+    }
+    if (searchRadiusCircleRef.current) {
+      searchRadiusCircleRef.current.setMap(null);
+      searchRadiusCircleRef.current = null;
     }
 
     // GPS 위치 마커 생성 (파란색) - 항상 표시
@@ -488,52 +530,95 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       }
     }
 
-    // 각 공연장에 마커 생성
-    validPlaces.forEach((place, index) => {
+    // 새로운 공연장 마커 생성 (비동기로 포스터 포함 마커 생성)
+    const createMarkers = async () => {
+      console.log('📍 [4단계] 새로운 공연장 마커 생성 시작:', validPlaces.length, '개');
+      
+      // 기존 마커가 남아있으면 제거 (안전장치)
+      if (markersRef.current.length > 0) {
+        console.warn('⚠️ [4단계] 기존 마커가 남아있습니다. 제거합니다.');
+        const remainingMarkers = [...markersRef.current];
+        remainingMarkers.forEach(marker => {
+          if (marker) {
+            marker.setMap(null);
+            if (window.naver && window.naver.maps && window.naver.maps.Event) {
+              window.naver.maps.Event.clearInstanceListeners(marker);
+            }
+          }
+        });
+        markersRef.current = [];
+      }
+
+      // 새로운 마커 생성
+      const newMarkers = [];
+      const newInfoWindows = [];
+
+      for (const place of validPlaces) {
       const position = new window.naver.maps.LatLng(place.latitude, place.longitude);
       
+        // 커스텀 마커 HTML 생성 (포스터 포함)
+        const { html: markerHTML, anchor } = await createPlaceMarkerHTML(place);
+        
+        // 마커 생성
       const marker = new window.naver.maps.Marker({
         position: position,
         map: map,
         title: place.name,
+          icon: {
+            content: markerHTML,
+            anchor: new window.naver.maps.Point(anchor.x, anchor.y),
+          },
+          zIndex: 100,
       });
-      markersRef.current.push(marker);
+        newMarkers.push(marker);
 
       // 정보창 생성
       const infoWindow = new window.naver.maps.InfoWindow({
         content: `<div style="padding: 10px; font-weight: 600;">${place.name}</div>`,
       });
-      infoWindowsRef.current.push(infoWindow);
+        newInfoWindows.push(infoWindow);
 
-      // 마커 클릭 시 공연장 카드 표시
+        // 마커 클릭 시 공연장 카드 표시
       window.naver.maps.Event.addListener(marker, 'click', () => {
         // 다른 정보창 닫기
-        infoWindowsRef.current.forEach(iw => {
+          newInfoWindows.forEach(iw => {
           if (iw && iw !== infoWindow && iw.getMap()) {
             iw.close();
           }
         });
-        
-        // 선택된 공연장 설정
-        setSelectedPlace(place);
-        selectedPlaceInfoWindowRef.current = infoWindow;
-        selectedPlaceMarkerRef.current = marker;
-        
-        // 인포윈도우 열기
-        infoWindow.open(map, marker);
-        
-        // 지도 중심을 해당 마커로 이동
-        map.setCenter(position);
-        map.setZoom(Math.max(map.getZoom(), 15)); // 최소 줌 레벨 15
-        
-        // 카드 시트 높이를 max-content로 설정 (내용에 맞게 자동 조정)
-        setSelectedPlaceCardHeight('max-content');
-        
-        // 애니메이션을 위해 약간의 지연 후 표시
-        setTimeout(() => {
-          setIsCardVisible(true);
-        }, 10);
-      });
+          
+          // 선택된 공연장 설정
+          setSelectedPlace(place);
+          selectedPlaceInfoWindowRef.current = infoWindow;
+          selectedPlaceMarkerRef.current = marker;
+          
+          // 인포윈도우 열기
+          infoWindow.open(map, marker);
+          
+          // 지도 중심을 해당 마커로 이동
+          map.setCenter(position);
+          map.setZoom(Math.max(map.getZoom(), 15)); // 최소 줌 레벨 15
+          
+          // 카드 시트 높이를 max-content로 설정 (내용에 맞게 자동 조정)
+          setSelectedPlaceCardHeight('max-content');
+          
+          // 애니메이션을 위해 약간의 지연 후 표시
+          setTimeout(() => {
+            setIsCardVisible(true);
+          }, 10);
+        });
+      }
+      
+      // 모든 마커 생성이 완료된 후에만 ref에 추가
+      markersRef.current = newMarkers;
+      infoWindowsRef.current = newInfoWindows;
+      
+      console.log('✅ [4단계] 새로운 공연장 마커 생성 완료:', markersRef.current.length, '개');
+    };
+
+    // await로 기다려서 마커 생성이 완료되도록 보장
+    createMarkers().catch(error => {
+      console.error('❌ [4단계] 마커 생성 중 오류 발생:', error);
     });
 
     console.log('✅ [디버깅] 마커 생성 완료:', {
@@ -544,7 +629,8 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       hasSearchRadiusCircle: !!searchRadiusCircleRef.current,
       validPlacesCount: validPlaces.length
     });
-  }, [places, userLocation, searchCenter, searchRadius, mapLoading]); // mapLoading도 의존성에 추가하여 지도 초기화 완료 후 실행
+
+  }, [places, userLocation, searchCenter, searchRadius, mapLoading]); // places가 변경될 때만 마커 생성
 
   // 컴포넌트 언마운트 시 마커 정리
   useEffect(() => {
@@ -1089,7 +1175,9 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       )}
     </div>
   );
-};
+});
+
+PlaceMapView.displayName = 'PlaceMapView';
 
 export default PlaceMapView;
 
