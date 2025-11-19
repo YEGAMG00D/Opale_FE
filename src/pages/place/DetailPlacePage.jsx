@@ -159,7 +159,7 @@ const DetailPlacePage = () => {
           onClick={() => setIsStageTableOpen(!isStageTableOpen)}
           style={{ cursor: 'pointer' }}
         >
-          공연장정보
+          공연관 정보
           <span className={styles.toggleIcon}>
             {isStageTableOpen ? '▲' : '▼'}
           </span>
@@ -168,7 +168,7 @@ const DetailPlacePage = () => {
           <table className={styles.stageTable}>
             <thead>
               <tr>
-                <th>공연장명</th>
+                <th>공연관명</th>
                 <th>객석수</th>
                 <th>무대시설</th>
               </tr>
