@@ -9,6 +9,7 @@ import BookingLinks from '../../components/culture/BookingLinks';
 import OpenChatSection from '../../components/culture/OpenChatSection';
 import ReviewCard from '../../components/culture/ReviewCard';
 import PerformanceInfoImages from '../../components/culture/PerformanceInfoImages';
+import PlaceMap from '../../components/place/PlaceMap';
 import { fetchPerformanceBasic } from '../../api/performanceApi';
 import { fetchPerformanceReviewsByPerformance } from '../../api/reviewApi';
 import { isPerformanceLiked, togglePerformanceFavorite, isPerformanceReviewLiked, togglePerformanceReviewFavorite } from '../../api/favoriteApi';
@@ -1275,6 +1276,17 @@ const DetailPerformancePage = () => {
                 </div>
               ) : (
                 <div className={styles.venueCard}>
+                  {/* 지도 영역 */}
+                  {(placeInfo?.latitude || placeInfo?.la) && (placeInfo?.longitude || placeInfo?.lo) && (
+                    <div className={styles.venueMapArea}>
+                      <PlaceMap
+                        latitude={placeInfo?.latitude || placeInfo?.la}
+                        longitude={placeInfo?.longitude || placeInfo?.lo}
+                        placeName={placeInfo?.placeName || placeInfo?.name || performance?.venue || '공연장'}
+                      />
+                    </div>
+                  )}
+                  
                   <div className={styles.venueInfoItem}>
                     <div className={styles.venueInfoIcon}>🏛️</div>
                     <div className={styles.venueInfoContent}>

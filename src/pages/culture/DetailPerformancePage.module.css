@@ -1118,6 +1118,15 @@
   transform: translateY(0);
 }
 
+.venueMapArea {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.venueMapArea > * {
+  width: 100%;
+  margin-bottom: 0;
+}
 
 /* 반응형 디자인 */
 @media (max-width: 375px) {
