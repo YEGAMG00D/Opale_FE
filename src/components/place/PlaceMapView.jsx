@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import styles from './PlaceMapView.module.css';
 import { loadNaverMapScript } from '../../utils/loadNaverMap';
-import PlaceApiCard from '../cards/PlaceApiCard';
+import PlaceWithPerformancesCard from '../cards/PlaceWithPerformancesCard';
 
 /**
  * 여러 공연장 위치를 표시하는 네이버 지도 컴포넌트
@@ -995,7 +995,7 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
           >
             <ul className={styles.placeList}>
               {places.map((place, index) => (
-                <PlaceApiCard
+                <PlaceWithPerformancesCard
                   key={place.id + "_" + index}
                   {...place}
                 />

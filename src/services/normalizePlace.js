@@ -11,6 +11,7 @@ export const normalizePlace = (item) => {
     stageCount: item.stageCount ?? 0,
     rating: item.rating ?? 0,
     reviewCount: item.reviewCount ?? 0,
+    distance: item.distance ?? null, // 거리 (미터 단위)
   };
 };
 

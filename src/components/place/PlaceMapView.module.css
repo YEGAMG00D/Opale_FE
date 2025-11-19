@@ -12,8 +12,8 @@
 /* 반경 정보 표시 */
 .radiusInfo {
   position: absolute;
-  top: 100px;
-  right: 12px;
+  top: 90px; /* 버튼 그룹과 같은 라인에 맞춤 */
+  right: 5%;
   z-index: 1000;
   padding: 8px 12px;
   background-color: rgba(255, 255, 255, 0.95);
@@ -23,12 +23,16 @@
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   white-space: nowrap;
+  display: flex;
+  align-items: center; /* 수직 중앙 정렬 */
+  height: 32px; /* 버튼들과 같은 높이로 고정 */
+  box-sizing: border-box;
 }
 
 /* 버튼 그룹 */
 .buttonGroup {
   position: absolute;
-  top: 80px; /* 탭 바로 아래 위치 */
+  top: 90px; /* 반경 정보와 같은 라인에 맞춤 */
   left: 20%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -39,8 +43,8 @@
 
 /* 현재 위치로 이동 버튼 */
 .locationButton {
-  width: 40px;
-  height: 40px;
+  width: 32px; /* 반경 정보와 같은 높이로 조정 */
+  height: 32px; /* 반경 정보와 같은 높이로 조정 */
   padding: 0;
   background-color: #ffffff;
   color: #797979;
@@ -77,17 +81,22 @@
 
 /* 현 위치에서 검색 버튼 */
 .searchButton {
-  padding: 10px 20px;
+  padding: 8px 16px; /* 반경 정보와 같은 padding으로 조정 */
   background-color: #ffffff;
   color: #797979;
   border: none;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 12px; /* 반경 정보와 같은 font-size로 조정 */
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
   white-space: nowrap;
+  height: 32px; /* 반경 정보와 같은 높이로 고정 */
+  box-sizing: border-box;
+  display: flex;
+  align-items: center; /* 수직 중앙 정렬 */
+  justify-content: center;
 }
 
 .searchButton:hover {
