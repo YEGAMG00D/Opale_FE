@@ -24,6 +24,13 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
   
+  // 선택된 공연장 상태 (마커 클릭 시)
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [selectedPlaceCardHeight, setSelectedPlaceCardHeight] = useState(0); // 선택된 카드 시트 높이 (0 또는 'max-content')
+  const [isCardVisible, setIsCardVisible] = useState(false); // 카드 표시 여부 (애니메이션용)
+  const selectedPlaceInfoWindowRef = useRef(null); // 선택된 공연장의 인포윈도우 ref
+  const selectedPlaceMarkerRef = useRef(null); // 선택된 공연장의 마커 ref
+  
   // 하단 시트 상태
   const [sheetHeight, setSheetHeight] = useState(180); // 기본 높이 (px) - 드래그 핸들 + 헤더 + 일부 카드가 보이도록
   const [isDragging, setIsDragging] = useState(false);
@@ -482,7 +489,7 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
     }
 
     // 각 공연장에 마커 생성
-    validPlaces.forEach((place) => {
+    validPlaces.forEach((place, index) => {
       const position = new window.naver.maps.LatLng(place.latitude, place.longitude);
       
       const marker = new window.naver.maps.Marker({
@@ -498,7 +505,7 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       });
       infoWindowsRef.current.push(infoWindow);
 
-      // 마커 클릭 시 정보창 표시
+      // 마커 클릭 시 공연장 카드 표시
       window.naver.maps.Event.addListener(marker, 'click', () => {
         // 다른 정보창 닫기
         infoWindowsRef.current.forEach(iw => {
@@ -506,12 +513,26 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
             iw.close();
           }
         });
-        // 현재 정보창 토글
-        if (infoWindow.getMap()) {
-          infoWindow.close();
-        } else {
-          infoWindow.open(map, marker);
-        }
+        
+        // 선택된 공연장 설정
+        setSelectedPlace(place);
+        selectedPlaceInfoWindowRef.current = infoWindow;
+        selectedPlaceMarkerRef.current = marker;
+        
+        // 인포윈도우 열기
+        infoWindow.open(map, marker);
+        
+        // 지도 중심을 해당 마커로 이동
+        map.setCenter(position);
+        map.setZoom(Math.max(map.getZoom(), 15)); // 최소 줌 레벨 15
+        
+        // 카드 시트 높이를 max-content로 설정 (내용에 맞게 자동 조정)
+        setSelectedPlaceCardHeight('max-content');
+        
+        // 애니메이션을 위해 약간의 지연 후 표시
+        setTimeout(() => {
+          setIsCardVisible(true);
+        }, 10);
       });
     });
 
@@ -643,6 +664,26 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
       longitude: userLocation.longitude,
       gpsLocation: userLocation 
     });
+  };
+
+  // 선택된 공연장 카드 닫기 핸들러
+  const handleCloseSelectedPlaceCard = () => {
+    // 먼저 애니메이션으로 닫기
+    setIsCardVisible(false);
+    setSelectedPlaceCardHeight(0);
+    
+    // 애니메이션 완료 후 상태 정리
+    setTimeout(() => {
+      // 인포윈도우 닫기
+      if (selectedPlaceInfoWindowRef.current) {
+        selectedPlaceInfoWindowRef.current.close();
+        selectedPlaceInfoWindowRef.current = null;
+      }
+      
+      // 선택 해제
+      setSelectedPlace(null);
+      selectedPlaceMarkerRef.current = null;
+    }, 300); // transition 시간과 동일
   };
 
   // 반경 표시 텍스트 포맷팅
@@ -871,12 +912,54 @@ const PlaceMapView = ({ places = [], userLocation = null, searchCenter = null, s
         </div>
       )}
       
+      {/* 선택된 공연장 카드 시트 (목록 위에 표시) */}
+      {selectedPlace && (
+        <div 
+          className={`${styles.selectedPlaceCard} ${isCardVisible ? styles.cardVisible : ''}`}
+          style={{ 
+            height: selectedPlaceCardHeight === 'max-content' ? 'max-content' : `${selectedPlaceCardHeight}px`,
+            maxHeight: selectedPlaceCardHeight === 'max-content' ? 'calc(100vh - 61px - 76px)' : 'none' // header와 footer 제외한 최대 높이
+          }}
+        >
+          {/* 닫기 버튼 */}
+          <button 
+            className={styles.closeButton}
+            onClick={handleCloseSelectedPlaceCard}
+            type="button"
+            aria-label="닫기"
+          >
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path 
+                d="M18 6L6 18M6 6L18 18" 
+                stroke="#6b7280" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          
+          {/* 공연장 카드 내용 */}
+          <div className={styles.selectedPlaceCardContent}>
+            <PlaceWithPerformancesCard
+              {...selectedPlace}
+            />
+          </div>
+        </div>
+      )}
+      
       {/* 하단 시트 - 공연장 목록 */}
       {places.length > 0 && (
         <div 
           ref={sheetRef}
-          className={`${styles.bottomSheet} ${isTransitioning ? styles.transitioning : ''} ${isDragging ? styles.dragging : ''}`}
-          style={{ height: `${sheetHeight}px` }}
+          className={`${styles.bottomSheet} ${isTransitioning ? styles.transitioning : ''} ${isDragging ? styles.dragging : ''} ${selectedPlace ? styles.sheetHidden : ''}`}
+          style={{ height: selectedPlace ? '0px' : `${sheetHeight}px` }}
         >
           {/* 드래그 핸들 */}
           <div 
