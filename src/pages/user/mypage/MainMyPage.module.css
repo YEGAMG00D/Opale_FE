@@ -2,59 +2,161 @@
   width: 100%;
   max-width: 430px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0;
   background-color: #ffffff;
   min-height: 100vh;
   overflow-x: hidden;
   box-sizing: border-box;
 }
 
-h1 {
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 15px;
-}
-
-p {
-  font-size: 16px;
-  color: #666;
-  line-height: 1.5;
-}
-
-.navigation {
-  margin: 30px 0;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-}
-
-.navigation h2 {
-  font-size: 18px;
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.linkGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
-}
-
-.link {
-  display: block;
-  padding: 10px 15px;
+/* 프로필 섹션 */
+.profileSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px 30px;
   background-color: #ffffff;
+}
+
+.profileImage {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #fff5f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  border: 2px solid #ffb6c1;
+}
+
+.profileName {
+  font-size: 18px;
+  font-weight: 600;
   color: #333;
+}
+
+/* 메뉴 리스트 */
+.menuList {
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px;
+  gap: 0;
+  background-color: #ffffff;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  padding: 16px 0;
   text-decoration: none;
+  color: #333;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.menuItem:last-child {
+  border-bottom: none;
+}
+
+.menuItem:hover {
+  background-color: #fff5f7;
+}
+
+.menuIcon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffb6c1;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.menuText {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 400;
+  color: #333;
+}
+
+.menuArrow {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  flex-shrink: 0;
+}
+
+/* 관심 공연 미리보기 섹션 */
+.favoritePreviewSection {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #ffffff;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.previewTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.moreButton {
+  padding: 6px 12px;
+  background-color: #ffffff;
+  color: #ffb6c1;
+  border: 1px solid #ffb6c1;
   border-radius: 6px;
-  text-align: center;
+  font-size: 14px;
   font-weight: 500;
-  border: 1px solid #e9ecef;
+  cursor: pointer;
   transition: all 0.2s;
 }
 
-.link:hover {
-  background-color: #007bff;
+.moreButton:hover {
+  background-color: #ffb6c1;
   color: #ffffff;
-  border-color: #007bff;
+}
+
+.performanceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.emptySubText {
+  font-size: 14px;
+  color: #999;
+  margin-top: 8px;
 }

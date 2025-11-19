@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import styles from './UpdateMyInfoPage.module.css';
 import FormInputField from '../../../components/signup/FormInputField';
 import FormInputWithButton from '../../../components/signup/FormInputWithButton';
-import { validateNickname, validatePhone, validateAddress, validateDetailAddress } from '../../../utils/validation';
-import { fetchMyInfo, updateMyInfo, checkNicknameDuplicate } from '../../../api/userApi';
+import { validateNickname, validatePhone, validateAddress, validateDetailAddress, validatePassword, validateConfirmPassword } from '../../../utils/validation';
+import { fetchMyInfo, updateMyInfo, checkNicknameDuplicate, changePassword } from '../../../api/userApi';
 
 const UpdateMyInfoPage = () => {
   const navigate = useNavigate();
@@ -14,26 +14,35 @@ const UpdateMyInfoPage = () => {
     address: '',
     detailAddress: '',
   });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   const [validationMessages, setValidationMessages] = useState({});
+  const [passwordValidationMessages, setPasswordValidationMessages] = useState({});
   const [loading, setLoading] = useState(true);
   const [originalNickname, setOriginalNickname] = useState(''); // 원래 닉네임 저장 (중복 확인 스킵용)
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
 
   // 페이지 진입 시 본인 정보 조회
   useEffect(() => {
     const loadMyInfo = async () => {
       try {
         setLoading(true);
-        const userInfo = await fetchMyInfo();
+        const info = await fetchMyInfo();
+        setUserInfo(info);
         
         const loadedData = {
-          nickname: userInfo.nickname || '',
-          phone: userInfo.phone || '',
-          address: userInfo.address1 || '',
-          detailAddress: userInfo.address2 || '',
+          nickname: info.nickname || '',
+          phone: info.phone || '',
+          address: info.address1 || '',
+          detailAddress: info.address2 || '',
         };
         
         setFormData(loadedData);
-        setOriginalNickname(userInfo.nickname || '');
+        setOriginalNickname(info.nickname || '');
         
         // 모든 필드에 대해 유효성 검사 실행 (원래 값이므로 모두 유효한 것으로 처리)
         setValidationMessages({
@@ -141,6 +150,92 @@ const UpdateMyInfoPage = () => {
     }
   };
 
+  // 비밀번호 변경 핸들러
+  const handlePasswordInputChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // 유효성 검사 실행
+    let validationResult = { isValid: null, message: '' };
+    
+    switch (name) {
+      case 'currentPassword':
+        if (!value.trim()) {
+          validationResult = { isValid: false, message: '현재 비밀번호를 입력해주세요.' };
+        } else {
+          validationResult = { isValid: true, message: '' };
+        }
+        break;
+      case 'newPassword':
+        validationResult = validatePassword(value);
+        // 새 비밀번호가 변경되면 비밀번호 확인도 다시 검증
+        if (passwordData.confirmPassword) {
+          const confirmResult = validateConfirmPassword(value, passwordData.confirmPassword);
+          setPasswordValidationMessages(prev => ({
+            ...prev,
+            confirmPassword: confirmResult
+          }));
+        }
+        break;
+      case 'confirmPassword':
+        validationResult = validateConfirmPassword(passwordData.newPassword, value);
+        break;
+      default:
+        break;
+    }
+
+    setPasswordValidationMessages(prev => ({
+      ...prev,
+      [name]: validationResult
+    }));
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    
+    // 최종 유효성 검사
+    const isCurrentPasswordValid = passwordValidationMessages?.currentPassword?.isValid === true;
+    const isNewPasswordValid = passwordValidationMessages?.newPassword?.isValid === true;
+    const isConfirmPasswordValid = passwordValidationMessages?.confirmPassword?.isValid === true;
+
+    if (!isCurrentPasswordValid || !isNewPasswordValid || !isConfirmPasswordValid) {
+      alert('입력한 정보를 확인해주세요.');
+      return;
+    }
+
+    try {
+      await changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      
+      alert('비밀번호가 변경되었습니다.');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setPasswordValidationMessages({});
+      setShowPasswordSection(false);
+    } catch (err) {
+      console.error('비밀번호 변경 실패:', err);
+      
+      // 현재 비밀번호가 틀린 경우
+      if (err.response?.status === 400 || err.response?.status === 401) {
+        setPasswordValidationMessages(prev => ({
+          ...prev,
+          currentPassword: { isValid: false, message: '현재 비밀번호가 올바르지 않습니다.' }
+        }));
+        alert('현재 비밀번호가 올바르지 않습니다.');
+      } else {
+        alert(err.message || '비밀번호 변경에 실패했습니다.');
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -198,11 +293,40 @@ const UpdateMyInfoPage = () => {
   return (
     <div className={styles.container}>
       <div className={styles.title}>
-        <h1>개인 정보 변경</h1>
+        <h1>회원정보 변경</h1>
       </div>
 
       <div className={styles.content}>
+        {/* 회원정보 표시 섹션 */}
+        {userInfo && (
+          <div className={styles.infoSection}>
+            <h2 className={styles.sectionTitle}>회원정보</h2>
+            <div className={styles.infoCard}>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>이메일</span>
+                <span className={styles.infoValue}>{userInfo.email || '-'}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>닉네임</span>
+                <span className={styles.infoValue}>{userInfo.nickname || '-'}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>연락처</span>
+                <span className={styles.infoValue}>{userInfo.phone || '-'}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>주소</span>
+                <span className={styles.infoValue}>
+                  {userInfo.address1 || '-'} {userInfo.address2 ? ` ${userInfo.address2}` : ''}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 정보 변경 섹션 */}
         <div className={styles.card}>
+          <h2 className={styles.cardTitle}>정보 변경</h2>
           <div className={styles.stepContent}>
             <FormInputWithButton
               label="닉네임"
@@ -260,6 +384,72 @@ const UpdateMyInfoPage = () => {
           >
             정보 변경
           </button>
+        </div>
+
+        {/* 비밀번호 변경 섹션 */}
+        <div className={styles.card}>
+          <div className={styles.passwordSectionHeader}>
+            <h2 className={styles.cardTitle}>비밀번호 변경</h2>
+            <button
+              className={styles.toggleButton}
+              onClick={() => setShowPasswordSection(!showPasswordSection)}
+            >
+              {showPasswordSection ? '접기' : '펼치기'}
+            </button>
+          </div>
+          {showPasswordSection && (
+            <div className={styles.stepContent}>
+              <FormInputField
+                label="현재 비밀번호"
+                required
+                name="currentPassword"
+                type="password"
+                placeholder="현재 비밀번호를 입력해주세요"
+                value={passwordData.currentPassword}
+                onChange={handlePasswordInputChange}
+                validation={passwordValidationMessages?.currentPassword || { isValid: null, message: '' }}
+                showPasswordToggle={true}
+              />
+
+              <FormInputField
+                label="새 비밀번호"
+                required
+                name="newPassword"
+                type="password"
+                placeholder="비밀번호는 영문, 숫자, 특수문자를 포함한 8자"
+                value={passwordData.newPassword}
+                onChange={handlePasswordInputChange}
+                validation={passwordValidationMessages?.newPassword || { isValid: null, message: '' }}
+                showPasswordToggle={true}
+              />
+
+              <FormInputField
+                label="새 비밀번호 확인"
+                required
+                name="confirmPassword"
+                type="password"
+                placeholder="새 비밀번호를 다시 입력해주세요"
+                value={passwordData.confirmPassword}
+                onChange={handlePasswordInputChange}
+                validation={passwordValidationMessages?.confirmPassword || { isValid: null, message: '' }}
+                showPasswordToggle={true}
+              />
+
+              <div className={styles.passwordButtonSection}>
+                <button
+                  className={styles.submitButton}
+                  onClick={handlePasswordSubmit}
+                  disabled={
+                    !passwordValidationMessages?.currentPassword?.isValid ||
+                    !passwordValidationMessages?.newPassword?.isValid ||
+                    !passwordValidationMessages?.confirmPassword?.isValid
+                  }
+                >
+                  비밀번호 변경
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

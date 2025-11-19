@@ -1,0 +1,660 @@
+.container {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: #FFFFFF;
+  min-height: 100vh;
+  padding: 0 0 61px; /* Footer 높이만큼 (1px border + 60px min-height) */
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.headerTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+.registerButton {
+  padding: 8px 16px;
+  background-color: #111827;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.registerButton:hover {
+  background-color: #374151;
+}
+
+/* 탭 메뉴 */
+.tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #FFFFFF;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #111827;
+}
+
+.tab.active {
+  color: #111827;
+  border-bottom-color: #111827;
+}
+
+/* 티켓 목록 */
+.ticketList {
+  padding: 20px 24px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.emptyIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.emptyText {
+  font-size: 16px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.emptySubText {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.ticketGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+/* 티켓 카드 래퍼 */
+.ticketCardWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 티켓 카드 플립 컨테이너 */
+.ticketCard {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.ticketCard.flipped {
+  /* 플립 상태는 자식 요소에서 처리 */
+}
+
+/* 앞면과 뒷면 공통 스타일 */
+.ticketFront,
+.ticketBack {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  overflow: visible;
+  border: 1px solid #e5e7eb;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.ticketFront {
+  transform: rotateY(0deg);
+}
+
+.ticketBack {
+  transform: rotateY(180deg);
+}
+
+.ticketCard.flipped .ticketFront {
+  transform: rotateY(-180deg);
+}
+
+.ticketCard.flipped .ticketBack {
+  transform: rotateY(0deg);
+}
+
+/* 앞면: 포스터 + 제목 */
+.ticketFront {
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ticketPoster {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.posterImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transform: scale(1.1);
+}
+
+.posterOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0) 30%,
+    rgba(0, 0, 0, 0) 50%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+  pointer-events: none;
+}
+
+.ticketTitleSection {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.6) 80%, transparent);
+  z-index: 2;
+}
+
+.ticketPerformanceName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 3px 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 2px rgba(0, 0, 0, 0.5);
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+
+.ticketDateInfo {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* 뒷면: 좌석 정보 */
+.ticketBack {
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: visible;
+  height: 100%;
+}
+
+.ticketBackHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.ticketBackTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  flex: 1;
+  line-height: 1.3;
+}
+
+.ticketBackBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  overflow: visible;
+  justify-content: flex-start;
+}
+
+.ticketInfoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ticketLabel {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.ticketValue {
+  font-size: 13px;
+  color: #111827;
+  font-weight: 500;
+  word-break: break-word;
+  text-align: right;
+  flex: 1;
+  margin-left: 12px;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+/* 앞면의 deleteButton은 absolute 위치 */
+.ticketFront .deleteButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 24px;
+  height: 24px;
+  font-size: 20px;
+}
+
+.ticketFront .deleteButton:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+.deleteButton:hover {
+  color: #ef4444;
+}
+
+.reviewButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reviewButton:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.editButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #ffb6c1;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.editButton:hover {
+  background-color: #ffa5b8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+}
+
+/* 티켓 등록 모달 스타일 */
+.ticketTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.scanArea {
+  width: 100%;
+  aspect-ratio: 1;
+  background-color: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.cameraArea {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.videoPreview {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  background-color: #000;
+}
+
+.cameraControls {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.captureButton {
+  flex: 1;
+  padding: 12px;
+  background-color: #111827;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.captureButton:hover {
+  background-color: #374151;
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 12px;
+  background-color: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: #e5e7eb;
+}
+
+.cameraIcon {
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+.scanInstruction {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 200px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.imagePreview {
+  width: 100%;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.imagePreview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.ticketForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formGroup label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.formGroup input {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #fef3f2;
+  color: #111827;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #fbccdc;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.seatInputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.seatInput {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #fef3f2;
+  color: #111827;
+}
+
+.seatInput:focus {
+  outline: none;
+  border-color: #fbccdc;
+}
+
+.primaryButton {
+  width: 100%;
+  padding: 14px;
+  background-color: #fef3f2;
+  border: 1px solid #fbccdc;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.primaryButton:hover {
+  background-color: #fee4e2;
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.secondaryButton:hover {
+  background-color: #e5e7eb;
+}
+
+.tertiaryButton {
+  width: 100%;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  border-radius: 6px;
+  font-size: 12px;
+  color: rgba(107, 114, 128, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.tertiaryButton:hover {
+  opacity: 0.8;
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* 모달 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modalContent {
+  background-color: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  max-width: 430px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.closeButton:hover {
+  color: #111827;
+}
+
+@media (max-width: 768px) {
+  .ticketGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
