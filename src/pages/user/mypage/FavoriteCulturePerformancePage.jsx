@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchFavoritePerformances } from '../../../api/favoriteApi';
+import { fetchFavoritePerformances, togglePerformanceFavorite } from '../../../api/favoriteApi';
 import styles from './FavoriteCulturePerformancePage.module.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -154,11 +154,24 @@ const FavoriteCulturePerformancePage = () => {
                   {/* 하트 버튼 */}
                   <button
                     className={styles.favoriteButton}
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      // 관심 해제 기능은 필요시 추가
+                      const performanceId = performance.id || performance.performanceId;
+                      if (!performanceId) return;
+
+                      try {
+                        await togglePerformanceFavorite(performanceId);
+                        // 관심 해제 후 목록에서 제거
+                        setFavoritePerformances(prev => 
+                          prev.filter(p => (p.id || p.performanceId) !== performanceId)
+                        );
+                      } catch (err) {
+                        console.error('관심 공연 해제 실패:', err);
+                        // 에러 발생 시 사용자에게 알림 (선택사항)
+                        alert('관심 공연 해제에 실패했습니다. 다시 시도해주세요.');
+                      }
                     }}
-                    aria-label="관심 공연"
+                    aria-label="관심 공연 해제"
                   >
                     <svg
                       width="20"
