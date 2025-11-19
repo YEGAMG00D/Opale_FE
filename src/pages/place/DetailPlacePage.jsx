@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styles from './DetailPlacePage.module.css';
 import PlaceShowHistory from '../../components/place/PlaceShowHistory';
 import PlaceReviewCard from '../../components/place/PlaceReviewCard';
+import PlaceMap from '../../components/place/PlaceMap';
 import { usePlaceDetail } from '../../hooks/usePlaceDetail';
 import { usePlaceFacilities } from '../../hooks/usePlaceFacilities';
 import { usePlaceStages } from '../../hooks/usePlaceStages';
@@ -17,6 +18,7 @@ const DetailPlacePage = () => {
   const { stages } = usePlaceStages(id);
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [writeForm, setWriteForm] = useState({ title: '', content: '', rating: 5 });
+  const [isStageTableOpen, setIsStageTableOpen] = useState(false);
   
   // 리뷰 데이터 상태
   const [reviews, setReviews] = useState([]);
@@ -77,127 +79,130 @@ const DetailPlacePage = () => {
 
   return (
     <div className={styles.container}>
-      {/* 헤더 섹션 */}
-      <div className={styles.header}>
-        <h1 className={styles.title}>
-          {place.name}
-          <a href={place.homepage} target="_blank" rel="noopener noreferrer" className={styles.linkIcon}>
-            🔗
-          </a>
-        </h1>
-        <div className={styles.ratingRow}>
-          <span className={styles.star}>★</span>
-          <span className={styles.rating}>
-            {typeof place.rating === 'number' ? place.rating.toFixed(1) : parseFloat(place.rating || 0).toFixed(1)}
-          </span>
-          <span className={styles.count}>({place.reviewCount || 0})</span>
+      {/* 시설특성 섹션 */}
+      <div className={styles.section}>
+        {/* 헤더 섹션 */}
+        <div className={styles.header}>
+          <div className={styles.sectionTitle}>{place.facilityType}</div>
+          <h1 className={styles.title}>{place.name}</h1>
+          <div className={styles.address}>{place.address}</div>
+          <div className={styles.headerTop}>
+            <div className={styles.ratingRow}>
+              <span className={styles.star}>★</span>
+              <span className={styles.rating}>
+                {typeof place.rating === 'number' ? place.rating.toFixed(1) : parseFloat(place.rating || 0).toFixed(1)}
+              </span>
+              <span className={styles.count}>({place.reviewCount || 0})</span>
+            </div>
+            <a href={place.homepage} target="_blank" rel="noopener noreferrer" className={styles.homeButton}>
+              홈
+            </a>
+          </div>
+          
         </div>
+
+        <div className={styles.facilityInfoContainer}>
+          <div className={styles.facilityInfoTable}>
+            <table className={styles.infoTable}>
+              <tbody>
+                <tr>
+                  <th>개관연도</th>
+                  <td>{place.openingYear}</td>
+                </tr>
+                <tr>
+                  <th>객석수</th>
+                  <td>총 {place.totalSeats.toLocaleString()}석</td>
+                </tr>
+                <tr>
+                  <th>공연관 수</th>
+                  <td>{place.numberOfStages}개</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className={styles.mapArea}>
+            <PlaceMap 
+              latitude={place.latitude} 
+              longitude={place.longitude}
+              placeName={place.name}
+            />
+          </div>
+        </div>
+        <button className={styles.facilityDetailsButton}>
+          <div className={styles.facilityDetailsContent}>
+            <div className={styles.facilityGroup}>
+              <span className={styles.facilityLabel}>편의시설:</span>
+              {convenienceFacilities.length > 0 ? (
+                <span className={styles.facilityItem}>√ {convenienceFacilities.join(', ')}</span>
+              ) : (
+                <span className={styles.noFacility}>-</span>
+              )}
+            </div>
+            <div className={styles.facilityGroup}>
+              <span className={styles.facilityLabel}>주차시설:</span>
+              {parkingFacilities.length > 0 ? (
+                <span className={styles.facilityItem}>√ {parkingFacilities.join(', ')}</span>
+              ) : (
+                <span className={styles.noFacility}>-</span>
+              )}
+            </div>
+          </div>
+        </button>
       </div>
 
-      {/* 공연시설 정보 */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>공연시설명</h2>
-        <table className={styles.infoTable}>
-          <tbody>
-            <tr>
-              <th>공연시설명</th>
-              <td>{place.name}</td>
-            </tr>
-            <tr>
-              <th>개관연도</th>
-              <td>{place.openingYear}</td>
-            </tr>
-            <tr>
-              <th>시설특성</th>
-              <td>{place.facilityType}</td>
-            </tr>
-            <tr>
-              <th>객석수</th>
-              <td>총 {place.totalSeats.toLocaleString()}석</td>
-            </tr>
-            <tr>
-              <th>공연장 수</th>
-              <td>{place.numberOfStages}개</td>
-            </tr>
-            <tr>
-              <th>홈페이지</th>
-              <td>
-                <a href={place.homepage} target="_blank" rel="noopener noreferrer" className={styles.homepageLink}>
-                  {place.homepage}
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <th>주소</th>
-              <td>{place.address}</td>
-            </tr>
-            <tr>
-              <th>주요 시설</th>
-              <td>
-                <div className={styles.facilities}>
-                  <div className={styles.facilityGroup}>
-                    <span className={styles.facilityLabel}>편의시설:</span>
-                    {convenienceFacilities.length > 0 ? (
-                      <span className={styles.facilityItem}>√ {convenienceFacilities.join(', ')}</span>
-                    ) : (
-                      <span className={styles.noFacility}>-</span>
-                    )}
-                  </div>
-                  <div className={styles.facilityGroup}>
-                    <span className={styles.facilityLabel}>주차시설:</span>
-                    {parkingFacilities.length > 0 ? (
-                      <span className={styles.facilityItem}>√ {parkingFacilities.join(', ')}</span>
-                    ) : (
-                      <span className={styles.noFacility}>-</span>
-                    )}
-                  </div>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+
 
       {/* 공연장 정보 */}
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>공연장정보</h2>
-        <table className={styles.stageTable}>
-          <thead>
-            <tr>
-              <th>공연장명</th>
-              <th>객석수</th>
-              <th>무대시설</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stages.length > 0 ? (
-              stages.map((stage) => (
-                <tr key={stage.id}>
-                  <td>{stage.name}</td>
-                  <td>
-                    총 {stage.seatscale.toLocaleString()}석
-                    {stage.disabledseatscale > 0 && (
-                      <span className={styles.disabledSeats}> (장애인석 {stage.disabledseatscale}석)</span>
-                    )}
-                  </td>
-                  <td>
-                    {stage.stageFacilities.length > 0 ? (
-                      <span className={styles.facilityItem}>√ {stage.stageFacilities.join(', ')}</span>
-                    ) : (
-                      <span className={styles.noFacility}>-</span>
-                    )}
+        <h2 
+          className={styles.sectionTitle} 
+          onClick={() => setIsStageTableOpen(!isStageTableOpen)}
+          style={{ cursor: 'pointer' }}
+        >
+          공연장정보
+          <span className={styles.toggleIcon}>
+            {isStageTableOpen ? '▲' : '▼'}
+          </span>
+        </h2>
+        {isStageTableOpen && (
+          <table className={styles.stageTable}>
+            <thead>
+              <tr>
+                <th>공연장명</th>
+                <th>객석수</th>
+                <th>무대시설</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stages.length > 0 ? (
+                stages.map((stage) => (
+                  <tr key={stage.id}>
+                    <td>{stage.name}</td>
+                    <td>
+                      총 {stage.seatscale.toLocaleString()}석
+                      {stage.disabledseatscale > 0 && (
+                        <span className={styles.disabledSeats}> (장애인석 {stage.disabledseatscale}석)</span>
+                      )}
+                    </td>
+                    <td>
+                      {stage.stageFacilities.length > 0 ? (
+                        <span className={styles.facilityItem}>√ {stage.stageFacilities.join(', ')}</span>
+                      ) : (
+                        <span className={styles.noFacility}>-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className={styles.empty}>
+                    공연관 정보가 없습니다.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="3" className={styles.empty}>
-                  공연관 정보가 없습니다.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* 관련공연 (진행중인 작품 / 지난 작품) */}

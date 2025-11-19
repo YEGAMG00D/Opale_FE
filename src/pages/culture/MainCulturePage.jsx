@@ -7,6 +7,7 @@ import styles from "./MainCulturePage.module.css";
 import { usePerformanceList } from "../../hooks/usePerformanceList";
 import PerformanceApiCard from "../../components/cards/PerformanceApiCard";
 import { fetchFavoritePerformanceIds, togglePerformanceFavorite } from "../../api/favoriteApi";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 const MainCulturePage = () => {
   const navigate = useNavigate();
@@ -181,7 +182,7 @@ const MainCulturePage = () => {
       </div>
 
       <div ref={sentinelRef} style={{ height: 40 }} />
-      {loading && <p>불러오는 중...</p>}
+      {loading && <LoadingSpinner />}
     </div>
   );
 };

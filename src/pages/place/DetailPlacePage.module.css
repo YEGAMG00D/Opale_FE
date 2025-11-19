@@ -36,37 +36,59 @@
 
 /* 헤더 섹션 */
 .header {
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 24px;
 }
 
 .title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #111827;
-  margin: 0;
+  margin: 0 0 8px 0;
+}
+
+.address {
+  font-size: 14px;
+  color: #666666;
+  margin-bottom: 12px;
+}
+
+.headerTop {
   display: flex;
+  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  margin-bottom: 12px;
+  padding: 6px 4px;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 16px;
+  border-bottom: 1px solid #e2e2e2;
 }
 
-.linkIcon {
-  font-size: 20px;
-  text-decoration: none;
-  opacity: 0.7;
-  transition: opacity 0.2s;
+.headerTop .ratingRow {
+  flex-shrink: 0;
 }
 
-.linkIcon:hover {
-  opacity: 1;
+.headerTop .homeButton {
+  flex-shrink: 0;
+}
+
+.header .sectionTitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #707070;
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 10px;
+  border: 2px solid #e2e2e2;
+  background-color: #f3f3f3;
+  display: inline-block;
 }
 
 .ratingRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 4px;
 }
 
 .star {
@@ -85,6 +107,23 @@
   color: #666666;
 }
 
+.homeButton {
+  padding: 6px 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  color: #111827;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.homeButton:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
 /* 섹션 공통 */
 .section {
   margin-bottom: 40px;
@@ -97,6 +136,68 @@
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 2px solid #111827;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toggleIcon {
+  font-size: 14px;
+  color: #666666;
+  margin-left: 8px;
+  transition: transform 0.2s;
+}
+
+/* 시설특성 섹션 */
+.facilityInfoContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.facilityInfoTable {
+  width: 100%;
+}
+
+.mapArea {
+  width: 100%;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  align-items: stretch;
+}
+
+.mapArea > * {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.facilityDetailsButton {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.facilityDetailsButton:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.facilityDetailsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
 }
 
 /* 공연시설 정보 테이블 */
@@ -530,15 +631,18 @@
     font-size: 24px;
   }
 
-  .titleSection {
-    flex-direction: column;
-    gap: 12px;
+  .headerTop {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
   }
 
-  .modifiedInfo {
+  .facilityInfoContainer {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  }
+
+  .mapArea {
+    width: 100%;
   }
 
   .infoTable {

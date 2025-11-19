@@ -5,6 +5,13 @@ import { fetchPlaceList } from "../api/placeApi";
 import { normalizePlace } from "../services/normalizePlace";
 
 export const usePlaceList = (initialParams = {}) => {
+  const {
+    area,
+    keyword,
+    sortType,
+    enabled = true, // 훅 활성화 여부
+  } = initialParams;
+
   const [places, setPlaces] = useState([]);
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(true);
@@ -13,7 +20,7 @@ export const usePlaceList = (initialParams = {}) => {
 
   const observerRef = useRef(null);
   const activeRequestId = useRef(0);
-  const paramsRef = useRef(initialParams);
+  const paramsRef = useRef({ area, keyword, sortType });
   const pageRef = useRef(1);
   const hasNextRef = useRef(true);
   const loadingRef = useRef(false);
@@ -62,10 +69,17 @@ export const usePlaceList = (initialParams = {}) => {
 
   /** ⭐ 초기 마운트 및 params 변경 감지 */
   useEffect(() => {
+    // 훅이 비활성화되어 있으면 스킵
+    if (!enabled) {
+      setPlaces([]);
+      setLoading(false);
+      return;
+    }
+
     const currentParams = JSON.stringify({
-      area: initialParams.area,
-      keyword: initialParams.keyword,
-      sortType: initialParams.sortType,
+      area,
+      keyword,
+      sortType,
     });
     const prevParams = prevParamsRef.current;
 
@@ -73,7 +87,7 @@ export const usePlaceList = (initialParams = {}) => {
     if (!isMountedRef.current || prevParams !== currentParams) {
       isMountedRef.current = true;
       prevParamsRef.current = currentParams;
-      paramsRef.current = initialParams;
+      paramsRef.current = { area, keyword, sortType };
 
       // 초기화
       setPlaces([]);
@@ -87,19 +101,19 @@ export const usePlaceList = (initialParams = {}) => {
       loadPage(1, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialParams.area, initialParams.keyword, initialParams.sortType]);
+  }, [enabled, area, keyword, sortType]);
 
   /** ⭐ page 변경될 때만 API 호출 */
   useEffect(() => {
-    // 마운트되지 않았으면 스킵
-    if (!isMountedRef.current) return;
+    // 훅이 비활성화되어 있거나 마운트되지 않았으면 스킵
+    if (!enabled || !isMountedRef.current) return;
 
     // page가 1보다 클 때만 추가 로드
     if (page > 1) {
       loadPage(page, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [enabled, page]);
 
   /** ⭐ 무한스크롤 */
   const sentinelRef = useCallback(
