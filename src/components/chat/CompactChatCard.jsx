@@ -37,11 +37,23 @@ const CompactChatCard = ({
   const formatTimeAgo = (timestamp) => {
     if (!timestamp) return "";
     const diff = (now - new Date(timestamp)) / 1000;
-    if (diff < 60) return `${Math.floor(diff)}초 전`;
+    if (diff < 60) return "방금 전"; // 1분 이내는 "방금 전"
     if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
     return `${Math.floor(diff / 86400)}일 전`;
   };
+
+  // active 상태 계산: active가 true이고 마지막 메시지가 1분 이내인 경우만 true
+  const isActiveNow = () => {
+    if (!active) return false; // active가 false면 항상 false
+    
+    if (!lastMessageTime) return false; // lastMessageTime이 없으면 false
+    
+    const timeDiff = (now - new Date(lastMessageTime)) / 1000; // 초 단위 차이
+    return timeDiff < 60; // 1분(60초) 이내면 true
+  };
+
+  const shouldShowActive = isActiveNow();
 
   return (
     <li className={styles.compactItem} onClick={handleClick}>
@@ -51,8 +63,8 @@ const CompactChatCard = ({
         {/* ✅ 제목 + 상태 점 */}
         <div className={styles.titleRow}>
           <div className={styles.compactTitle}>{title}</div>
-          <span className={active ? styles.statusOn : styles.statusOff}>
-            {active ? "●" : "○"}
+          <span className={shouldShowActive ? styles.statusOn : styles.statusOff}>
+            {shouldShowActive ? "●" : "○"}
           </span>
         </div>
 
