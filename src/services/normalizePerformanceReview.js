@@ -37,6 +37,12 @@ export const normalizePerformanceReviews = (apiData) => {
       // ReviewCard에서 사용하는 필드들 (기대평에는 없을 수 있음)
       performanceDate: '', // API 응답에 없으면 빈 문자열
       seat: '', // API 응답에 없으면 빈 문자열
+      // API 응답의 새로운 필드들
+      performanceTitle: review.performanceTitle || '',
+      poster: review.poster || '',
+      // 하위 호환성을 위한 필드
+      performanceName: review.performanceTitle || review.performanceName || review.performance?.title || null,
+      performance: review.performance || null,
     };
   });
 };

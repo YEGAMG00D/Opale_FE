@@ -18,6 +18,8 @@ import MainMyPage from '../pages/user/mypage/MainMyPage';
 import UpdateMyInfoPage from '../pages/user/mypage/UpdateMyInfoPage';
 import ChangePasswordPage from '../pages/user/mypage/ChangePasswordPage';
 import FavoriteCulturePerformancePage from '../pages/user/mypage/FavoriteCulturePerformancePage';
+import FavoriteReviewPage from '../pages/user/mypage/FavoriteReviewPage';
+import MyReviewPage from '../pages/user/mypage/MyReviewPage';
 import BookingPerformancePage from '../pages/user/mypage/BookingPerformancePage';
 import BookingPerformanceRegistrationPage from '../pages/user/mypage/BookingPerformanceRegistrationPage';
 import MyPageTicketPage from '../pages/user/mypage/MyTicketPage';
@@ -73,6 +75,8 @@ const AppRouter = () => {
           <Route path="my/update-info" element={<UpdateMyInfoPage />} />
           <Route path="my/change-password" element={<ChangePasswordPage />} />
           <Route path="my/favorite-performances" element={<FavoriteCulturePerformancePage />} />
+          <Route path="my/favorite-reviews" element={<FavoriteReviewPage />} />
+          <Route path="my/my-reviews" element={<MyReviewPage />} />
           <Route path="my/booking-performances" element={<BookingPerformancePage />} />
           <Route path="my/booking-performances/register" element={<BookingPerformanceRegistrationPage />} />
           <Route path="my/tickets" element={<MyPageTicketPage />} />

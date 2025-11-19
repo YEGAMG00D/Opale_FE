@@ -1,0 +1,125 @@
+.reviewWrapper {
+  margin-bottom: 12px;
+}
+
+.reviewActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 16px;
+  background-color: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: 0;
+}
+
+.editButton,
+.deleteButton {
+  padding: 3px 12px;
+  margin: 3px 0px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editButton {
+  background-color: #ffffff;
+  color: #666;
+}
+
+.editButton:hover {
+  background-color: #f5f5f5;
+  border-color: #d0d0d0;
+}
+
+.deleteButton {
+  background-color: #ffffff;
+  color: #ff4444;
+  border-color: #ffcccc;
+}
+
+.deleteButton:hover {
+  background-color: #fff5f5;
+  border-color: #ff9999;
+}
+
+.reviewCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.reviewCard:hover {
+  background-color: #fafafa;
+}
+
+.targetName {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9c9c9c;
+  margin-bottom: 2px;
+}
+
+.reviewTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  margin: 0 0 8px 0;
+}
+
+.reviewRating {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 12px;
+}
+
+.star {
+  font-size: 14px;
+  color: #E5E5E5;
+}
+
+.star.filled {
+  color: #FFD700;
+}
+
+.star.half {
+  background: linear-gradient(90deg, #FFD700 50%, #E5E5E5 50%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.reviewContent {
+  margin-bottom: 12px;
+}
+
+.reviewText {
+  font-size: 14px;
+  color: #333333;
+  line-height: 1.6;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reviewFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.reviewAuthor {
+  font-size: 12px;
+  color: #666666;
+}
+
