@@ -989,7 +989,12 @@ const DetailPerformancePage = () => {
         </button>
       </div>
 
-      <OpenChatSection performanceId={performance.id || performance.performanceId} />
+      <OpenChatSection 
+        performanceId={performance.id || performance.performanceId}
+        performanceTitle={performance.title}
+        performanceGenre={performance.genre}
+        performancePoster={performance.poster}
+      />
 
       {/* Tabs */}
       <div className={styles.tabSection}>
