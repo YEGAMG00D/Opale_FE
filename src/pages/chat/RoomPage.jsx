@@ -4,7 +4,7 @@ import styles from "./RoomPage.module.css";
 import ChatRoomHeader from "../../components/chat/ChatRoomHeader";
 import MyMessage from "../../components/chat/MyMessage";
 import OtherMessage from "../../components/chat/OtherMessage";
-import { fetchChatRooms, fetchChatRoom, fetchMessages } from "../../api/chatApi";
+import { fetchChatRoom, fetchMessages } from "../../api/chatApi";
 import {
   connectSocket,
   subscribeRoom,
@@ -56,20 +56,30 @@ const RoomPage = () => {
   useEffect(() => {
     const loadRoom = async () => {
       try {
-        const allRooms = await fetchChatRooms();
-        const currentRoom = allRooms.find(
-          (r) => String(r.roomId) === String(id)
-        );
-
-        if (!currentRoom) {
-          setRoom(null);
-          return;
+        // 먼저 public endpoint로 시도 (PERFORMANCE_PUBLIC일 가능성)
+        let data = null;
+        try {
+          data = await fetchChatRoom(id, "PERFORMANCE_PUBLIC");
+        } catch (publicErr) {
+          // public endpoint 실패 시 일반 endpoint로 시도
+          try {
+            data = await fetchChatRoom(id, null);
+          } catch (privateErr) {
+            // 둘 다 실패하면 채팅방이 없음
+            console.error("❌ 채팅방을 찾을 수 없습니다:", privateErr);
+            setRoom(null);
+            return;
+          }
         }
-
-        const data = await fetchChatRoom(id, currentRoom.roomType);
-        setRoom(data);
+        
+        if (data) {
+          setRoom(data);
+        } else {
+          setRoom(null);
+        }
       } catch (err) {
         console.error("❌ 채팅방 불러오기 실패:", err);
+        setRoom(null);
       }
     };
     loadRoom();

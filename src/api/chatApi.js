@@ -84,6 +84,27 @@ export const sendMessageRest = async (roomId, message) => {
   }
 };
 
+
+
+/* ============================================================
+    ✅ 채팅방 검색 (roomType, performanceId, keyword)
+============================================================ */
+export const searchChatRooms = async (dto) => {
+  try {
+    const res = await axiosInstance.post(`${base}/rooms/search`, dto);
+
+    if (res.data.success) return res.data.data.rooms || [];
+    throw new Error("채팅방 검색 실패");
+  } catch (err) {
+    console.error("❌ searchChatRooms 오류:", err);
+    throw err;
+  }
+};
+
+
+
+
+
 export default {
   fetchChatRooms,
   fetchChatRoom,

@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./MainChatPage.module.css";
-import axiosInstance from "../../api/axiosInstance";
 import CompactChatCard from "../../components/chat/CompactChatCard";
 import { connectSocket } from "../../api/socket";
+import { searchChatRooms } from "../../api/chatApi";
+import { normalizeChatRoom } from "../../services/normalizeChatRoom";
 
 const MainChatPage = () => {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState(""); // 실제 검색에 사용할 키워드
   const [chatRooms, setChatRooms] = useState([]);
   const [error, setError] = useState("");
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -20,16 +22,20 @@ const MainChatPage = () => {
     DM: "💬",
   };
 
-  // 1️⃣ 채팅방 목록 로드
+  // 1️⃣ 채팅방 목록 로드 및 검색
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const res = await axiosInstance.get("/chat/rooms");
-        if (res.data.success) {
-          setChatRooms(res.data.data.rooms);
-        } else {
-          setError("채팅방 목록을 불러오지 못했습니다.");
-        }
+        setError("");
+        const dto = {
+          roomType: null,
+          performanceId: null,
+          keyword: searchKeyword.trim() || null,
+        };
+        
+        const rooms = await searchChatRooms(dto);
+        const normalizedRooms = rooms.map(normalizeChatRoom);
+        setChatRooms(normalizedRooms);
       } catch (err) {
         console.error("채팅방 목록 요청 실패:", err);
         if (err.response?.status === 401) {
@@ -41,7 +47,7 @@ const MainChatPage = () => {
       }
     };
     fetchRooms();
-  }, [navigate]);
+  }, [searchKeyword, navigate]);
 
   // 2️⃣ WebSocket: 방 목록 업데이트 구독
   useEffect(() => {
@@ -79,9 +85,8 @@ const MainChatPage = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const filteredRooms = chatRooms.filter((r) =>
-    r.title?.toLowerCase().includes(keyword.toLowerCase())
-  );
+  // 검색은 서버에서 처리하므로 클라이언트 필터링 불필요
+  const filteredRooms = chatRooms;
 
   const enterRoom = (id) => {
     const token = localStorage.getItem("accessToken");
@@ -115,17 +120,22 @@ const MainChatPage = () => {
     }
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setSearchKeyword(keyword);
+  };
+
   return (
     <div className={styles.container}>
-      <div className={styles.searchBar}>
+      <form className={styles.searchBar} onSubmit={handleSearch}>
         <input
           className={styles.searchInput}
           placeholder="채팅방 또는 공연명을 검색"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
-        <button className={styles.searchBtn}>🔍</button>
-      </div>
+        <button type="submit" className={styles.searchBtn}>🔍</button>
+      </form>
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>모든 채팅방</h2>
