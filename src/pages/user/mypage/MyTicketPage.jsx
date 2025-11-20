@@ -7,6 +7,12 @@ import kinkyBootsPoster from '../../../assets/poster/kinky-boots.gif';
 import hanbokManPoster from '../../../assets/poster/hanbok-man.jpg';
 import deathNotePoster from '../../../assets/poster/death-note.gif';
 import rentPoster from '../../../assets/poster/rent.gif';
+import { 
+  getTickets, 
+  deleteTicket as deleteTicketUtil, 
+  getBookedTickets, 
+  getWatchedTickets 
+} from '../../../utils/ticketUtils';
 
 const MyTicketPage = () => {
   const navigate = useNavigate();
@@ -44,51 +50,36 @@ const MyTicketPage = () => {
     return wickedPoster;
   };
 
-  // 티켓이 예매한 공연인지 관람한 공연인지 판단
-  const isTicketWatched = (ticket) => {
-    if (!ticket.performanceDate) return false;
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const ticketDate = new Date(ticket.performanceDate);
-    ticketDate.setHours(0, 0, 0, 0);
-    
-    return ticketDate < today;
+  // 티켓 목록 불러오기
+  const loadTickets = () => {
+    const allTickets = getTickets();
+    setTickets(allTickets);
   };
 
-  // 로컬 스토리지에서 티켓 목록 불러오기
+  // 초기 로드
   useEffect(() => {
-    const savedTickets = localStorage.getItem('myTickets');
-    if (savedTickets) {
-      setTickets(JSON.parse(savedTickets));
-    }
+    loadTickets();
   }, []);
 
   // 티켓 목록 업데이트를 위한 이벤트 리스너
   useEffect(() => {
-    const handleStorageChange = () => {
-      const savedTickets = localStorage.getItem('myTickets');
-      if (savedTickets) {
-        setTickets(JSON.parse(savedTickets));
-      }
+    const handleTicketUpdate = () => {
+      loadTickets();
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    // 같은 탭에서도 업데이트되도록 커스텀 이벤트 사용
-    window.addEventListener('ticketUpdated', handleStorageChange);
+    window.addEventListener('storage', handleTicketUpdate);
+    window.addEventListener('ticketUpdated', handleTicketUpdate);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('ticketUpdated', handleStorageChange);
+      window.removeEventListener('storage', handleTicketUpdate);
+      window.removeEventListener('ticketUpdated', handleTicketUpdate);
     };
   }, []);
 
   const handleDeleteTicket = (ticketId) => {
     if (window.confirm('티켓을 삭제하시겠습니까?')) {
-      const updatedTickets = tickets.filter(ticket => ticket.id !== ticketId);
-      setTickets(updatedTickets);
-      localStorage.setItem('myTickets', JSON.stringify(updatedTickets));
+      deleteTicketUtil(ticketId);
+      loadTickets();
       // 플립 상태도 제거
       setFlippedTickets(prev => {
         const newState = { ...prev };
@@ -107,8 +98,8 @@ const MyTicketPage = () => {
 
   // 탭별 티켓 필터링
   const filteredTickets = activeTab === 'booked'
-    ? tickets.filter(ticket => !isTicketWatched(ticket))
-    : tickets.filter(ticket => isTicketWatched(ticket));
+    ? getBookedTickets()
+    : getWatchedTickets();
 
   return (
     <div className={styles.container}>
