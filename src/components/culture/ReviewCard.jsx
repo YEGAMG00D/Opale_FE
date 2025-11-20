@@ -10,7 +10,11 @@ const ReviewCard = ({
   rating,
   content,
   author,
-  date
+  date,
+  userId,
+  currentUserId,
+  onEdit,
+  onDelete
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
@@ -89,13 +93,37 @@ const ReviewCard = ({
       </div>
       
       <div className={styles.reviewFooter}>
-        <button 
-          className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
-          onClick={toggleLike}
-        >
-          {isLiked ? '♥' : '♡'}
-        </button>
-        <span className={styles.reviewAuthor}>{author} | {date}</span>
+        <div className={styles.reviewFooterLeft}>
+          <button 
+            className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
+            onClick={toggleLike}
+          >
+            {isLiked ? '♥' : '♡'}
+          </button>
+          <span className={styles.reviewAuthor}>{author} | {date}</span>
+        </div>
+        {userId && currentUserId && userId === currentUserId && (
+          <div className={styles.reviewActions}>
+            <button
+              className={styles.editButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onEdit) onEdit();
+              }}
+            >
+              수정
+            </button>
+            <button
+              className={styles.deleteButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onDelete) onDelete();
+              }}
+            >
+              삭제
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

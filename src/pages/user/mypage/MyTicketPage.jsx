@@ -13,14 +13,37 @@ import {
   getBookedTickets, 
   getWatchedTickets 
 } from '../../../utils/ticketUtils';
+import { fetchPerformanceList } from '../../../api/performanceApi';
+import { normalizePerformance } from '../../../services/normalizePerformance';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+// 이미지 URL 처리 헬퍼 함수
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return null;
+  
+  // 이미 절대 URL인 경우 그대로 반환
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  
+  // 상대 경로인 경우 API base URL과 결합
+  if (imageUrl.startsWith('/')) {
+    return `${API_BASE_URL}${imageUrl}`;
+  }
+  
+  // 그 외의 경우 그대로 반환 (이미지 이름 등)
+  return imageUrl;
+};
 
 const MyTicketPage = () => {
   const navigate = useNavigate();
   const [tickets, setTickets] = useState([]);
   const [flippedTickets, setFlippedTickets] = useState({});
   const [activeTab, setActiveTab] = useState('booked'); // 'booked' (예매한 공연) or 'watched' (관람한 공연)
+  const [posterCache, setPosterCache] = useState({}); // 공연명 -> 포스터 URL 캐시
 
-  // 포스터 이미지 매핑
+  // 포스터 이미지 매핑 (fallback용)
   const posterImages = {
     'wicked': wickedPoster,
     '위키드': wickedPoster,
@@ -36,9 +59,51 @@ const MyTicketPage = () => {
     '렌트': rentPoster
   };
 
-  // 공연명에서 포스터 찾기
-  const getPosterImage = (performanceName) => {
+  // 공연명으로 포스터 이미지 가져오기 (API 사용)
+  const fetchPosterByPerformanceName = async (performanceName) => {
     if (!performanceName) return null;
+    
+    // 캐시에 있으면 반환
+    if (posterCache[performanceName]) {
+      return posterCache[performanceName];
+    }
+
+    try {
+      const res = await fetchPerformanceList({
+        keyword: performanceName,
+        page: 1,
+        size: 1
+      });
+      
+      if (res.performances && res.performances.length > 0) {
+        const normalized = normalizePerformance(res.performances[0]);
+        const posterUrl = normalized.poster || normalized.posterImage || normalized.image;
+        
+        if (posterUrl) {
+          // getImageUrl 함수로 URL 처리
+          const fullPosterUrl = getImageUrl(posterUrl);
+          
+          if (fullPosterUrl) {
+            // 캐시에 저장
+            setPosterCache(prev => ({
+              ...prev,
+              [performanceName]: fullPosterUrl
+            }));
+            
+            return fullPosterUrl;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('포스터 검색 실패:', err);
+    }
+    
+    return null;
+  };
+
+  // 공연명에서 fallback 포스터 찾기 (동기 함수)
+  const getFallbackPoster = (performanceName) => {
+    if (!performanceName) return wickedPoster;
     
     const nameLower = performanceName.toLowerCase();
     for (const [key, image] of Object.entries(posterImages)) {
@@ -46,8 +111,22 @@ const MyTicketPage = () => {
         return image;
       }
     }
-    // 기본값으로 위키드 포스터 반환
+    
     return wickedPoster;
+  };
+
+  // 공연명으로 포스터 이미지 가져오기 (비동기, API 우선)
+  const getPosterImage = async (performanceName) => {
+    if (!performanceName) return getFallbackPoster(performanceName);
+    
+    // 먼저 API로 검색
+    const apiPoster = await fetchPosterByPerformanceName(performanceName);
+    if (apiPoster) {
+      return apiPoster;
+    }
+    
+    // API에서 못 찾으면 fallback 이미지 사용
+    return getFallbackPoster(performanceName);
   };
 
   // 티켓 목록 불러오기
@@ -65,6 +144,9 @@ const MyTicketPage = () => {
   useEffect(() => {
     const handleTicketUpdate = () => {
       loadTickets();
+      // 포스터 캐시 초기화하여 다시 로드
+      setTicketPosters({});
+      setPosterCache({});
     };
 
     window.addEventListener('storage', handleTicketUpdate);
@@ -100,6 +182,34 @@ const MyTicketPage = () => {
   const filteredTickets = activeTab === 'booked'
     ? getBookedTickets()
     : getWatchedTickets();
+
+  // 티켓별 포스터 이미지 상태
+  const [ticketPosters, setTicketPosters] = useState({});
+
+  // 티켓 포스터 이미지 로드
+  useEffect(() => {
+    const loadPosters = async () => {
+      const posters = {};
+      for (const ticket of filteredTickets) {
+        if (ticket.performanceName && !ticketPosters[ticket.id]) {
+          // 먼저 fallback 이미지로 설정 (빠른 표시)
+          posters[ticket.id] = getFallbackPoster(ticket.performanceName);
+          
+          // 그 다음 API로 검색해서 업데이트
+          const apiPoster = await fetchPosterByPerformanceName(ticket.performanceName);
+          if (apiPoster) {
+            posters[ticket.id] = apiPoster;
+          }
+        }
+      }
+      if (Object.keys(posters).length > 0) {
+        setTicketPosters(prev => ({ ...prev, ...posters }));
+      }
+    };
+    
+    loadPosters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredTickets.length, activeTab]);
 
   return (
     <div className={styles.container}>
@@ -146,7 +256,7 @@ const MyTicketPage = () => {
           <div className={styles.ticketGrid}>
             {filteredTickets.map((ticket) => {
               const isFlipped = flippedTickets[ticket.id] || false;
-              const posterImage = getPosterImage(ticket.performanceName);
+              const posterImage = ticketPosters[ticket.id] || getFallbackPoster(ticket.performanceName);
               
               return (
                 <div key={ticket.id} className={styles.ticketCardWrapper}>
