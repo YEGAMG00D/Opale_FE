@@ -10,6 +10,7 @@ import {
   subscribeRoom,
   sendMessage as sendSocketMessage,
 } from "../../api/socket"; // ❗ disconnectSocket 제거
+import logApi from "../../api/logApi";
 import defaultPoster from "../../assets/poster/wicked.gif";
 
 // JWT 파싱
@@ -74,6 +75,30 @@ const RoomPage = () => {
         
         if (data) {
           setRoom(data);
+          
+          // 채팅방 접속 시 VIEW 로그 기록
+          try {
+            // 공연 채팅방인 경우
+            if (data.roomType === "PERFORMANCE_PUBLIC" || data.roomType === "PERFORMANCE_GROUP") {
+              if (data.performanceId) {
+                await logApi.createLog({
+                  eventType: "VIEW",
+                  targetType: "PERFORMANCE",
+                  targetId: String(data.performanceId)
+                });
+              }
+            }
+            // 공연장 채팅방인 경우 (향후 추가 가능)
+            // else if (data.roomType === "PLACE_PUBLIC" && data.placeId) {
+            //   await logApi.createLog({
+            //     eventType: "VIEW",
+            //     targetType: "PLACE",
+            //     targetId: String(data.placeId)
+            //   });
+            // }
+          } catch (logErr) {
+            console.error('로그 기록 실패:', logErr);
+          }
         } else {
           setRoom(null);
         }

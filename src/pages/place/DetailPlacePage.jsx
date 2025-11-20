@@ -10,6 +10,7 @@ import { usePlaceStages } from '../../hooks/usePlaceStages';
 import { fetchPlaceReviewsByPlace, createPlaceReview } from '../../api/reviewApi';
 import { normalizePlaceReviews } from '../../services/normalizePlaceReview';
 import { normalizePlaceReviewRequest } from '../../services/normalizePlaceReviewRequest';
+import logApi from '../../api/logApi';
 
 const DetailPlacePage = () => {
   const { id } = useParams();
@@ -54,6 +55,17 @@ const DetailPlacePage = () => {
   // 초기 로드
   useEffect(() => {
     loadReviews();
+    
+    // 공연장 상세 페이지 진입 시 VIEW 로그 기록
+    if (id) {
+      logApi.createLog({
+        eventType: "VIEW",
+        targetType: "PLACE",
+        targetId: String(id)
+      }).catch((logErr) => {
+        console.error('로그 기록 실패:', logErr);
+      });
+    }
   }, [id]);
 
   if (loading) {
@@ -283,6 +295,17 @@ const DetailPlacePage = () => {
 
                 // API 호출
                 await createPlaceReview(requestDto);
+
+                // 공연장 리뷰 작성 완료 시 REVIEW_WRITE 로그 기록
+                try {
+                  await logApi.createLog({
+                    eventType: "REVIEW_WRITE",
+                    targetType: "PLACE",
+                    targetId: String(id)
+                  });
+                } catch (logErr) {
+                  console.error('로그 기록 실패:', logErr);
+                }
 
                 // 성공 시 모달 닫고 폼 초기화
                 setShowWriteModal(false);

@@ -7,6 +7,7 @@ import { normalizePerformanceReviewRequest } from '../../services/normalizePerfo
 import { fetchPerformanceList } from '../../api/performanceApi';
 import { normalizePerformance } from '../../services/normalizePerformance';
 import { transformTicketDataForApi } from '../../utils/ticketDataTransform';
+import logApi from '../../api/logApi';
 
 const ReviewWritingPage = () => {
   const navigate = useNavigate();
@@ -188,7 +189,27 @@ const ReviewWritingPage = () => {
       const apiDto = transformTicketDataForApi(ticketData);
 
       // 티켓 등록 API 호출
-      await createTicket(apiDto);
+      const ticketResponse = await createTicket(apiDto);
+
+      // 티켓 인증 완료 시 BOOKED 로그 기록
+      // 응답에서 performanceId 확인 (응답 구조에 따라 조정 필요)
+      // 백엔드 TicketDetailResponseDto에 performanceId가 포함되어 있을 것으로 예상
+      const ticketPerformanceId = ticketResponse?.performanceId || ticketResponse?.performance?.performanceId || ticketResponse?.performanceId;
+      if (ticketPerformanceId) {
+        try {
+          await logApi.createLog({
+            eventType: "BOOKED",
+            targetType: "PERFORMANCE",
+            targetId: String(ticketPerformanceId)
+          });
+        } catch (logErr) {
+          console.error('로그 기록 실패:', logErr);
+        }
+      } else {
+        // performanceId가 응답에 없는 경우, 나중에 handleRegister에서 performanceId를 찾을 때 로그 기록
+        // (현재는 생략하고, handleRegister에서 리뷰 작성 시 함께 처리)
+        console.warn('티켓 등록 응답에 performanceId가 없습니다. handleRegister에서 처리합니다.');
+      }
 
       // 공연 후기 작성 단계로 이동
       setStep('performanceReview');
@@ -286,6 +307,17 @@ const ReviewWritingPage = () => {
         );
         
         await createPerformanceReview(requestDto);
+        
+        // 공연 리뷰 작성 완료 시 REVIEW_WRITE 로그 기록
+        try {
+          await logApi.createLog({
+            eventType: "REVIEW_WRITE",
+            targetType: "PERFORMANCE",
+            targetId: String(performanceId)
+          });
+        } catch (logErr) {
+          console.error('로그 기록 실패:', logErr);
+        }
       }
 
       // 공연장 후기 등록 (있는 경우)

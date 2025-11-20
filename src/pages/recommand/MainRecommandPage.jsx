@@ -1,14 +1,85 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import PerformanceCard from '../../components/culture/PerformanceCard';
 import { fetchFavoritePerformances } from '../../api/favoriteApi';
+import { getUserRecommendations, getRecentViewedPerformance, getRecentSimilarRecommendations, getPopularRecommendations, getGenreRecommendations } from '../../api/recommendationApi';
+import { fetchPerformanceBasic } from '../../api/performanceApi';
+import { normalizeRecommendation } from '../../services/normalizeRecommendation';
+import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
 import styles from './MainRecommandPage.module.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 const MainRecommandPage = () => {
   const navigate = useNavigate();
+  const { isLoggedIn } = useSelector((state) => state.user);
   const [myKeywords, setMyKeywords] = useState([]);
   
-  // 추천 영화 시리즈 데이터
+  // 로그인한 사용자용
+  // 개인 맞춤 추천 공연 목록
+  const [userRecommendations, setUserRecommendations] = useState([]);
+  const [userRecommendationsLoading, setUserRecommendationsLoading] = useState(true);
+  
+  // 최근 본 공연과 유사한 공연 목록
+  const [recentPerformance, setRecentPerformance] = useState(null);
+  const [similarPerformances, setSimilarPerformances] = useState([]);
+  const [similarPerformancesLoading, setSimilarPerformancesLoading] = useState(false);
+  
+  // 로그인하지 않은 사용자용
+  // 인기 공연 추천
+  const [popularPerformances, setPopularPerformances] = useState([]);
+  const [popularPerformancesLoading, setPopularPerformancesLoading] = useState(true);
+  
+  // 장르 기반 추천 (랜덤 3개)
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const [genreRecommendations, setGenreRecommendations] = useState({}); // { '뮤지컬': [...], '연극': [...] }
+  const [genreRecommendationsLoading, setGenreRecommendationsLoading] = useState({});
+  
+  // 개인 맞춤 추천 슬라이더 상태
+  const [userRecCurrentIndex, setUserRecCurrentIndex] = useState(0);
+  const [userRecDisplayIndex, setUserRecDisplayIndex] = useState(0);
+  const [userRecIsTransitioning, setUserRecIsTransitioning] = useState(true);
+  const [userRecStartX, setUserRecStartX] = useState(0);
+  const [userRecIsDragging, setUserRecIsDragging] = useState(false);
+  const userRecSliderRef = useRef(null);
+  
+  // 유사 공연 슬라이더 상태
+  const [similarCurrentIndex, setSimilarCurrentIndex] = useState(0);
+  const [similarDisplayIndex, setSimilarDisplayIndex] = useState(0);
+  const [similarIsTransitioning, setSimilarIsTransitioning] = useState(true);
+  const [similarStartX, setSimilarStartX] = useState(0);
+  const [similarIsDragging, setSimilarIsDragging] = useState(false);
+  const similarSliderRef = useRef(null);
+  
+  // 인기 공연 슬라이더 상태
+  const [popularCurrentIndex, setPopularCurrentIndex] = useState(0);
+  const [popularDisplayIndex, setPopularDisplayIndex] = useState(0);
+  const [popularIsTransitioning, setPopularIsTransitioning] = useState(true);
+  const [popularStartX, setPopularStartX] = useState(0);
+  const [popularIsDragging, setPopularIsDragging] = useState(false);
+  const popularSliderRef = useRef(null);
+  
+  // 장르별 슬라이더 상태 (각 장르마다 독립적으로 관리)
+  const [genreSliderStates, setGenreSliderStates] = useState({});
+  
+  // 장르별 슬라이더 상태 초기화 함수
+  const initializeGenreSliderState = (genre) => {
+    if (!genreSliderStates[genre]) {
+      setGenreSliderStates((prev) => ({
+        ...prev,
+        [genre]: {
+          currentIndex: 0,
+          displayIndex: 0,
+          isTransitioning: true,
+          startX: 0,
+          isDragging: false
+        }
+      }));
+    }
+  };
+  
+  // 추천 영화 시리즈 데이터 (기존 하드코딩 데이터 - 필요시 제거 가능)
   const recommendedSeries = [
     {
       id: 1,
@@ -95,8 +166,11 @@ const MainRecommandPage = () => {
   const sliderRef = useRef(null);
   
 
-  // 관심 공연 기반 키워드 추출
+
+  // 로그인한 사용자: 관심 공연 기반 키워드 추출
   useEffect(() => {
+    if (!isLoggedIn) return;
+    
     const extractMyKeywords = async () => {
       try {
         const favoritePerformances = await fetchFavoritePerformances();
@@ -130,9 +204,330 @@ const MainRecommandPage = () => {
     };
 
     extractMyKeywords();
-  }, []);
+  }, [isLoggedIn]);
 
-  // 슬라이드 이동 함수 (무한 루프)
+  // 로그인한 사용자: 개인 맞춤 추천 공연 목록 조회
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    
+    const loadUserRecommendations = async () => {
+      try {
+        setUserRecommendationsLoading(true);
+        const response = await getUserRecommendations({ size: 10 });
+        const normalized = normalizeRecommendation(response);
+        setUserRecommendations(normalized.recommendations || []);
+      } catch (err) {
+        console.error('개인 맞춤 추천 조회 실패:', err);
+        setUserRecommendations([]);
+      } finally {
+        setUserRecommendationsLoading(false);
+      }
+    };
+
+    loadUserRecommendations();
+  }, [isLoggedIn]);
+
+  // 로그인한 사용자: 최근 본 공연 조회 및 유사 공연 추천
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    
+    const loadRecentAndSimilar = async () => {
+      try {
+        // 최근 본 공연 ID 조회
+        const recentResponse = await getRecentViewedPerformance();
+        const recentPerformanceId = recentResponse?.recentPerformanceId;
+        
+        if (!recentPerformanceId) {
+          // 최근 본 공연이 없으면 섹션을 표시하지 않음
+          setRecentPerformance(null);
+          setSimilarPerformances([]);
+          return;
+        }
+        
+        // 최근 본 공연 상세 정보 가져오기 (타이틀용)
+        try {
+          const performanceData = await fetchPerformanceBasic(recentPerformanceId);
+          const normalized = normalizePerformanceDetail(performanceData);
+          
+          // title이 있으면 최근 본 공연 정보 저장
+          if (normalized && normalized.title && normalized.title.trim()) {
+            setRecentPerformance(normalized);
+          } else {
+            console.warn('공연 제목이 없습니다:', normalized);
+            setRecentPerformance(null);
+            return;
+          }
+        } catch (perfErr) {
+          console.error('최근 본 공연 정보 조회 실패:', perfErr);
+          setRecentPerformance(null);
+          return;
+        }
+
+        // 최근 본 공연 기반 유사 공연 추천 조회
+        setSimilarPerformancesLoading(true);
+        try {
+          const similarResponse = await getRecentSimilarRecommendations({ size: 10 });
+          const normalized = normalizeRecommendation(similarResponse);
+          setSimilarPerformances(normalized.recommendations || []);
+        } catch (similarErr) {
+          console.error('유사 공연 추천 조회 실패:', similarErr);
+          setSimilarPerformances([]);
+        } finally {
+          setSimilarPerformancesLoading(false);
+        }
+      } catch (err) {
+        console.error('최근 본 공연 조회 실패:', err);
+        setRecentPerformance(null);
+        setSimilarPerformances([]);
+      }
+    };
+
+    loadRecentAndSimilar();
+  }, [isLoggedIn]);
+
+  // 로그인하지 않은 사용자: 인기 공연 추천 조회
+  useEffect(() => {
+    if (isLoggedIn) return;
+    
+    const loadPopularRecommendations = async () => {
+      try {
+        setPopularPerformancesLoading(true);
+        const response = await getPopularRecommendations({ size: 10 });
+        const normalized = normalizeRecommendation(response);
+        setPopularPerformances(normalized.recommendations || []);
+      } catch (err) {
+        console.error('인기 공연 추천 조회 실패:', err);
+        setPopularPerformances([]);
+      } finally {
+        setPopularPerformancesLoading(false);
+      }
+    };
+
+    loadPopularRecommendations();
+  }, [isLoggedIn]);
+
+  // 로그인하지 않은 사용자: 장르 랜덤 선택 및 장르별 추천 조회
+  useEffect(() => {
+    if (isLoggedIn) return;
+    
+    const genres = ['뮤지컬', '연극', '대중음악', '서양음악(클래식)', '한국음악(국악)'];
+    
+    // 랜덤으로 3개 장르 선택
+    const shuffle = [...genres].sort(() => Math.random() - 0.5);
+    const selected = shuffle.slice(0, 3);
+    setSelectedGenres(selected);
+    
+    // 각 장르별로 슬라이더 상태 초기화
+    selected.forEach((genre) => {
+      initializeGenreSliderState(genre);
+    });
+    
+    // 각 장르별로 추천 조회
+    selected.forEach((genre) => {
+      const loadGenreRecommendations = async () => {
+        try {
+          setGenreRecommendationsLoading((prev) => ({ ...prev, [genre]: true }));
+          const response = await getGenreRecommendations({ genre, size: 10 });
+          const normalized = normalizeRecommendation(response);
+          setGenreRecommendations((prev) => ({
+            ...prev,
+            [genre]: normalized.recommendations || []
+          }));
+        } catch (err) {
+          console.error(`${genre} 장르 추천 조회 실패:`, err);
+          setGenreRecommendations((prev) => ({
+            ...prev,
+            [genre]: []
+          }));
+        } finally {
+          setGenreRecommendationsLoading((prev) => ({ ...prev, [genre]: false }));
+        }
+      };
+      
+      loadGenreRecommendations();
+    });
+  }, [isLoggedIn]);
+
+  // 이미지 URL 처리 헬퍼 함수
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    if (imageUrl.startsWith('/')) {
+      return `${API_BASE_URL}${imageUrl}`;
+    }
+    return imageUrl;
+  };
+
+  // 날짜 포맷팅 함수
+  const formatDateRange = (startDate, endDate) => {
+    if (!startDate && !endDate) return '';
+    if (!endDate) return startDate;
+    return `${startDate} ~ ${endDate}`;
+  };
+
+  // 개인 맞춤 추천 슬라이드 이동 함수
+  const goToUserRecSlide = (index) => {
+    if (userRecommendations.length === 0) return;
+    
+    setUserRecIsTransitioning(true);
+    let targetIndex = index;
+    
+    if (index < 0) {
+      targetIndex = userRecommendations.length - 1;
+    } else if (index >= userRecommendations.length) {
+      targetIndex = 0;
+    }
+    
+    const seriesLength = userRecommendations.length;
+    let newDisplayIndex = userRecDisplayIndex;
+    const direction = index - userRecCurrentIndex;
+    
+    if (direction < 0) {
+      newDisplayIndex = userRecDisplayIndex - 1;
+    } else if (direction > 0) {
+      newDisplayIndex = userRecDisplayIndex + 1;
+    }
+    
+    const maxIndex = seriesLength * 5 - 1;
+    const minIndex = 0;
+    
+    if (newDisplayIndex < minIndex) {
+      newDisplayIndex = maxIndex;
+    } else if (newDisplayIndex > maxIndex) {
+      newDisplayIndex = minIndex;
+    }
+    
+    setUserRecDisplayIndex(newDisplayIndex);
+    setUserRecCurrentIndex(targetIndex);
+  };
+
+  // 유사 공연 슬라이드 이동 함수
+  const goToSimilarSlide = (index) => {
+    if (similarPerformances.length === 0) return;
+    
+    setSimilarIsTransitioning(true);
+    let targetIndex = index;
+    
+    if (index < 0) {
+      targetIndex = similarPerformances.length - 1;
+    } else if (index >= similarPerformances.length) {
+      targetIndex = 0;
+    }
+    
+    const seriesLength = similarPerformances.length;
+    let newDisplayIndex = similarDisplayIndex;
+    const direction = index - similarCurrentIndex;
+    
+    if (direction < 0) {
+      newDisplayIndex = similarDisplayIndex - 1;
+    } else if (direction > 0) {
+      newDisplayIndex = similarDisplayIndex + 1;
+    }
+    
+    const maxIndex = seriesLength * 5 - 1;
+    const minIndex = 0;
+    
+    if (newDisplayIndex < minIndex) {
+      newDisplayIndex = maxIndex;
+    } else if (newDisplayIndex > maxIndex) {
+      newDisplayIndex = minIndex;
+    }
+    
+    setSimilarDisplayIndex(newDisplayIndex);
+    setSimilarCurrentIndex(targetIndex);
+  };
+
+  // 인기 공연 슬라이드 이동 함수
+  const goToPopularSlide = (index) => {
+    if (popularPerformances.length === 0) return;
+    
+    setPopularIsTransitioning(true);
+    let targetIndex = index;
+    
+    if (index < 0) {
+      targetIndex = popularPerformances.length - 1;
+    } else if (index >= popularPerformances.length) {
+      targetIndex = 0;
+    }
+    
+    const seriesLength = popularPerformances.length;
+    let newDisplayIndex = popularDisplayIndex;
+    const direction = index - popularCurrentIndex;
+    
+    if (direction < 0) {
+      newDisplayIndex = popularDisplayIndex - 1;
+    } else if (direction > 0) {
+      newDisplayIndex = popularDisplayIndex + 1;
+    }
+    
+    const maxIndex = seriesLength * 5 - 1;
+    const minIndex = 0;
+    
+    if (newDisplayIndex < minIndex) {
+      newDisplayIndex = maxIndex;
+    } else if (newDisplayIndex > maxIndex) {
+      newDisplayIndex = minIndex;
+    }
+    
+    setPopularDisplayIndex(newDisplayIndex);
+    setPopularCurrentIndex(targetIndex);
+  };
+
+  // 장르별 슬라이드 이동 함수
+  const goToGenreSlide = (genre, index) => {
+    const performances = genreRecommendations[genre] || [];
+    if (performances.length === 0) return;
+    
+    const currentState = genreSliderStates[genre] || { currentIndex: 0, displayIndex: 0 };
+    
+    setGenreSliderStates((prev) => ({
+      ...prev,
+      [genre]: {
+        ...prev[genre],
+        isTransitioning: true
+      }
+    }));
+    
+    let targetIndex = index;
+    
+    if (index < 0) {
+      targetIndex = performances.length - 1;
+    } else if (index >= performances.length) {
+      targetIndex = 0;
+    }
+    
+    const seriesLength = performances.length;
+    let newDisplayIndex = currentState.displayIndex;
+    const direction = index - currentState.currentIndex;
+    
+    if (direction < 0) {
+      newDisplayIndex = currentState.displayIndex - 1;
+    } else if (direction > 0) {
+      newDisplayIndex = currentState.displayIndex + 1;
+    }
+    
+    const maxIndex = seriesLength * 5 - 1;
+    const minIndex = 0;
+    
+    if (newDisplayIndex < minIndex) {
+      newDisplayIndex = maxIndex;
+    } else if (newDisplayIndex > maxIndex) {
+      newDisplayIndex = minIndex;
+    }
+    
+    setGenreSliderStates((prev) => ({
+      ...prev,
+      [genre]: {
+        ...prev[genre],
+        currentIndex: targetIndex,
+        displayIndex: newDisplayIndex
+      }
+    }));
+  };
+
+  // 기존 슬라이드 이동 함수 (기존 하드코딩 데이터용)
   const goToSlide = (index) => {
     setIsTransitioning(true);
     
@@ -187,7 +582,133 @@ const MainRecommandPage = () => {
     ...recommendedSeries  // 네 번째 복제본 (24-29)
   ];
 
-  // 터치/드래그 이벤트 핸들러
+  // 개인 맞춤 추천 터치/드래그 이벤트 핸들러
+  const handleUserRecStart = (e) => {
+    setUserRecIsDragging(true);
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    setUserRecStartX(clientX);
+  };
+
+  const handleUserRecMove = (e) => {
+    if (!userRecIsDragging) return;
+    e.preventDefault();
+  };
+
+  const handleUserRecEnd = (e) => {
+    if (!userRecIsDragging) return;
+    setUserRecIsDragging(false);
+    
+    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const diffX = userRecStartX - clientX;
+    
+    if (Math.abs(diffX) > 50) {
+      if (diffX > 0) {
+        goToUserRecSlide(userRecCurrentIndex + 1);
+      } else {
+        goToUserRecSlide(userRecCurrentIndex - 1);
+      }
+    }
+  };
+
+  // 유사 공연 터치/드래그 이벤트 핸들러
+  const handleSimilarStart = (e) => {
+    setSimilarIsDragging(true);
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    setSimilarStartX(clientX);
+  };
+
+  const handleSimilarMove = (e) => {
+    if (!similarIsDragging) return;
+    e.preventDefault();
+  };
+
+  const handleSimilarEnd = (e) => {
+    if (!similarIsDragging) return;
+    setSimilarIsDragging(false);
+    
+    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const diffX = similarStartX - clientX;
+    
+    if (Math.abs(diffX) > 50) {
+      if (diffX > 0) {
+        goToSimilarSlide(similarCurrentIndex + 1);
+      } else {
+        goToSimilarSlide(similarCurrentIndex - 1);
+      }
+    }
+  };
+
+  // 인기 공연 터치/드래그 이벤트 핸들러
+  const handlePopularStart = (e) => {
+    setPopularIsDragging(true);
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    setPopularStartX(clientX);
+  };
+
+  const handlePopularMove = (e) => {
+    if (!popularIsDragging) return;
+    e.preventDefault();
+  };
+
+  const handlePopularEnd = (e) => {
+    if (!popularIsDragging) return;
+    setPopularIsDragging(false);
+    
+    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const diffX = popularStartX - clientX;
+    
+    if (Math.abs(diffX) > 50) {
+      if (diffX > 0) {
+        goToPopularSlide(popularCurrentIndex + 1);
+      } else {
+        goToPopularSlide(popularCurrentIndex - 1);
+      }
+    }
+  };
+
+  // 장르별 터치/드래그 이벤트 핸들러
+  const handleGenreStart = (genre) => (e) => {
+    setGenreSliderStates((prev) => ({
+      ...prev,
+      [genre]: {
+        ...prev[genre],
+        isDragging: true,
+        startX: e.touches ? e.touches[0].clientX : e.clientX
+      }
+    }));
+  };
+
+  const handleGenreMove = (genre) => (e) => {
+    const state = genreSliderStates[genre];
+    if (!state?.isDragging) return;
+    e.preventDefault();
+  };
+
+  const handleGenreEnd = (genre) => (e) => {
+    const state = genreSliderStates[genre];
+    if (!state?.isDragging) return;
+    
+    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const diffX = state.startX - clientX;
+    
+    setGenreSliderStates((prev) => ({
+      ...prev,
+      [genre]: {
+        ...prev[genre],
+        isDragging: false
+      }
+    }));
+    
+    if (Math.abs(diffX) > 50) {
+      if (diffX > 0) {
+        goToGenreSlide(genre, state.currentIndex + 1);
+      } else {
+        goToGenreSlide(genre, state.currentIndex - 1);
+      }
+    }
+  };
+
+  // 기존 터치/드래그 이벤트 핸들러 (기존 하드코딩 데이터용)
   const handleStart = (e) => {
     setIsDragging(true);
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -208,10 +729,8 @@ const MainRecommandPage = () => {
     
     if (Math.abs(diffX) > 50) {
       if (diffX > 0) {
-        // 왼쪽으로 스와이프 - 다음 슬라이드
         goToSlide(currentIndex + 1);
       } else {
-        // 오른쪽으로 스와이프 - 이전 슬라이드
         goToSlide(currentIndex - 1);
       }
     }
@@ -237,8 +756,8 @@ const MainRecommandPage = () => {
         </div>
       </div>
 
-      {/* 내 키워드 섹션 */}
-      {myKeywords.length > 0 && (
+      {/* 로그인한 사용자: 내 키워드 섹션 */}
+      {isLoggedIn && myKeywords.length > 0 && (
         <section className={styles.myKeywordsSection}>
           <h2 className={styles.sectionTitle}>내 키워드</h2>
           <div className={styles.keywordsContainer}>
@@ -255,9 +774,451 @@ const MainRecommandPage = () => {
         </section>
       )}
 
-      {/* 추천 영화 시리즈 슬라이드 섹션 */}
-      <section className={styles.seriesSection}>
-        <h2 className={styles.sectionTitle}>추천하는 공연</h2>
+      {/* 로그인한 사용자: 개인 맞춤 추천 공연 섹션 */}
+      {isLoggedIn && (
+        <section className={styles.seriesSection}>
+          <h2 className={styles.sectionTitle}>추천하는 공연</h2>
+          {userRecommendationsLoading ? (
+            <div style={{ padding: '20px', textAlign: 'center' }}>추천 공연을 불러오는 중...</div>
+          ) : userRecommendations.length > 0 ? (
+          <>
+            <div 
+              className={styles.sliderContainer}
+              ref={userRecSliderRef}
+              onTouchStart={handleUserRecStart}
+              onTouchMove={handleUserRecMove}
+              onTouchEnd={handleUserRecEnd}
+              onMouseDown={handleUserRecStart}
+              onMouseMove={handleUserRecMove}
+              onMouseUp={handleUserRecEnd}
+              onMouseLeave={handleUserRecEnd}
+            >
+              <div 
+                className={styles.sliderTrack}
+                style={{ 
+                  transform: `translateX(-${userRecDisplayIndex * (100 / 2.5)}%)`,
+                  transition: userRecIsTransitioning ? 'transform 0.3s ease' : 'none'
+                }}
+                onTransitionEnd={() => {
+                  const seriesLength = userRecommendations.length;
+                  const totalSlides = seriesLength * 5;
+                  
+                  if (userRecDisplayIndex < seriesLength) {
+                    setUserRecIsTransitioning(false);
+                    setUserRecDisplayIndex(seriesLength * 2 + userRecCurrentIndex);
+                  } else if (userRecDisplayIndex >= seriesLength * 4) {
+                    setUserRecIsTransitioning(false);
+                    setUserRecDisplayIndex(seriesLength * 2 + userRecCurrentIndex);
+                  }
+                }}
+              >
+                {(() => {
+                  const infiniteSlides = [
+                    ...userRecommendations,
+                    ...userRecommendations,
+                    ...userRecommendations,
+                    ...userRecommendations,
+                    ...userRecommendations
+                  ];
+                  
+                  return infiniteSlides.map((performance, index) => {
+                    const imageUrl = getImageUrl(performance.poster || performance.image);
+                    const dateStr = formatDateRange(performance.startDate, performance.endDate);
+                    
+                    return (
+                      <div key={`${performance.id || performance.performanceId}-${index}`} className={styles.slideCard}>
+                        <PerformanceCard
+                          id={performance.id || performance.performanceId}
+                          title={performance.title}
+                          image={imageUrl || 'wicked'}
+                          rating={performance.rating || 0}
+                          reviewCount={performance.reviewCount || 0}
+                          date={dateStr}
+                          keywords={performance.keywords || []}
+                          variant="default"
+                        />
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+            
+            {/* 슬라이드 인디케이터 */}
+            <div className={styles.sliderIndicators}>
+              {userRecommendations.map((_, index) => (
+                <button
+                  key={index}
+                  className={`${styles.indicator} ${userRecCurrentIndex === index ? styles.active : ''}`}
+                  onClick={() => goToUserRecSlide(index)}
+                  aria-label={`슬라이드 ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* 좌우 화살표 버튼 */}
+            <button
+              className={styles.prevButton}
+              onClick={() => goToUserRecSlide(userRecCurrentIndex - 1)}
+              aria-label="이전 슬라이드"
+            >
+              ‹
+            </button>
+            <button
+              className={styles.nextButton}
+              onClick={() => goToUserRecSlide(userRecCurrentIndex + 1)}
+              aria-label="다음 슬라이드"
+            >
+              ›
+            </button>
+          </>
+        ) : (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+            추천할 공연이 없습니다.
+          </div>
+        )}
+        </section>
+      )}
+
+      {/* 로그인한 사용자: 최근 본 공연과 유사한 공연 섹션 */}
+      {isLoggedIn && recentPerformance && (
+        <section className={styles.seriesSection}>
+          <h2 className={styles.sectionTitle}>
+            {recentPerformance.title ? `'${recentPerformance.title}'과 비슷한 공연은` : '최근 본 공연과 비슷한 공연은'}
+          </h2>
+          {similarPerformancesLoading ? (
+            <div style={{ padding: '20px', textAlign: 'center' }}>유사 공연을 불러오는 중...</div>
+          ) : similarPerformances.length > 0 ? (
+            <>
+              <div 
+                className={styles.sliderContainer}
+                ref={similarSliderRef}
+                onTouchStart={handleSimilarStart}
+                onTouchMove={handleSimilarMove}
+                onTouchEnd={handleSimilarEnd}
+                onMouseDown={handleSimilarStart}
+                onMouseMove={handleSimilarMove}
+                onMouseUp={handleSimilarEnd}
+                onMouseLeave={handleSimilarEnd}
+              >
+                <div 
+                  className={styles.sliderTrack}
+                  style={{ 
+                    transform: `translateX(-${similarDisplayIndex * (100 / 2.5)}%)`,
+                    transition: similarIsTransitioning ? 'transform 0.3s ease' : 'none'
+                  }}
+                  onTransitionEnd={() => {
+                    const seriesLength = similarPerformances.length;
+                    const totalSlides = seriesLength * 5;
+                    
+                    if (similarDisplayIndex < seriesLength) {
+                      setSimilarIsTransitioning(false);
+                      setSimilarDisplayIndex(seriesLength * 2 + similarCurrentIndex);
+                    } else if (similarDisplayIndex >= seriesLength * 4) {
+                      setSimilarIsTransitioning(false);
+                      setSimilarDisplayIndex(seriesLength * 2 + similarCurrentIndex);
+                    }
+                  }}
+                >
+                  {(() => {
+                    const infiniteSlides = [
+                      ...similarPerformances,
+                      ...similarPerformances,
+                      ...similarPerformances,
+                      ...similarPerformances,
+                      ...similarPerformances
+                    ];
+                    
+                    return infiniteSlides.map((performance, index) => {
+                      const imageUrl = getImageUrl(performance.poster || performance.image);
+                      const dateStr = formatDateRange(performance.startDate, performance.endDate);
+                      
+                      return (
+                        <div key={`${performance.id || performance.performanceId}-${index}`} className={styles.slideCard}>
+                          <PerformanceCard
+                            id={performance.id || performance.performanceId}
+                            title={performance.title}
+                            image={imageUrl || performance.poster || performance.image || 'wicked'}
+                            rating={performance.rating || 0}
+                            reviewCount={performance.reviewCount || 0}
+                            date={dateStr}
+                            keywords={performance.keywords || []}
+                            variant="default"
+                          />
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+              
+              {/* 슬라이드 인디케이터 */}
+              <div className={styles.sliderIndicators}>
+                {similarPerformances.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`${styles.indicator} ${similarCurrentIndex === index ? styles.active : ''}`}
+                    onClick={() => goToSimilarSlide(index)}
+                    aria-label={`슬라이드 ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* 좌우 화살표 버튼 */}
+              <button
+                className={styles.prevButton}
+                onClick={() => goToSimilarSlide(similarCurrentIndex - 1)}
+                aria-label="이전 슬라이드"
+              >
+                ‹
+              </button>
+              <button
+                className={styles.nextButton}
+                onClick={() => goToSimilarSlide(similarCurrentIndex + 1)}
+                aria-label="다음 슬라이드"
+              >
+                ›
+              </button>
+            </>
+          ) : (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+              유사한 공연이 없습니다.
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* 로그인하지 않은 사용자: 인기 공연 추천 섹션 */}
+      {!isLoggedIn && (
+        <section className={styles.seriesSection}>
+          <h2 className={styles.sectionTitle}>인기 공연</h2>
+          {popularPerformancesLoading ? (
+            <div style={{ padding: '20px', textAlign: 'center' }}>인기 공연을 불러오는 중...</div>
+          ) : popularPerformances.length > 0 ? (
+            <>
+              <div 
+                className={styles.sliderContainer}
+                ref={popularSliderRef}
+                onTouchStart={handlePopularStart}
+                onTouchMove={handlePopularMove}
+                onTouchEnd={handlePopularEnd}
+                onMouseDown={handlePopularStart}
+                onMouseMove={handlePopularMove}
+                onMouseUp={handlePopularEnd}
+                onMouseLeave={handlePopularEnd}
+              >
+                <div 
+                  className={styles.sliderTrack}
+                  style={{ 
+                    transform: `translateX(-${popularDisplayIndex * (100 / 2.5)}%)`,
+                    transition: popularIsTransitioning ? 'transform 0.3s ease' : 'none'
+                  }}
+                  onTransitionEnd={() => {
+                    const seriesLength = popularPerformances.length;
+                    
+                    if (popularDisplayIndex < seriesLength) {
+                      setPopularIsTransitioning(false);
+                      setPopularDisplayIndex(seriesLength * 2 + popularCurrentIndex);
+                    } else if (popularDisplayIndex >= seriesLength * 4) {
+                      setPopularIsTransitioning(false);
+                      setPopularDisplayIndex(seriesLength * 2 + popularCurrentIndex);
+                    }
+                  }}
+                >
+                  {(() => {
+                    const infiniteSlides = [
+                      ...popularPerformances,
+                      ...popularPerformances,
+                      ...popularPerformances,
+                      ...popularPerformances,
+                      ...popularPerformances
+                    ];
+                    
+                    return infiniteSlides.map((performance, index) => {
+                      const imageUrl = getImageUrl(performance.poster || performance.image);
+                      const dateStr = formatDateRange(performance.startDate, performance.endDate);
+                      
+                      return (
+                        <div key={`${performance.id || performance.performanceId}-${index}`} className={styles.slideCard}>
+                          <PerformanceCard
+                            id={performance.id || performance.performanceId}
+                            title={performance.title}
+                            image={imageUrl || performance.poster || performance.image || 'wicked'}
+                            rating={performance.rating || 0}
+                            reviewCount={performance.reviewCount || 0}
+                            date={dateStr}
+                            keywords={performance.keywords || []}
+                            variant="default"
+                          />
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+              
+              {/* 슬라이드 인디케이터 */}
+              <div className={styles.sliderIndicators}>
+                {popularPerformances.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`${styles.indicator} ${popularCurrentIndex === index ? styles.active : ''}`}
+                    onClick={() => goToPopularSlide(index)}
+                    aria-label={`슬라이드 ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* 좌우 화살표 버튼 */}
+              <button
+                className={styles.prevButton}
+                onClick={() => goToPopularSlide(popularCurrentIndex - 1)}
+                aria-label="이전 슬라이드"
+              >
+                ‹
+              </button>
+              <button
+                className={styles.nextButton}
+                onClick={() => goToPopularSlide(popularCurrentIndex + 1)}
+                aria-label="다음 슬라이드"
+              >
+                ›
+              </button>
+            </>
+          ) : (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+              인기 공연이 없습니다.
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* 로그인하지 않은 사용자: 장르별 추천 섹션 */}
+      {!isLoggedIn && selectedGenres.map((genre) => {
+        const performances = genreRecommendations[genre] || [];
+        const loading = genreRecommendationsLoading[genre] || false;
+        const state = genreSliderStates[genre] || { currentIndex: 0, displayIndex: 0, isTransitioning: true };
+        
+        return (
+          <section key={genre} className={styles.seriesSection}>
+            <h2 className={styles.sectionTitle}>{genre} 인기 공연</h2>
+            {loading ? (
+              <div style={{ padding: '20px', textAlign: 'center' }}>{genre} 공연을 불러오는 중...</div>
+            ) : performances.length > 0 ? (
+              <>
+                <div 
+                  className={styles.sliderContainer}
+                  onTouchStart={handleGenreStart(genre)}
+                  onTouchMove={handleGenreMove(genre)}
+                  onTouchEnd={handleGenreEnd(genre)}
+                  onMouseDown={handleGenreStart(genre)}
+                  onMouseMove={handleGenreMove(genre)}
+                  onMouseUp={handleGenreEnd(genre)}
+                  onMouseLeave={handleGenreEnd(genre)}
+                >
+                  <div 
+                    className={styles.sliderTrack}
+                    style={{ 
+                      transform: `translateX(-${state.displayIndex * (100 / 2.5)}%)`,
+                      transition: state.isTransitioning ? 'transform 0.3s ease' : 'none'
+                    }}
+                    onTransitionEnd={() => {
+                      const seriesLength = performances.length;
+                      const currentState = genreSliderStates[genre] || { currentIndex: 0, displayIndex: 0 };
+                      
+                      if (currentState.displayIndex < seriesLength) {
+                        setGenreSliderStates((prev) => ({
+                          ...prev,
+                          [genre]: {
+                            ...prev[genre],
+                            isTransitioning: false,
+                            displayIndex: seriesLength * 2 + currentState.currentIndex
+                          }
+                        }));
+                      } else if (currentState.displayIndex >= seriesLength * 4) {
+                        setGenreSliderStates((prev) => ({
+                          ...prev,
+                          [genre]: {
+                            ...prev[genre],
+                            isTransitioning: false,
+                            displayIndex: seriesLength * 2 + currentState.currentIndex
+                          }
+                        }));
+                      }
+                    }}
+                  >
+                    {(() => {
+                      const infiniteSlides = [
+                        ...performances,
+                        ...performances,
+                        ...performances,
+                        ...performances,
+                        ...performances
+                      ];
+                      
+                      return infiniteSlides.map((performance, index) => {
+                        const imageUrl = getImageUrl(performance.poster || performance.image);
+                        const dateStr = formatDateRange(performance.startDate, performance.endDate);
+                        
+                        return (
+                          <div key={`${performance.id || performance.performanceId}-${index}`} className={styles.slideCard}>
+                            <PerformanceCard
+                              id={performance.id || performance.performanceId}
+                              title={performance.title}
+                              image={imageUrl || performance.poster || performance.image || 'wicked'}
+                              rating={performance.rating || 0}
+                              reviewCount={performance.reviewCount || 0}
+                              date={dateStr}
+                              keywords={performance.keywords || []}
+                              variant="default"
+                            />
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+                
+                {/* 슬라이드 인디케이터 */}
+                <div className={styles.sliderIndicators}>
+                  {performances.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`${styles.indicator} ${state.currentIndex === index ? styles.active : ''}`}
+                      onClick={() => goToGenreSlide(genre, index)}
+                      aria-label={`슬라이드 ${index + 1}`}
+                    />
+                  ))}
+                </div>
+
+                {/* 좌우 화살표 버튼 */}
+                <button
+                  className={styles.prevButton}
+                  onClick={() => goToGenreSlide(genre, state.currentIndex - 1)}
+                  aria-label="이전 슬라이드"
+                >
+                  ‹
+                </button>
+                <button
+                  className={styles.nextButton}
+                  onClick={() => goToGenreSlide(genre, state.currentIndex + 1)}
+                  aria-label="다음 슬라이드"
+                >
+                  ›
+                </button>
+              </>
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                {genre} 공연이 없습니다.
+              </div>
+            )}
+          </section>
+        );
+      })}
+
+      {/* 기존 추천 영화 시리즈 슬라이드 섹션 (필요시 제거 가능) */}
+      <section className={styles.seriesSection} style={{ display: 'none' }}>
+        <h2 className={styles.sectionTitle}>추천하는 공연 (기존)</h2>
         <div 
           className={styles.sliderContainer}
           ref={sliderRef}

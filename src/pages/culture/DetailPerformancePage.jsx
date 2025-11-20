@@ -22,6 +22,7 @@ import { usePerformanceInfoImages } from '../../hooks/usePerformanceInfoImages';
 import { usePerformanceBooking } from '../../hooks/usePerformanceBooking';
 import { usePlaceBasic } from '../../hooks/usePlaceBasic';
 import { getTicketsByPerformanceName, getWatchedTickets, addTicket } from '../../utils/ticketUtils';
+import logApi from '../../api/logApi';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -818,6 +819,17 @@ const DetailPerformancePage = () => {
         
         if (normalizedData) {
           setPerformance(normalizedData);
+          
+          // 공연 상세 페이지 진입 시 VIEW 로그 기록
+          try {
+            await logApi.createLog({
+              eventType: "VIEW",
+              targetType: "PERFORMANCE",
+              targetId: normalizedData.id || normalizedData.performanceId || id
+            });
+          } catch (logErr) {
+            console.error('로그 기록 실패:', logErr);
+          }
         } else {
           throw new Error('공연 정보를 불러올 수 없습니다.');
         }
@@ -830,6 +842,17 @@ const DetailPerformancePage = () => {
         const fallbackData = allPerformances[performanceId] || allPerformances[1];
         if (fallbackData) {
           setPerformance(fallbackData);
+          
+          // fallback 데이터 사용 시에도 VIEW 로그 기록
+          try {
+            await logApi.createLog({
+              eventType: "VIEW",
+              targetType: "PERFORMANCE",
+              targetId: String(id)
+            });
+          } catch (logErr) {
+            console.error('로그 기록 실패:', logErr);
+          }
         }
       } finally {
         setLoading(false);
@@ -941,6 +964,17 @@ const DetailPerformancePage = () => {
     try {
       const result = await togglePerformanceFavorite(performanceId);
       setIsFavorite(result);
+      
+      // 공연 찜/찜해제 시 FAVORITE 로그 기록
+      try {
+        await logApi.createLog({
+          eventType: "FAVORITE",
+          targetType: "PERFORMANCE",
+          targetId: String(performanceId)
+        });
+      } catch (logErr) {
+        console.error('로그 기록 실패:', logErr);
+      }
     } catch (err) {
       console.error('공연 관심 토글 실패:', err);
     }
@@ -1126,6 +1160,17 @@ const DetailPerformancePage = () => {
 
       // API 호출
       await createPerformanceReview(requestDto);
+
+      // 리뷰 작성 완료 시 REVIEW_WRITE 로그 기록
+      try {
+        await logApi.createLog({
+          eventType: "REVIEW_WRITE",
+          targetType: "PERFORMANCE",
+          targetId: String(performanceId)
+        });
+      } catch (logErr) {
+        console.error('로그 기록 실패:', logErr);
+      }
 
       // 성공 시 모달 닫고 폼 초기화
       setShowWriteModal(false);

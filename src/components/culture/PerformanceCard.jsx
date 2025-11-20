@@ -32,6 +32,21 @@ const PerformanceCard = ({
     'rent': rentPoster
   };
 
+  // 이미지 URL 처리: URL이면 그대로 사용, 아니면 posterImages에서 찾기
+  const getImageSrc = () => {
+    if (!image) return wickedPoster;
+    // HTTP/HTTPS로 시작하면 URL로 간주
+    if (image.startsWith('http://') || image.startsWith('https://')) {
+      return image;
+    }
+    // 슬래시로 시작하면 상대 경로 URL로 간주
+    if (image.startsWith('/')) {
+      return image;
+    }
+    // 그 외는 이미지 이름으로 간주하여 posterImages에서 찾기
+    return posterImages[image] || wickedPoster;
+  };
+
   const handleCardClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -58,8 +73,14 @@ const PerformanceCard = ({
       <div className={styles.posterCard}>
         <img
           className={styles.posterImg}
-          src={posterImages[image] || wickedPoster}
+          src={getImageSrc()}
           alt={`${title} 포스터`}
+          onError={(e) => {
+            // 이미지 로드 실패 시 기본 이미지로 대체
+            if (e.target.src !== wickedPoster) {
+              e.target.src = wickedPoster;
+            }
+          }}
         />
       </div>
       <div className={styles.cardInfo}>

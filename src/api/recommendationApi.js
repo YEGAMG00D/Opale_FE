@@ -153,6 +153,50 @@ export const getPopularChatRooms = async (params = {}) => {
   }
 };
 
+
+/* ============================================================
+    9) 최근 본 공연 1개 조회
+    GET /api/recommendations/recent
+============================================================ */
+export const getRecentViewedPerformance = async () => {
+  try {
+    const res = await axiosInstance.get(`${base}/recent`);
+
+    if (res.data.success) {
+      // { recentPerformanceId: "PF123" } 반환됨
+      return res.data.data ?? { recentPerformanceId: null };
+    }
+
+    throw new Error("최근 본 공연 조회 실패");
+  } catch (err) {
+    console.error("❌ getRecentViewedPerformance 오류:", err);
+    throw err;
+  }
+};
+
+/* ============================================================
+    10) 최근 본 공연 → 유사 공연 추천
+    GET /api/recommendations/recent/similar
+============================================================ */
+export const getRecentSimilarRecommendations = async (params = {}) => {
+  try {
+    const res = await axiosInstance.get(`${base}/recent/similar`, { params });
+
+    if (res.data.success) return normalizeRecommendation(res.data.data);
+    throw new Error("최근 본 공연 기반 추천 조회 실패");
+  } catch (err) {
+    console.error("❌ getRecentSimilarRecommendations 오류:", err);
+    throw err;
+  }
+};
+
+
+
+
+
+
+
+
 /* ============================================================
     Export
 ============================================================ */
@@ -165,6 +209,8 @@ const recommendationApi = {
   getLatestRecommendations,
   getPopularPlaces,
   getPopularChatRooms,
+  getRecentViewedPerformance,
+  getRecentSimilarRecommendations,
 };
 
 export default recommendationApi;

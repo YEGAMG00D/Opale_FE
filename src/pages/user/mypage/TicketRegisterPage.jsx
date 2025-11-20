@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './TicketRegisterPage.module.css';
 import { createTicket, updateTicket as updateTicketApi, getTicket } from '../../../api/reservationApi';
 import { transformTicketDataForApi, transformTicketDataFromApi } from '../../../utils/ticketDataTransform';
+import logApi from '../../../api/logApi';
 
 const TicketRegisterPage = () => {
   const navigate = useNavigate();
@@ -197,8 +198,28 @@ const TicketRegisterPage = () => {
         alert('티켓이 수정되었습니다.');
       } else {
         // 등록 모드: API 호출
-        await createTicket(apiDto);
+        const ticketResponse = await createTicket(apiDto);
         alert('티켓이 등록되었습니다.');
+        
+        // 티켓 인증 완료 시 BOOKED 로그 기록
+        // 응답에서 performanceId 확인 (응답 구조에 따라 조정 필요)
+        // 백엔드 TicketDetailResponseDto에 performanceId가 포함되어 있을 것으로 예상
+        const performanceId = ticketResponse?.performanceId || ticketResponse?.performance?.performanceId || ticketResponse?.performanceId;
+        if (performanceId) {
+          try {
+            await logApi.createLog({
+              eventType: "BOOKED",
+              targetType: "PERFORMANCE",
+              targetId: String(performanceId)
+            });
+          } catch (logErr) {
+            console.error('로그 기록 실패:', logErr);
+          }
+        } else {
+          // performanceId가 응답에 없는 경우, performanceName으로 검색하여 로그 기록
+          // (선택사항: 성능상 이유로 생략 가능)
+          console.warn('티켓 등록 응답에 performanceId가 없습니다. BOOKED 로그를 기록하지 않습니다.');
+        }
       }
       
       stopCamera();
