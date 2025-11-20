@@ -308,11 +308,11 @@
 .selectedPlaceCardContent > * {
   border-bottom: none !important;
   padding: 0 !important;
-  cursor: default !important;
+  cursor: pointer !important; /* 클릭 가능하도록 */
 }
 
 .selectedPlaceCardContent > *:hover {
-  background-color: transparent !important;
+  background-color: #f9fafb !important; /* hover 효과 활성화 */
 }
 
 .selectedPlaceCardContent::-webkit-scrollbar {

@@ -237,6 +237,9 @@ h1 {
   font-weight: 500;
   color: #374151;
   line-height: 1.5;
+  word-break: keep-all; /* 한국어 단어가 중간에 잘리지 않도록 */
+  white-space: normal; /* 줄바꿈 허용 */
+  text-align: center;
 }
 
 /* 목록 컨테이너 */
