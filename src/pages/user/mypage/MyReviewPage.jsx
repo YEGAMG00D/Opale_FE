@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   fetchMyPerformanceReviews, 
   fetchMyPlaceReviews, 
+  fetchPerformanceReview,
+  fetchPlaceReview,
   deletePerformanceReview, 
   deletePlaceReview,
   updatePerformanceReview,
@@ -11,6 +13,7 @@ import {
 import { normalizePerformanceReviews } from '../../../services/normalizePerformanceReview';
 import { normalizePlaceReviews } from '../../../services/normalizePlaceReview';
 import { normalizePerformanceReviewRequest } from '../../../services/normalizePerformanceReviewRequest';
+import { normalizePlaceReviewRequest } from '../../../services/normalizePlaceReviewRequest';
 import MyReviewCard from '../../../components/user/MyReviewCard';
 import styles from './MyReviewPage.module.css';
 
@@ -117,14 +120,63 @@ const MyReviewPage = () => {
   };
 
   // 리뷰 수정 핸들러
-  const handleEditReview = (review, reviewType) => {
-    setEditingReview({ ...review, reviewType });
-    setEditForm({
-      title: review.title || '',
-      content: review.content || review.contents || '',
-      rating: review.rating || 5
-    });
-    setShowEditModal(true);
+  const handleEditReview = async (review, reviewType) => {
+    const reviewId = review.id || review.performanceReviewId || review.placeReviewId || review.reviewId;
+    
+    if (!reviewId) {
+      alert('리뷰 ID를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      let normalizedReview;
+      
+      if (reviewType === 'PLACE') {
+        // 공연장 리뷰 단일 조회
+        const apiResponse = await fetchPlaceReview(reviewId);
+        normalizedReview = {
+          id: apiResponse.placeReviewId,
+          placeReviewId: apiResponse.placeReviewId,
+          placeId: apiResponse.placeId,
+          title: apiResponse.title || '',
+          content: apiResponse.contents || '',
+          contents: apiResponse.contents || '',
+          rating: apiResponse.rating || 5,
+          reviewType: apiResponse.reviewType || 'PLACE'
+        };
+      } else {
+        // 공연 리뷰 단일 조회
+        const apiResponse = await fetchPerformanceReview(reviewId);
+        normalizedReview = {
+          id: apiResponse.performanceReviewId,
+          performanceReviewId: apiResponse.performanceReviewId,
+          performanceId: apiResponse.performanceId,
+          title: apiResponse.title || '',
+          content: apiResponse.contents || '',
+          contents: apiResponse.contents || '',
+          rating: apiResponse.rating || 5,
+          reviewType: apiResponse.reviewType || reviewType
+        };
+      }
+
+      setEditingReview(normalizedReview);
+      setEditForm({
+        title: normalizedReview.title || '',
+        content: normalizedReview.content || normalizedReview.contents || '',
+        rating: normalizedReview.rating || 5
+      });
+      setShowEditModal(true);
+    } catch (err) {
+      console.error('리뷰 조회 실패:', err);
+      // API 조회 실패 시 목록 데이터 사용 (fallback)
+      setEditingReview({ ...review, reviewType });
+      setEditForm({
+        title: review.title || '',
+        content: review.content || review.contents || '',
+        rating: review.rating || 5
+      });
+      setShowEditModal(true);
+    }
   };
 
   // 수정 모달 닫기
@@ -141,16 +193,19 @@ const MyReviewPage = () => {
     if (!editingReview) return;
 
     try {
-      const reviewId = editingReview.id || editingReview.performanceReviewId || editingReview.reviewId;
       const reviewType = editingReview.reviewType;
 
       if (reviewType === 'PLACE') {
         // 공연장 리뷰 수정
-        const updateDto = {
-          title: editForm.title,
-          contents: editForm.content,
-          rating: parseFloat(editForm.rating)
-        };
+        const reviewId = editingReview.id || editingReview.placeReviewId || editingReview.reviewId;
+        const placeId = editingReview.placeId;
+        
+        if (!placeId) {
+          alert('공연장 정보를 찾을 수 없습니다.');
+          return;
+        }
+        
+        const updateDto = normalizePlaceReviewRequest(editForm, placeId);
         await updatePlaceReview(reviewId, updateDto);
         
         // 목록에서 해당 리뷰 업데이트

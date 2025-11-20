@@ -7,8 +7,9 @@ import PlaceMap from '../../components/place/PlaceMap';
 import { usePlaceDetail } from '../../hooks/usePlaceDetail';
 import { usePlaceFacilities } from '../../hooks/usePlaceFacilities';
 import { usePlaceStages } from '../../hooks/usePlaceStages';
-import { fetchPlaceReviewsByPlace } from '../../api/reviewApi';
+import { fetchPlaceReviewsByPlace, createPlaceReview } from '../../api/reviewApi';
 import { normalizePlaceReviews } from '../../services/normalizePlaceReview';
+import { normalizePlaceReviewRequest } from '../../services/normalizePlaceReviewRequest';
 
 const DetailPlacePage = () => {
   const { id } = useParams();
@@ -25,32 +26,33 @@ const DetailPlacePage = () => {
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState(null);
 
-  // 공연장 리뷰 데이터 로드
+  // 공연장 리뷰 데이터 로드 함수 (재사용 가능)
+  const loadReviews = async () => {
+    if (!id) return;
+
+    try {
+      setReviewsLoading(true);
+      setReviewsError(null);
+
+      // 공연장 리뷰는 PLACE 타입만 있음
+      const apiData = await fetchPlaceReviewsByPlace(id, 'PLACE');
+      
+      // API 응답 구조 처리: apiData는 { reviews: [...], totalCount: ... } 형태 또는 빈 배열
+      const reviewsData = Array.isArray(apiData) ? { reviews: [] } : apiData;
+
+      const normalizedReviews = normalizePlaceReviews(reviewsData);
+      setReviews(normalizedReviews);
+    } catch (err) {
+      console.error('공연장 리뷰 조회 실패:', err);
+      setReviewsError(err.message || '리뷰를 불러오는 중 오류가 발생했습니다.');
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  // 초기 로드
   useEffect(() => {
-    const loadReviews = async () => {
-      if (!id) return;
-
-      try {
-        setReviewsLoading(true);
-        setReviewsError(null);
-
-        // 공연장 리뷰는 PLACE 타입만 있음
-        const apiData = await fetchPlaceReviewsByPlace(id, 'PLACE');
-        
-        // API 응답 구조 처리: apiData는 { reviews: [...], totalCount: ... } 형태 또는 빈 배열
-        const reviewsData = Array.isArray(apiData) ? { reviews: [] } : apiData;
-
-        const normalizedReviews = normalizePlaceReviews(reviewsData);
-        setReviews(normalizedReviews);
-      } catch (err) {
-        console.error('공연장 리뷰 조회 실패:', err);
-        setReviewsError(err.message || '리뷰를 불러오는 중 오류가 발생했습니다.');
-        setReviews([]);
-      } finally {
-        setReviewsLoading(false);
-      }
-    };
-
     loadReviews();
   }, [id]);
 
@@ -267,12 +269,31 @@ const DetailPlacePage = () => {
               }}>×</button>
             </div>
             
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              // 여기서 실제 글 업로드 로직을 구현
-              console.log('후기 작성:', writeForm);
-              setShowWriteModal(false);
-              setWriteForm({ title: '', content: '', rating: 5 });
+              
+              if (!id) {
+                alert('공연장 정보가 없습니다.');
+                return;
+              }
+
+              try {
+                // 요청 DTO 생성
+                const requestDto = normalizePlaceReviewRequest(writeForm, id);
+
+                // API 호출
+                await createPlaceReview(requestDto);
+
+                // 성공 시 모달 닫고 폼 초기화
+                setShowWriteModal(false);
+                setWriteForm({ title: '', content: '', rating: 5 });
+
+                // 리뷰 목록 다시 조회
+                await loadReviews();
+              } catch (err) {
+                console.error('공연장 리뷰 작성 실패:', err);
+                alert(err.response?.data?.message || err.message || '공연장 리뷰 작성에 실패했습니다.');
+              }
             }} className={styles.writeForm}>
               <div className={styles.formGroup}>
                 <label>제목</label>

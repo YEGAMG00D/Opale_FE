@@ -12,7 +12,7 @@ import ReviewCard from '../../components/culture/ReviewCard';
 import PerformanceInfoImages from '../../components/culture/PerformanceInfoImages';
 import PlaceMap from '../../components/place/PlaceMap';
 import { fetchPerformanceBasic } from '../../api/performanceApi';
-import { fetchPerformanceReviewsByPerformance, createPerformanceReview, updatePerformanceReview, deletePerformanceReview } from '../../api/reviewApi';
+import { fetchPerformanceReviewsByPerformance, fetchPerformanceReview, createPerformanceReview, updatePerformanceReview, deletePerformanceReview } from '../../api/reviewApi';
 import { isPerformanceLiked, togglePerformanceFavorite, isPerformanceReviewLiked, togglePerformanceReviewFavorite } from '../../api/favoriteApi';
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
 import { normalizePerformanceReviews } from '../../services/normalizePerformanceReview';
@@ -1149,14 +1149,48 @@ const DetailPerformancePage = () => {
   };
 
   // 리뷰 수정 핸들러
-  const handleEditReview = (review, reviewType) => {
-    setEditingReview({ ...review, reviewType });
-    setEditForm({
-      title: review.title || '',
-      content: review.content || review.contents || '',
-      rating: review.rating || 5
-    });
-    setShowEditModal(true);
+  const handleEditReview = async (review, reviewType) => {
+    const reviewId = review.id || review.performanceReviewId || review.reviewId;
+    
+    if (!reviewId) {
+      alert('리뷰 ID를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      // 단일 조회 API로 최신 데이터 가져오기
+      const apiResponse = await fetchPerformanceReview(reviewId);
+      
+      // API 응답을 프론트엔드 형식으로 변환
+      const normalizedReview = {
+        id: apiResponse.performanceReviewId,
+        performanceReviewId: apiResponse.performanceReviewId,
+        performanceId: apiResponse.performanceId,
+        title: apiResponse.title || '',
+        content: apiResponse.contents || '',
+        contents: apiResponse.contents || '',
+        rating: apiResponse.rating || 5,
+        reviewType: apiResponse.reviewType || reviewType
+      };
+
+      setEditingReview(normalizedReview);
+      setEditForm({
+        title: normalizedReview.title || '',
+        content: normalizedReview.content || normalizedReview.contents || '',
+        rating: normalizedReview.rating || 5
+      });
+      setShowEditModal(true);
+    } catch (err) {
+      console.error('리뷰 조회 실패:', err);
+      // API 조회 실패 시 목록 데이터 사용 (fallback)
+      setEditingReview({ ...review, reviewType });
+      setEditForm({
+        title: review.title || '',
+        content: review.content || review.contents || '',
+        rating: review.rating || 5
+      });
+      setShowEditModal(true);
+    }
   };
 
   // 수정 모달 닫기
