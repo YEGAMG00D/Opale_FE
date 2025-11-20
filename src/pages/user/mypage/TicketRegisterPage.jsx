@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './TicketRegisterPage.module.css';
+import { addTicket, updateTicket } from '../../../utils/ticketUtils';
 
 const TicketRegisterPage = () => {
   const navigate = useNavigate();
@@ -145,47 +146,24 @@ const TicketRegisterPage = () => {
       return;
     }
 
-    // 로컬 스토리지에서 기존 티켓 목록 가져오기
-    const savedTickets = localStorage.getItem('myTickets');
-    const tickets = savedTickets ? JSON.parse(savedTickets) : [];
-
     if (isEditMode && existingTicket) {
       // 수정 모드
-      const updatedTickets = tickets.map(ticket => 
-        ticket.id === existingTicket.id 
-          ? {
-              ...ticket,
-              performanceName: ticketData.performanceName,
-              performanceDate: ticketData.performanceDate,
-              performanceTime: ticketData.performanceTime,
-              section: ticketData.section,
-              row: ticketData.row,
-              number: ticketData.number,
-              ticketImage: capturedImage
-            }
-          : ticket
-      );
-      localStorage.setItem('myTickets', JSON.stringify(updatedTickets));
-    } else {
-      // 등록 모드
-      const newTicket = {
-        id: Date.now(),
+      updateTicket(existingTicket.id, {
         performanceName: ticketData.performanceName,
         performanceDate: ticketData.performanceDate,
         performanceTime: ticketData.performanceTime,
         section: ticketData.section,
         row: ticketData.row,
         number: ticketData.number,
-        ticketImage: capturedImage, // 이미지 URL 저장
-        registeredDate: new Date().toISOString().split('T')[0]
-      };
-
-      const updatedTickets = [newTicket, ...tickets];
-      localStorage.setItem('myTickets', JSON.stringify(updatedTickets));
+        ticketImage: capturedImage
+      });
+    } else {
+      // 등록 모드
+      addTicket({
+        ...ticketData,
+        ticketImage: capturedImage
+      });
     }
-    
-    // 티켓 목록 업데이트를 위한 이벤트 발생
-    window.dispatchEvent(new Event('ticketUpdated'));
     
     stopCamera();
     navigate('/my/tickets');
@@ -212,7 +190,7 @@ const TicketRegisterPage = () => {
     <div className={styles.container}>
       {/* 상단 헤더 */}
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={handleCancel}>←</button>
+        <div></div>
         <h2 className={styles.headerTitle}>{isEditMode ? '티켓 수정' : '티켓 등록'}</h2>
         <div></div>
       </div>

@@ -113,7 +113,23 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
         <textarea
           className={styles.termsText}
           readOnly
-          value="opale에서는 ~~~할 수 있습니다."
+          value="Opale는 회원님께 맞춤형 공연 정보와 추천 서비스를 제공하기 위해
+다음 개인정보를 수집·이용합니다.
+
+■ 수집 항목
+   이메일, 비밀번호, 이름, 생년월일, 성별, 연락처, 주소
+
+■ 이용 목적
+   - 공연 및 공연장 정보 제공
+   - 관심 공연, 리뷰, 찜 기능 제공
+   - 개인화 추천 및 사용자 맞춤 콘텐츠 제공
+   - 공지사항 안내 및 고객센터 응대
+
+■ 보유 및 이용 기간
+   회원 탈퇴 시 즉시 삭제하며, 관련 법령에 따라 필요한 경우 일정 기간 보관합니다.
+
+위 내용을 확인하였으며, 개인정보 수집·이용에 동의합니다.
+"
         />
         <label className={styles.checkboxLabel}>
           <input

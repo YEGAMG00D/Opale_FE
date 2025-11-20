@@ -451,6 +451,18 @@
   width: 18px;
   height: 18px;
   cursor: pointer;
+  accent-color: #ffb6c1;
+}
+
+.checkboxLabel span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.checkboxLabel span span {
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .bottomSection {
@@ -537,6 +549,14 @@
   color: #ffffff;
 }
 
-.signupButton:hover {
+.signupButton:hover:not(:disabled) {
   background-color: #ffa5b8;
+}
+
+.signupButton:disabled {
+  background-color: #e0e0e0;
+  border-color: #e0e0e0;
+  color: #9e9e9e;
+  cursor: not-allowed;
+  opacity: 1;
 }

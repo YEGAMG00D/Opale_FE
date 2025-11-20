@@ -14,32 +14,55 @@ const TicketRegistrationPage = () => {
     number: ''
   });
   const videoRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
 
-  // 카메라 접근 시도
-  useEffect(() => {
-    if (step === 'scan' && !isScanning) {
-      // 실제 카메라 접근 로직은 여기에 구현
-      // 현재는 시뮬레이션만
-    }
-  }, [step, isScanning]);
-
-  const handleScan = () => {
-    // 스캔 로직 시뮬레이션
-    setIsScanning(true);
-    setTimeout(() => {
-      // 스캔된 데이터 (실제로는 OCR 결과)
-      setTicketData({
-        performanceName: '뮤지컬 위키드 내한공연',
-        performanceDate: '2025-10-23',
-        performanceTime: '19:00',
-        section: '나 구역',
-        row: '15',
-        number: '23'
+  // 카메라 시작
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // 후면 카메라 우선
       });
+      setCameraStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error('카메라 접근 실패:', err);
+      alert('카메라 접근에 실패했습니다. 파일에서 선택해주세요.');
+    }
+  };
+
+  // 카메라 중지
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  // 카메라로 촬영
+  const handleCameraClick = async () => {
+    setIsScanning(true);
+    await startCamera();
+  };
+
+  // 파일 선택 버튼 클릭
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // 파일에서 이미지 선택
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // 파일 선택 시 직접 입력 단계로 이동
       setStep('manual');
-      setIsScanning(false);
-    }, 2000);
+    }
   };
 
   const handleManualInput = () => {
@@ -61,10 +84,17 @@ const TicketRegistrationPage = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.card}>
+      {/* 상단 헤더 */}
+      <div className={styles.header}>
+        <div></div>
+        <h2 className={styles.headerTitle}>티켓 등록</h2>
+        <div></div>
+      </div>
+
+      <div className={styles.content}>
         {step === 'scan' ? (
           <>
-            <div className={styles.title}>Frame 298</div>
+            <div className={styles.ticketTitle}>티켓 스캔</div>
             <div className={styles.scanArea}>
               <div className={styles.cameraIcon}>
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -73,30 +103,78 @@ const TicketRegistrationPage = () => {
                 </svg>
               </div>
               <p className={styles.scanInstruction}>
-                상자 안에 티켓의 위치를 맞춰주세요
+                티켓을 스캔하거나 사진을 업로드해주세요
               </p>
             </div>
-            <button 
-              className={styles.primaryButton}
-              onClick={handleScan}
-              disabled={isScanning}
-            >
-              {isScanning ? '스캔 중...' : '스캔하기'}
-            </button>
-            <button 
-              className={styles.secondaryButton}
-              onClick={handleManualInput}
-            >
-              직접 등록하기
-            </button>
+            {cameraStream ? (
+              <div className={styles.cameraArea}>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className={styles.videoPreview}
+                />
+                <div className={styles.cameraControls}>
+                  <button
+                    className={styles.captureButton}
+                    onClick={() => {
+                      // 촬영 로직 (간단히 단계 이동)
+                      stopCamera();
+                      setIsScanning(false);
+                      setStep('manual');
+                    }}
+                  >
+                    촬영
+                  </button>
+                  <button
+                    className={styles.cancelButton}
+                    onClick={() => {
+                      stopCamera();
+                      setIsScanning(false);
+                    }}
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  style={{ display: 'none' }}
+                />
+                <button 
+                  className={styles.primaryButton}
+                  onClick={handleCameraClick}
+                  disabled={isScanning}
+                >
+                  카메라로 촬영
+                </button>
+                <button 
+                  className={styles.secondaryButton}
+                  onClick={handleFileClick}
+                >
+                  파일에서 선택
+                </button>
+                <button 
+                  className={styles.tertiaryButton}
+                  onClick={handleManualInput}
+                >
+                  직접 입력하기
+                </button>
+              </>
+            )}
           </>
         ) : (
           <>
-            <div className={styles.title}>Frame 296</div>
+            <div className={styles.ticketTitle}>티켓 정보 입력</div>
             <div className={styles.imagePlaceholder}>
               {/* 티켓 이미지 영역 */}
             </div>
-            <div className={styles.form}>
+            <div className={styles.ticketForm}>
               <div className={styles.formGroup}>
                 <label>공연명</label>
                 <input

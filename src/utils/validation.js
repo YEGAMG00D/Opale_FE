@@ -134,6 +134,11 @@ export const validateBirthDate = (birthDate) => {
     return { isValid: null, message: '' }; // 초기 상태
   }
 
+  // 공백만 입력된 경우
+  if (birthDate.trim().length === 0) {
+    return { isValid: false, message: '생년월일을 입력해주세요.' };
+  }
+
   const dateRegex = /^\d{8}$/;
   if (!dateRegex.test(birthDate)) {
     return { isValid: false, message: '생년월일은 YYYYMMdd 형식(8자리 숫자)으로 입력해주세요.' };
@@ -168,6 +173,11 @@ export const validateBirthDate = (birthDate) => {
 export const validatePhone = (phone) => {
   if (!phone) {
     return { isValid: null, message: '' }; // 초기 상태
+  }
+
+  // 공백만 입력된 경우
+  if (phone.trim().length === 0) {
+    return { isValid: false, message: '연락처를 입력해주세요.' };
   }
 
   const phoneRegex = /^010\d{8}$/;
@@ -212,3 +222,20 @@ export const validateDetailAddress = (detailAddress) => {
   return { isValid: true, message: '올바른 상세주소입니다.' };
 };
 
+
+/**
+ * 보호자 이름 검증 (비어있지 않아야 함)
+ * @param {string} guardianName - 검증할 보호자 이름
+ * @returns {object} { isValid: boolean, message: string }
+ */
+export const validateGuardianName = (guardianName) => {
+  if (!guardianName) {
+    return { isValid: null, message: '' }; // 초기 상태
+  }
+
+  if (guardianName.trim().length === 0) {
+    return { isValid: false, message: '보호자 이름을 입력해주세요.' };
+  }
+
+  return { isValid: true, message: '올바른 보호자 이름입니다.' };
+};

@@ -127,9 +127,7 @@
   cursor: pointer;
 }
 
-.ticketCard.flipped {
-  /* 플립 상태는 자식 요소에서 처리 */
-}
+/* .ticketCard.flipped - 플립 상태는 자식 요소(.ticketFront, .ticketBack)에서 처리 */
 
 /* 앞면과 뒷면 공통 스타일 */
 .ticketFront,
