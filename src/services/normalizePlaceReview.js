@@ -34,6 +34,11 @@ export const normalizePlaceReviews = (apiData) => {
       date: formatDate(review.createdAt || review.updatedAt),
       createdAt: review.createdAt,
       updatedAt: review.updatedAt,
+      // API 응답의 새로운 필드들
+      placeName: review.placeName || '',
+      placeAddress: review.placeAddress || '',
+      // 하위 호환성을 위한 필드
+      place: review.place || { name: review.placeName, address: review.placeAddress },
     };
   });
 };

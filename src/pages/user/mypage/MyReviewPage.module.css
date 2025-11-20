@@ -1,0 +1,158 @@
+.container {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  background-color: #ffffff;
+  z-index: 10;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+/* 탭 */
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tab:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.tab.active {
+  background-color: #ffb6c1;
+  border-color: #ffb6c1;
+  color: #ffffff;
+}
+
+.content {
+  padding: 20px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 16px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.emptyText {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.emptySubText {
+  font-size: 14px;
+  color: #999;
+  margin: 0;
+}
+
+.reviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.reviewWrapper {
+  margin-bottom: 12px;
+}
+
+.reviewActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 16px;
+  background-color: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: 0;
+}
+
+.reviewCardWrapper {
+  margin-top: 0;
+}
+
+.reviewCardWrapper :global(.reviewItem) {
+  margin-bottom: 0 !important;
+  border-radius: 0 0 8px 8px !important;
+  border-top: none !important;
+}
+
+.editButton,
+.deleteButton {
+  padding: 3px 12px;
+  margin: 3px 0px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editButton {
+  background-color: #ffffff;
+  color: #666;
+}
+
+.editButton:hover {
+  background-color: #f5f5f5;
+  border-color: #d0d0d0;
+}
+
+.deleteButton {
+  background-color: #ffffff;
+  color: #ff4444;
+  border-color: #ffcccc;
+}
+
+.deleteButton:hover {
+  background-color: #fff5f5;
+  border-color: #ff9999;
+}
+

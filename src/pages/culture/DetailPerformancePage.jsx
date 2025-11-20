@@ -9,11 +9,13 @@ import BookingLinks from '../../components/culture/BookingLinks';
 import OpenChatSection from '../../components/culture/OpenChatSection';
 import ReviewCard from '../../components/culture/ReviewCard';
 import PerformanceInfoImages from '../../components/culture/PerformanceInfoImages';
+import PlaceMap from '../../components/place/PlaceMap';
 import { fetchPerformanceBasic } from '../../api/performanceApi';
-import { fetchPerformanceReviewsByPerformance } from '../../api/reviewApi';
+import { fetchPerformanceReviewsByPerformance, createPerformanceReview } from '../../api/reviewApi';
 import { isPerformanceLiked, togglePerformanceFavorite, isPerformanceReviewLiked, togglePerformanceReviewFavorite } from '../../api/favoriteApi';
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
 import { normalizePerformanceReviews } from '../../services/normalizePerformanceReview';
+import { normalizePerformanceReviewRequest } from '../../services/normalizePerformanceReviewRequest';
 import { usePerformanceRelations } from '../../hooks/usePerformanceRelations';
 import { usePerformanceInfoImages } from '../../hooks/usePerformanceInfoImages';
 import { usePerformanceBooking } from '../../hooks/usePerformanceBooking';
@@ -818,56 +820,57 @@ const DetailPerformancePage = () => {
     loadFavoriteStatus();
   }, [performanceId]);
 
+  // 리뷰 데이터 로드 함수 (재사용 가능)
+  const loadReviews = async () => {
+    if (!performanceId) return;
+
+    try {
+      setReviewsLoading(true);
+      setReviewsError(null);
+
+      // 현재 활성화된 탭에 따라 reviewType 설정
+      const reviewType = activeReviewTab === 'review' ? 'AFTER' : 'EXPECTATION';
+      
+      const apiData = await fetchPerformanceReviewsByPerformance(performanceId, reviewType);
+      
+      // API 응답 구조 처리: apiData는 { reviews: [...], totalCount: ... } 형태 또는 빈 배열
+      const reviewsData = Array.isArray(apiData) ? { reviews: [] } : apiData;
+
+      const normalizedReviews = normalizePerformanceReviews(reviewsData);
+
+      if (activeReviewTab === 'review') {
+        setReviews(normalizedReviews);
+      } else {
+        setExpectations(normalizedReviews);
+        // 기대평 관심 여부 조회
+        const likesMap = {};
+        for (const expectation of normalizedReviews) {
+          try {
+            const liked = await isPerformanceReviewLiked(expectation.id);
+            likesMap[expectation.id] = liked;
+          } catch (err) {
+            console.error(`기대평 ${expectation.id} 관심 여부 조회 실패:`, err);
+            likesMap[expectation.id] = false;
+          }
+        }
+        setExpectationLikes(likesMap);
+      }
+    } catch (err) {
+      console.error('리뷰 조회 실패:', err);
+      setReviewsError(err.message || '리뷰를 불러오는 중 오류가 발생했습니다.');
+      // 에러 발생 시 빈 배열로 설정
+      if (activeReviewTab === 'review') {
+        setReviews([]);
+      } else {
+        setExpectations([]);
+      }
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
   // 리뷰 데이터 로드
   useEffect(() => {
-    const loadReviews = async () => {
-      if (!performanceId) return;
-
-      try {
-        setReviewsLoading(true);
-        setReviewsError(null);
-
-        // 현재 활성화된 탭에 따라 reviewType 설정
-        const reviewType = activeReviewTab === 'review' ? 'AFTER' : 'EXPECTATION';
-        
-        const apiData = await fetchPerformanceReviewsByPerformance(performanceId, reviewType);
-        
-        // API 응답 구조 처리: apiData는 { reviews: [...], totalCount: ... } 형태 또는 빈 배열
-        const reviewsData = Array.isArray(apiData) ? { reviews: [] } : apiData;
-
-        const normalizedReviews = normalizePerformanceReviews(reviewsData);
-
-        if (activeReviewTab === 'review') {
-          setReviews(normalizedReviews);
-        } else {
-          setExpectations(normalizedReviews);
-          // 기대평 관심 여부 조회
-          const likesMap = {};
-          for (const expectation of normalizedReviews) {
-            try {
-              const liked = await isPerformanceReviewLiked(expectation.id);
-              likesMap[expectation.id] = liked;
-            } catch (err) {
-              console.error(`기대평 ${expectation.id} 관심 여부 조회 실패:`, err);
-              likesMap[expectation.id] = false;
-            }
-          }
-          setExpectationLikes(likesMap);
-        }
-      } catch (err) {
-        console.error('리뷰 조회 실패:', err);
-        setReviewsError(err.message || '리뷰를 불러오는 중 오류가 발생했습니다.');
-        // 에러 발생 시 빈 배열로 설정
-        if (activeReviewTab === 'review') {
-          setReviews([]);
-        } else {
-          setExpectations([]);
-        }
-      } finally {
-        setReviewsLoading(false);
-      }
-    };
-
     loadReviews();
   }, [performanceId, activeReviewTab]);
 
@@ -902,12 +905,40 @@ const DetailPerformancePage = () => {
     setShowWriteModal(true);
   };
 
-  const handleWriteSubmit = (e) => {
+  const handleWriteSubmit = async (e) => {
     e.preventDefault();
-    // 여기서 실제 글 업로드 로직을 구현
-    console.log('글 작성:', writeForm);
-    setShowWriteModal(false);
-    setWriteForm({ title: '', content: '', rating: 5 });
+    
+    if (!performanceId) {
+      alert('공연 정보가 없습니다.');
+      return;
+    }
+
+    try {
+      // 요청 DTO 생성
+      const reviewType = writeType === 'review' ? 'AFTER' : 'EXPECTATION';
+      const requestDto = normalizePerformanceReviewRequest(
+        writeForm,
+        performanceId,
+        reviewType
+      );
+
+      // API 호출
+      await createPerformanceReview(requestDto);
+
+      // 성공 시 모달 닫고 폼 초기화
+      setShowWriteModal(false);
+      setWriteForm({ title: '', content: '', rating: 5 });
+
+      // 리뷰 목록 다시 조회
+      // activeReviewTab이 현재 작성한 타입과 일치하는 경우에만 리뷰 목록 갱신
+      if ((writeType === 'review' && activeReviewTab === 'review') ||
+          (writeType === 'expectation' && activeReviewTab === 'expectation')) {
+        await loadReviews();
+      }
+    } catch (err) {
+      console.error('후기 작성 실패:', err);
+      alert(err.response?.data?.message || err.message || '후기 작성에 실패했습니다.');
+    }
   };
 
   const handleWriteCancel = () => {
@@ -1275,6 +1306,17 @@ const DetailPerformancePage = () => {
                 </div>
               ) : (
                 <div className={styles.venueCard}>
+                  {/* 지도 영역 */}
+                  {(placeInfo?.latitude || placeInfo?.la) && (placeInfo?.longitude || placeInfo?.lo) && (
+                    <div className={styles.venueMapArea}>
+                      <PlaceMap
+                        latitude={placeInfo?.latitude || placeInfo?.la}
+                        longitude={placeInfo?.longitude || placeInfo?.lo}
+                        placeName={placeInfo?.placeName || placeInfo?.name || performance?.venue || '공연장'}
+                      />
+                    </div>
+                  )}
+                  
                   <div className={styles.venueInfoItem}>
                     <div className={styles.venueInfoIcon}>🏛️</div>
                     <div className={styles.venueInfoContent}>
