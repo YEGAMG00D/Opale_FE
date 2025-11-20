@@ -229,6 +229,17 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       console.log('🧹 [마커 제거] 검색 반경 원 제거');
     }
     
+    // 선택된 공연장 카드 닫기 (시트가 보이도록)
+    if (selectedPlaceInfoWindowRef.current) {
+      selectedPlaceInfoWindowRef.current.close();
+      selectedPlaceInfoWindowRef.current = null;
+    }
+    setIsCardVisible(false);
+    setSelectedPlaceCardHeight(0);
+    setSelectedPlace(null);
+    selectedPlaceMarkerRef.current = null;
+    console.log('🧹 [마커 제거] 선택된 공연장 카드 닫기');
+    
     // ref를 즉시 비움
     markersRef.current = [];
     infoWindowsRef.current = [];
@@ -237,7 +248,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     await new Promise(resolve => setTimeout(resolve, 100));
     
     console.log('✅ [마커 제거] 기존 공연장 마커 제거 완료');
-  }, []);
+  }, []); // 의존성 배열은 비워둠 (상태 setter는 안정적이므로)
 
   // ref를 통해 clearMarkers 함수 노출
   useImperativeHandle(ref, () => ({
