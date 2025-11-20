@@ -265,7 +265,13 @@ const ReviewWritingPage = () => {
           {
             title: reviewData.title,
             content: reviewData.performanceReview,
-            rating: reviewData.rating
+            rating: reviewData.rating,
+            // 티켓 정보 추가
+            performanceDate: ticketData.performanceDate || '',
+            performanceTime: ticketData.performanceTime || '',
+            section: ticketData.section || '',
+            row: ticketData.row || '',
+            number: ticketData.number || ''
           },
           performanceId,
           'AFTER'

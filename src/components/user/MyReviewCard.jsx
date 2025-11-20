@@ -81,6 +81,22 @@ const MyReviewCard = ({
           <h5 className={styles.reviewTitle}>{review.title}</h5>
         )}
 
+        {/* 관람일자, 관람 시간, 좌석 정보 */}
+        {(review.performanceDate || review.performanceTime || review.seat) && (
+          <div className={styles.reviewMeta}>
+            <span className={styles.reviewMetaText}>
+              |{' '}
+              {review.performanceDate && <>{review.performanceDate}</>}
+              {review.performanceTime && (
+                <>{review.performanceDate ? ' ' : ''}{review.performanceTime}</>
+              )}
+              {review.seat && (
+                <>{review.performanceDate || review.performanceTime ? ' ' : ''}{review.seat}</>
+              )}
+            </span>
+          </div>
+        )}
+
         {/* 평점 - 기대평(EXPECTATION)일 때는 표시하지 않음 */}
         {reviewType !== 'EXPECTATION' && (
           <div className={styles.reviewRating}>
@@ -104,9 +120,14 @@ const MyReviewCard = ({
           <p className={styles.reviewText}>{content}</p>
         </div>
 
-        {/* 작성자 및 날짜 */}
+        {/* 작성자 및 날짜, 좌석 정보 */}
         <div className={styles.reviewFooter}>
-          <span className={styles.reviewAuthor}>{author} | {date}</span>
+          <span className={styles.reviewAuthor}>
+            {author} | {date}
+            {review.seat && (
+              <> | {review.seat}</>
+            )}
+          </span>
         </div>
       </div>
     </div>
