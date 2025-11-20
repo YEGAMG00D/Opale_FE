@@ -3,6 +3,7 @@ import styles from './PlaceMapView.module.css';
 import { loadNaverMapScript } from '../../utils/loadNaverMap';
 import PlaceWithPerformancesCard from '../cards/PlaceWithPerformancesCard';
 import { createPlaceMarkerHTML } from './PlaceMarker';
+import { watchCurrentLocation, clearLocationWatch } from '../../utils/geolocation';
 
 /**
  * 여러 공연장 위치를 표시하는 네이버 지도 컴포넌트
@@ -22,6 +23,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
   const searchCenterMarkerRef = useRef(null); // 검색 기준 좌표 마커 (주황색)
   const searchRadiusCircleRef = useRef(null); // 검색 반경 원
   const scaleControlRef = useRef(null);
+  const locationWatchIdRef = useRef(null); // 실시간 위치 추적 ID
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
   
@@ -709,9 +711,98 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     }
   }, [userLocation, searchCenter, places, mapLoading]); // GPS 위치가 설정되면 뷰포트 업데이트
 
+  // 실시간 GPS 위치 추적 (GPS 마커만 업데이트)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.naver || !window.naver.maps || mapLoading) {
+      return;
+    }
+
+    const map = mapInstanceRef.current;
+
+    // 기존 watchPosition이 있으면 정리
+    if (locationWatchIdRef.current !== null) {
+      clearLocationWatch(locationWatchIdRef.current);
+      locationWatchIdRef.current = null;
+    }
+
+    // 실시간 위치 추적 시작
+    const watchId = watchCurrentLocation(
+      (newLocation) => {
+        // 위치가 변경될 때마다 GPS 마커만 업데이트 (다른 마커는 건드리지 않음)
+        if (!mapInstanceRef.current || !window.naver || !window.naver.maps) {
+          return;
+        }
+
+        const gpsPosition = new window.naver.maps.LatLng(
+          newLocation.latitude,
+          newLocation.longitude
+        );
+
+        // GPS 마커가 있으면 위치만 업데이트
+        if (userMarkerRef.current) {
+          userMarkerRef.current.setPosition(gpsPosition);
+          console.log('📍 [실시간] GPS 마커 위치 업데이트:', {
+            latitude: newLocation.latitude,
+            longitude: newLocation.longitude
+          });
+        } else {
+          // GPS 마커가 없으면 생성
+          const gpsMarker = new window.naver.maps.Marker({
+            position: gpsPosition,
+            map: map,
+            icon: {
+              content: `
+                <div style="
+                  width: 18px;
+                  height: 18px;
+                  background-color: #4285F4;
+                  border: 2px solid #FFFFFF;
+                  border-radius: 50%;
+                  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                "></div>
+              `,
+              anchor: window.naver && window.naver.maps && window.naver.maps.Point 
+                ? new window.naver.maps.Point(9, 9)
+                : undefined,
+            },
+            zIndex: 1000,
+            title: '내 위치 (GPS)',
+          });
+          userMarkerRef.current = gpsMarker;
+          console.log('📍 [실시간] GPS 마커 생성:', {
+            latitude: newLocation.latitude,
+            longitude: newLocation.longitude
+          });
+        }
+      },
+      (error) => {
+        console.error('❌ [실시간] GPS 위치 추적 실패:', error);
+        // 에러가 발생해도 기존 마커는 유지
+      }
+    );
+
+    locationWatchIdRef.current = watchId;
+    console.log('🔄 [실시간] GPS 위치 추적 시작');
+
+    // cleanup: 컴포넌트 언마운트 시 위치 추적 중지
+    return () => {
+      if (locationWatchIdRef.current !== null) {
+        clearLocationWatch(locationWatchIdRef.current);
+        locationWatchIdRef.current = null;
+        console.log('🛑 [실시간] GPS 위치 추적 중지');
+      }
+    };
+  }, [mapLoading]); // 지도가 로드되면 시작
+
   // 컴포넌트 언마운트 시 마커 정리
   useEffect(() => {
     return () => {
+      // 위치 추적 중지
+      if (locationWatchIdRef.current !== null) {
+        clearLocationWatch(locationWatchIdRef.current);
+        locationWatchIdRef.current = null;
+      }
+      
       // 컴포넌트가 언마운트될 때만 마커 정리
       if (userMarkerRef.current) {
         userMarkerRef.current.setMap(null);
