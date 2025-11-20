@@ -134,6 +134,11 @@ export const validateBirthDate = (birthDate) => {
     return { isValid: null, message: '' }; // 초기 상태
   }
 
+  // 공백만 입력된 경우
+  if (birthDate.trim().length === 0) {
+    return { isValid: false, message: '생년월일을 입력해주세요.' };
+  }
+
   const dateRegex = /^\d{8}$/;
   if (!dateRegex.test(birthDate)) {
     return { isValid: false, message: '생년월일은 YYYYMMdd 형식(8자리 숫자)으로 입력해주세요.' };
@@ -168,6 +173,11 @@ export const validateBirthDate = (birthDate) => {
 export const validatePhone = (phone) => {
   if (!phone) {
     return { isValid: null, message: '' }; // 초기 상태
+  }
+
+  // 공백만 입력된 경우
+  if (phone.trim().length === 0) {
+    return { isValid: false, message: '연락처를 입력해주세요.' };
   }
 
   const phoneRegex = /^010\d{8}$/;

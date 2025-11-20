@@ -537,6 +537,14 @@
   color: #ffffff;
 }
 
-.signupButton:hover {
+.signupButton:hover:not(:disabled) {
   background-color: #ffa5b8;
+}
+
+.signupButton:disabled {
+  background-color: #e0e0e0;
+  border-color: #e0e0e0;
+  color: #9e9e9e;
+  cursor: not-allowed;
+  opacity: 1;
 }

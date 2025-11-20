@@ -13,6 +13,7 @@ import styles from '../../pages/user/auth/SignupPage.module.css';
  * @param {object} validation - 유효성 검사 결과 { isValid: boolean|null, message: string }
  * @param {boolean} disabled - 비활성화 여부
  * @param {boolean} showPasswordToggle - 비밀번호 표시/숨김 토글 버튼 표시 여부
+ * @param {function} onEnterKeyPress - 엔터 키 입력 시 호출될 함수
  */
 const FormInputField = ({
   label,
@@ -25,10 +26,18 @@ const FormInputField = ({
   validation = { isValid: null, message: '' },
   disabled = false,
   showPasswordToggle = false,
+  onEnterKeyPress,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPasswordType = type === 'password';
   const inputType = isPasswordType && showPasswordToggle && showPassword ? 'text' : type;
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && onEnterKeyPress) {
+      e.preventDefault();
+      onEnterKeyPress();
+    }
+  };
 
   return (
     <div className={styles.inputGroup}>
@@ -43,6 +52,7 @@ const FormInputField = ({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
+          onKeyDown={handleKeyDown}
           disabled={disabled}
         />
         {isPasswordType && showPasswordToggle && (

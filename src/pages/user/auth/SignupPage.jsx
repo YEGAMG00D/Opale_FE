@@ -16,6 +16,13 @@ import {
   validateAddress,
   validateDetailAddress,
 } from '../../../utils/validation';
+import { sendEmailCode, verifyEmailCode } from '../../../api/emailApi';
+import { normalizeEmailResponse } from '../../../services/normalizeEmailResponse';
+import { normalizeVerifyCodeResponse } from '../../../services/normalizeVerifyCodeResponse';
+import { checkNicknameDuplicate, signUp } from '../../../api/userApi';
+import { normalizeCheckNicknameResponse } from '../../../services/normalizeCheckNicknameResponse';
+import { normalizeSignUpRequest } from '../../../services/normalizeSignUpRequest';
+import { normalizeSignUpResponse } from '../../../services/normalizeSignUpResponse';
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -42,6 +49,8 @@ const SignupPage = () => {
   const [isCodeVerified, setIsCodeVerified] = useState(false); // 인증번호 확인 여부
   const [emailSendStatus, setEmailSendStatus] = useState(null); // 'success' | 'error' | null
   const [codeVerifyStatus, setCodeVerifyStatus] = useState(null); // 'success' | 'error' | null
+  // 회원가입 관련 상태
+  const [signupError, setSignupError] = useState(''); // 회원가입 에러 메시지
 
   const handleUnder14 = () => {
     console.log('Under 14 signup');
@@ -110,7 +119,8 @@ const SignupPage = () => {
         validationResult = validateConfirmPassword(formData.password, value);
         break;
       case 'nickname':
-        validationResult = validateNickname(value);
+        // 닉네임은 입력 중 유효성 검사하지 않음 (중복확인 버튼 클릭 시에만 검사)
+        validationResult = { isValid: null, message: '' };
         break;
       case 'name':
         validationResult = validateName(value);
@@ -137,27 +147,36 @@ const SignupPage = () => {
     }));
   };
 
-  // 인증번호 전송 (개발용: 항상 200 응답)
+  // 인증번호 전송
   const handleSendCode = async () => {
-    // TODO: 실제 API 호출로 교체
-    // const response = await sendVerificationCode(formData.email);
-    
-    // 개발용: 항상 성공 응답
-    const mockResponse = { status: 200 };
-    
-    if (mockResponse.status === 200) {
+    try {
+      // 이메일 유효성 검사
+      const emailValidation = validateEmail(formData.email);
+      if (!emailValidation.isValid) {
+        setValidationMessages(prev => ({
+          ...prev,
+          email: emailValidation
+        }));
+        return;
+      }
+
+      // API 호출
+      const response = await sendEmailCode(formData.email);
+      const normalizedData = normalizeEmailResponse(response);
+
       setEmailSendStatus('success');
       setIsCodeSent(true);
-      setTimer(300); // 5분 타이머 시작
+      setTimer(normalizedData.expiresIn); // expiresIn 초 만큼 타이머 시작
       setValidationMessages(prev => ({
         ...prev,
-        email: { isValid: true, message: '인증번호를 전송하였습니다.' }
+        email: { isValid: true, message: normalizedData.message || '인증번호가 발송되었습니다.' }
       }));
-    } else {
+    } catch (err) {
       setEmailSendStatus('error');
+      const errorMessage = err.response?.data?.message || err.message || '인증번호 전송에 실패했습니다.';
       setValidationMessages(prev => ({
         ...prev,
-        email: { isValid: false, message: '전송 실패하였습니다.' }
+        email: { isValid: false, message: errorMessage }
       }));
     }
   };
@@ -167,37 +186,110 @@ const SignupPage = () => {
     await handleSendCode();
   };
 
-  // 인증번호 확인 (개발용: 항상 200 응답)
+  // 인증번호 확인
   const handleVerifyCode = async () => {
-    // TODO: 실제 API 호출로 교체
-    // const response = await verifyCode(formData.email, formData.verificationCode);
-    
-    // 개발용: 항상 성공 응답
-    const mockResponse = { status: 200 };
-    
-    if (mockResponse.status === 200) {
-      setCodeVerifyStatus('success');
-      setIsCodeVerified(true);
-      setValidationMessages(prev => ({
-        ...prev,
-        verificationCode: { isValid: true, message: '인증번호가 확인되었습니다.' }
-      }));
-    } else {
+    try {
+      // 인증번호 유효성 검사
+      if (!formData.verificationCode || !/^\d{6}$/.test(formData.verificationCode)) {
+        setValidationMessages(prev => ({
+          ...prev,
+          verificationCode: { isValid: false, message: '인증번호는 6자리 숫자여야 합니다.' }
+        }));
+        return;
+      }
+
+      // API 호출
+      const response = await verifyEmailCode({
+        email: formData.email,
+        code: formData.verificationCode
+      });
+      const normalizedData = normalizeVerifyCodeResponse(response);
+
+      if (normalizedData.verified) {
+        setCodeVerifyStatus('success');
+        setIsCodeVerified(true);
+        setValidationMessages(prev => ({
+          ...prev,
+          verificationCode: { isValid: true, message: normalizedData.message || '인증번호가 확인되었습니다.' }
+        }));
+      } else {
+        setCodeVerifyStatus('error');
+        setIsCodeVerified(false);
+        setValidationMessages(prev => ({
+          ...prev,
+          verificationCode: { isValid: false, message: normalizedData.message || '인증번호가 일치하지 않습니다.' }
+        }));
+      }
+    } catch (err) {
       setCodeVerifyStatus('error');
+      setIsCodeVerified(false);
+      const errorMessage = err.response?.data?.message || err.message || '인증번호 검증에 실패했습니다.';
       setValidationMessages(prev => ({
         ...prev,
-        verificationCode: { isValid: false, message: '인증번호가 일치하지 않습니다.' }
+        verificationCode: { isValid: false, message: errorMessage }
       }));
     }
   };
 
-  const handleCheckNickname = () => {
-    console.log('Check nickname duplication');
+  const handleCheckNickname = async () => {
+    try {
+      // 닉네임 유효성 검사
+      const nicknameValidation = validateNickname(formData.nickname);
+      if (!nicknameValidation.isValid) {
+        setValidationMessages(prev => ({
+          ...prev,
+          nickname: nicknameValidation
+        }));
+        return;
+      }
+
+      // API 호출
+      const response = await checkNicknameDuplicate(formData.nickname);
+      const normalizedData = normalizeCheckNicknameResponse(response);
+
+      if (normalizedData.available) {
+        // 사용 가능한 닉네임
+        setValidationMessages(prev => ({
+          ...prev,
+          nickname: { isValid: true, message: '사용 가능한 닉네임입니다.' }
+        }));
+      } else {
+        // 중복된 닉네임
+        setValidationMessages(prev => ({
+          ...prev,
+          nickname: { isValid: false, message: '이미 존재하는 닉네임입니다.' }
+        }));
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || '닉네임 중복 확인에 실패했습니다.';
+      setValidationMessages(prev => ({
+        ...prev,
+        nickname: { isValid: false, message: errorMessage }
+      }));
+    }
   };
 
-  const handleSignup = () => {
-    console.log('Signup', formData);
-    navigate('/signup/welcome', { state: { nickname: formData.nickname || '닉네임' } });
+  const handleSignup = async () => {
+    try {
+      setSignupError(''); // 에러 메시지 초기화
+      
+      // formData를 API 요청 형식으로 변환
+      const requestData = normalizeSignUpRequest(formData);
+      
+      // API 호출
+      const response = await signUp(requestData);
+      const normalizedData = normalizeSignUpResponse(response);
+
+      // 성공 시 WelcomePage로 이동
+      if (normalizedData.userId) {
+        navigate('/signup/welcome', { state: { nickname: normalizedData.nickname || formData.nickname || '닉네임' } });
+      } else {
+        setSignupError('회원가입에 실패했습니다. 다시 시도해주세요.');
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || '회원가입에 실패했습니다. 다시 시도해주세요.';
+      setSignupError(errorMessage);
+    }
   };
 
   // 타이머 효과 (인증번호 전송 후에만 작동)
@@ -301,6 +393,7 @@ const SignupPage = () => {
               formData={formData}
               handleInputChange={handleInputChange}
               validationMessages={validationMessages}
+              onNext={handleNext}
             />
           )}
 
@@ -345,22 +438,50 @@ const SignupPage = () => {
                 다음
               </button>
             ) : (
-              <button 
-                className={styles.signupButton} 
-                onClick={handleSignup}
-                disabled={
-                  !validationMessages?.nickname?.isValid ||
-                  !validationMessages?.name?.isValid ||
-                  !formData.gender ||
-                  !validationMessages?.birthDate?.isValid ||
-                  !validationMessages?.phone?.isValid ||
-                  !validationMessages?.address?.isValid ||
-                  !validationMessages?.detailAddress?.isValid ||
-                  !formData.agreeToTerms
-                }
-              >
-                가입
-              </button>
+              <>
+                {signupError && (
+                  <div className={styles.errorMsg} style={{ marginBottom: '10px', textAlign: 'center' }}>
+                    {signupError}
+                  </div>
+                )}
+                <button 
+                  className={styles.signupButton} 
+                  onClick={handleSignup}
+                  disabled={
+                    // 닉네임: 중복확인 통과 필수 (isValid가 true이고 메시지가 '사용 가능한 닉네임입니다.'인 경우)
+                    !validationMessages?.nickname ||
+                    validationMessages.nickname.isValid !== true ||
+                    validationMessages.nickname.message !== '사용 가능한 닉네임입니다.' ||
+                    !formData.nickname?.trim() ||
+                    // 성명: 유효성 검사 통과 필수 및 공백 체크
+                    !validationMessages?.name ||
+                    validationMessages.name.isValid !== true ||
+                    !formData.name?.trim() ||
+                    // 성별: 선택 필수
+                    !formData.gender ||
+                    // 생년월일: 유효성 검사 통과 필수 및 공백 체크
+                    !validationMessages?.birthDate ||
+                    validationMessages.birthDate.isValid !== true ||
+                    !formData.birthDate?.trim() ||
+                    // 연락처: 유효성 검사 통과 필수 및 공백 체크
+                    !validationMessages?.phone ||
+                    validationMessages.phone.isValid !== true ||
+                    !formData.phone?.trim() ||
+                    // 주소: 유효성 검사 통과 필수 및 공백 체크
+                    !validationMessages?.address ||
+                    validationMessages.address.isValid !== true ||
+                    !formData.address?.trim() ||
+                    // 상세주소: 유효성 검사 통과 필수 및 공백 체크
+                    !validationMessages?.detailAddress ||
+                    validationMessages.detailAddress.isValid !== true ||
+                    !formData.detailAddress?.trim() ||
+                    // 약관 동의: 체크 필수
+                    !formData.agreeToTerms
+                  }
+                >
+                  가입
+                </button>
+              </>
             )}
           </div>
         </div>
