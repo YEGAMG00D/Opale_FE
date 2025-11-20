@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import styles from './DetailPerformancePage.module.css';
 import PerformancePoster from '../../components/culture/PerformancePoster';
 import PerformanceInfoCard from '../../components/culture/PerformanceInfoCard';
@@ -11,7 +12,7 @@ import ReviewCard from '../../components/culture/ReviewCard';
 import PerformanceInfoImages from '../../components/culture/PerformanceInfoImages';
 import PlaceMap from '../../components/place/PlaceMap';
 import { fetchPerformanceBasic } from '../../api/performanceApi';
-import { fetchPerformanceReviewsByPerformance, createPerformanceReview } from '../../api/reviewApi';
+import { fetchPerformanceReviewsByPerformance, fetchPerformanceReview, createPerformanceReview, updatePerformanceReview, deletePerformanceReview } from '../../api/reviewApi';
 import { isPerformanceLiked, togglePerformanceFavorite, isPerformanceReviewLiked, togglePerformanceReviewFavorite } from '../../api/favoriteApi';
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
 import { normalizePerformanceReviews } from '../../services/normalizePerformanceReview';
@@ -21,6 +22,7 @@ import { usePerformanceInfoImages } from '../../hooks/usePerformanceInfoImages';
 import { usePerformanceBooking } from '../../hooks/usePerformanceBooking';
 import { usePlaceBasic } from '../../hooks/usePlaceBasic';
 import { getTicketsByPerformanceName, getWatchedTickets, addTicket } from '../../utils/ticketUtils';
+import logApi from '../../api/logApi';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -32,6 +34,8 @@ const DetailPerformancePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useSelector((state) => state.user);
+  const currentUserId = user?.userId || user?.id || null;
   const [activeTab, setActiveTab] = useState('reservation');
   const [isFavorite, setIsFavorite] = useState(false);
   const [expandedExpectations, setExpandedExpectations] = useState({});
@@ -39,6 +43,11 @@ const DetailPerformancePage = () => {
   const [writeType, setWriteType] = useState('review'); // 'review' or 'expectation'
   const [writeForm, setWriteForm] = useState({ title: '', content: '', rating: 5 });
   const [activeReviewTab, setActiveReviewTab] = useState('review'); // 'review' or 'expectation'
+  
+  // 수정 모달 관련 상태
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [editForm, setEditForm] = useState({ title: '', content: '', rating: 5 });
   const [showTicketInfoModal, setShowTicketInfoModal] = useState(false);
   const [ticketStep, setTicketStep] = useState('scan'); // 'scan' or 'input'
   const [ticketInfo, setTicketInfo] = useState({
@@ -810,6 +819,17 @@ const DetailPerformancePage = () => {
         
         if (normalizedData) {
           setPerformance(normalizedData);
+          
+          // 공연 상세 페이지 진입 시 VIEW 로그 기록
+          try {
+            await logApi.createLog({
+              eventType: "VIEW",
+              targetType: "PERFORMANCE",
+              targetId: normalizedData.id || normalizedData.performanceId || id
+            });
+          } catch (logErr) {
+            console.error('로그 기록 실패:', logErr);
+          }
         } else {
           throw new Error('공연 정보를 불러올 수 없습니다.');
         }
@@ -822,6 +842,17 @@ const DetailPerformancePage = () => {
         const fallbackData = allPerformances[performanceId] || allPerformances[1];
         if (fallbackData) {
           setPerformance(fallbackData);
+          
+          // fallback 데이터 사용 시에도 VIEW 로그 기록
+          try {
+            await logApi.createLog({
+              eventType: "VIEW",
+              targetType: "PERFORMANCE",
+              targetId: String(id)
+            });
+          } catch (logErr) {
+            console.error('로그 기록 실패:', logErr);
+          }
         }
       } finally {
         setLoading(false);
@@ -933,6 +964,17 @@ const DetailPerformancePage = () => {
     try {
       const result = await togglePerformanceFavorite(performanceId);
       setIsFavorite(result);
+      
+      // 공연 찜/찜해제 시 FAVORITE 로그 기록
+      try {
+        await logApi.createLog({
+          eventType: "FAVORITE",
+          targetType: "PERFORMANCE",
+          targetId: String(performanceId)
+        });
+      } catch (logErr) {
+        console.error('로그 기록 실패:', logErr);
+      }
     } catch (err) {
       console.error('공연 관심 토글 실패:', err);
     }
@@ -1119,6 +1161,17 @@ const DetailPerformancePage = () => {
       // API 호출
       await createPerformanceReview(requestDto);
 
+      // 리뷰 작성 완료 시 REVIEW_WRITE 로그 기록
+      try {
+        await logApi.createLog({
+          eventType: "REVIEW_WRITE",
+          targetType: "PERFORMANCE",
+          targetId: String(performanceId)
+        });
+      } catch (logErr) {
+        console.error('로그 기록 실패:', logErr);
+      }
+
       // 성공 시 모달 닫고 폼 초기화
       setShowWriteModal(false);
       setWriteForm({ title: '', content: '', rating: 5 });
@@ -1138,6 +1191,105 @@ const DetailPerformancePage = () => {
   const handleWriteCancel = () => {
     setShowWriteModal(false);
     setWriteForm({ title: '', content: '', rating: 5 });
+  };
+
+  // 리뷰 수정 핸들러
+  const handleEditReview = async (review, reviewType) => {
+    const reviewId = review.id || review.performanceReviewId || review.reviewId;
+    
+    if (!reviewId) {
+      alert('리뷰 ID를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      // 단일 조회 API로 최신 데이터 가져오기
+      const apiResponse = await fetchPerformanceReview(reviewId);
+      
+      // API 응답을 프론트엔드 형식으로 변환
+      const normalizedReview = {
+        id: apiResponse.performanceReviewId,
+        performanceReviewId: apiResponse.performanceReviewId,
+        performanceId: apiResponse.performanceId,
+        title: apiResponse.title || '',
+        content: apiResponse.contents || '',
+        contents: apiResponse.contents || '',
+        rating: apiResponse.rating || 5,
+        reviewType: apiResponse.reviewType || reviewType
+      };
+
+      setEditingReview(normalizedReview);
+      setEditForm({
+        title: normalizedReview.title || '',
+        content: normalizedReview.content || normalizedReview.contents || '',
+        rating: normalizedReview.rating || 5
+      });
+      setShowEditModal(true);
+    } catch (err) {
+      console.error('리뷰 조회 실패:', err);
+      // API 조회 실패 시 목록 데이터 사용 (fallback)
+      setEditingReview({ ...review, reviewType });
+      setEditForm({
+        title: review.title || '',
+        content: review.content || review.contents || '',
+        rating: review.rating || 5
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  // 수정 모달 닫기
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingReview(null);
+    setEditForm({ title: '', content: '', rating: 5 });
+  };
+
+  // 리뷰 수정 제출
+  const handleUpdateReview = async (e) => {
+    e.preventDefault();
+    
+    if (!editingReview || !performanceId) return;
+
+    try {
+      const reviewId = editingReview.id || editingReview.performanceReviewId || editingReview.reviewId;
+      const reviewType = editingReview.reviewType || (activeReviewTab === 'review' ? 'AFTER' : 'EXPECTATION');
+
+      const updateDto = normalizePerformanceReviewRequest(
+        editForm,
+        performanceId,
+        reviewType
+      );
+      
+      await updatePerformanceReview(reviewId, updateDto);
+      
+      alert('리뷰가 수정되었습니다.');
+      handleCloseEditModal();
+      
+      // 리뷰 목록 다시 조회
+      await loadReviews();
+    } catch (err) {
+      console.error('리뷰 수정 실패:', err);
+      alert(err.response?.data?.message || err.message || '리뷰 수정에 실패했습니다.');
+    }
+  };
+
+  // 리뷰 삭제 핸들러
+  const handleDeleteReview = async (reviewId, reviewType) => {
+    if (!window.confirm('정말 이 리뷰를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await deletePerformanceReview(reviewId);
+      alert('리뷰가 삭제되었습니다.');
+      
+      // 리뷰 목록 다시 조회
+      await loadReviews();
+    } catch (err) {
+      console.error('리뷰 삭제 실패:', err);
+      alert(err.response?.data?.message || err.message || '리뷰 삭제에 실패했습니다.');
+    }
   };
 
   // 로딩 중이거나 데이터가 없을 때
@@ -1415,6 +1567,10 @@ const DetailPerformancePage = () => {
                         content={review.content}
                         author={review.author}
                         date={review.date}
+                        userId={review.userId}
+                        currentUserId={currentUserId}
+                        onEdit={() => handleEditReview(review, 'AFTER')}
+                        onDelete={() => handleDeleteReview(review.id || review.performanceReviewId || review.reviewId, 'AFTER')}
                       />
                     ))
                   )}
@@ -1439,52 +1595,73 @@ const DetailPerformancePage = () => {
                       등록된 기대평이 없습니다.
                     </div>
                   ) : (
-                    expectations.map(expectation => (
-                      <div key={expectation.id} className={styles.expectationItem}>
-                        <div className={styles.expectationHeader}>
-                          <h5 className={styles.expectationTitle}>{expectation.title}</h5>
+                    expectations.map(expectation => {
+                      const isMyReview = currentUserId && expectation.userId && expectation.userId === currentUserId;
+                      return (
+                        <div key={expectation.id} className={styles.expectationItem}>
+                          <div className={styles.expectationHeader}>
+                            <h5 className={styles.expectationTitle}>{expectation.title}</h5>
+                            {isMyReview && (
+                              <div className={styles.expectationActions}>
+                                <button
+                                  className={styles.editButton}
+                                  onClick={() => handleEditReview(expectation, 'EXPECTATION')}
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  className={styles.deleteButton}
+                                  onClick={() => handleDeleteReview(expectation.id || expectation.performanceReviewId || expectation.reviewId, 'EXPECTATION')}
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className={styles.expectationContent}>
+                            <p className={styles.expectationText}>
+                              {expandedExpectations[expectation.id] 
+                                ? expectation.content 
+                                : expectation.content.length > 100 
+                                  ? expectation.content.substring(0, 100) + '...' 
+                                  : expectation.content
+                            }
+                          </p>
+                            {expectation.content.length > 100 && (
+                              <button 
+                                className={styles.expandButton}
+                                onClick={() => toggleExpectationExpansion(expectation.id)}
+                              >
+                                {expandedExpectations[expectation.id] ? '닫기' : '더보기'}
+                              </button>
+                            )}
+                          </div>
+                          
+                          <div className={styles.expectationFooter}>
+                            <div className={styles.expectationFooterLeft}>
+                              <button 
+                                className={`${styles.likeButton} ${expectationLikes[expectation.id] ? styles.liked : ''}`}
+                                onClick={async () => {
+                                  try {
+                                    const result = await togglePerformanceReviewFavorite(expectation.id);
+                                    setExpectationLikes(prev => ({
+                                      ...prev,
+                                      [expectation.id]: result
+                                    }));
+                                  } catch (err) {
+                                    console.error('기대평 관심 토글 실패:', err);
+                                  }
+                                }}
+                              >
+                                {expectationLikes[expectation.id] ? '♥' : '♡'}
+                              </button>
+                              <span className={styles.expectationAuthor}>{expectation.author} | {expectation.date}</span>
+                            </div>
+                          </div>
                         </div>
-                        
-                        <div className={styles.expectationContent}>
-                          <p className={styles.expectationText}>
-                            {expandedExpectations[expectation.id] 
-                              ? expectation.content 
-                              : expectation.content.length > 100 
-                                ? expectation.content.substring(0, 100) + '...' 
-                                : expectation.content
-                          }
-                        </p>
-                          {expectation.content.length > 100 && (
-                            <button 
-                              className={styles.expandButton}
-                              onClick={() => toggleExpectationExpansion(expectation.id)}
-                            >
-                              {expandedExpectations[expectation.id] ? '닫기' : '더보기'}
-                            </button>
-                          )}
-                        </div>
-                        
-                        <div className={styles.expectationFooter}>
-                          <button 
-                            className={`${styles.likeButton} ${expectationLikes[expectation.id] ? styles.liked : ''}`}
-                            onClick={async () => {
-                              try {
-                                const result = await togglePerformanceReviewFavorite(expectation.id);
-                                setExpectationLikes(prev => ({
-                                  ...prev,
-                                  [expectation.id]: result
-                                }));
-                              } catch (err) {
-                                console.error('기대평 관심 토글 실패:', err);
-                              }
-                            }}
-                          >
-                            {expectationLikes[expectation.id] ? '♥' : '♡'}
-                          </button>
-                          <span className={styles.expectationAuthor}>{expectation.author} | {expectation.date}</span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               )}
@@ -1638,7 +1815,7 @@ const DetailPerformancePage = () => {
                 </>
               ) : (
                 <>
-                  <div className={styles.ticketTitle}>티켓 정보 입력</div>
+                  <div className={styles.ticketTitle}>티켓1 정보 입력</div>
                   {capturedImage && (
                     <div className={styles.imagePreview}>
                       <img src={capturedImage} alt="티켓 이미지" />
@@ -1781,6 +1958,77 @@ const DetailPerformancePage = () => {
                 </button>
                 <button type="submit" className={styles.submitButton}>
                   작성하기
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 수정 모달 */}
+      {showEditModal && editingReview && (
+        <div className={styles.modalOverlay} onClick={handleCloseEditModal}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>리뷰 수정</h3>
+              <button className={styles.closeButton} onClick={handleCloseEditModal}>×</button>
+            </div>
+            
+            <form onSubmit={handleUpdateReview} className={styles.writeForm}>
+              <div className={styles.formGroup}>
+                <label>제목</label>
+                <input 
+                  type="text" 
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                  placeholder="제목을 입력하세요"
+                  required
+                />
+              </div>
+              
+              {/* 평점 - 기대평(EXPECTATION)일 때는 표시하지 않음 */}
+              {editingReview.reviewType !== 'EXPECTATION' && (
+                <div className={styles.formGroup}>
+                  <label>평점</label>
+                  <div className={styles.ratingInput}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button 
+                        key={star} 
+                        type="button"
+                        className={`${styles.ratingStar} ${star <= editForm.rating ? styles.filled : ''}`}
+                        onClick={() => setEditForm({...editForm, rating: star})}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className={styles.formGroup}>
+                <label>내용</label>
+                <textarea 
+                  value={editForm.content}
+                  onChange={(e) => setEditForm({...editForm, content: e.target.value})}
+                  placeholder="내용을 입력하세요"
+                  required
+                  rows={6}
+                />
+              </div>
+              
+              <div className={styles.formActions}>
+                <button 
+                  type="button" 
+                  className={styles.cancelButton}
+                  onClick={handleCloseEditModal}
+                >
+                  취소
+                </button>
+                <button 
+                  type="submit" 
+                  className={styles.submitButton}
+                >
+                  수정하기
                 </button>
               </div>
             </form>

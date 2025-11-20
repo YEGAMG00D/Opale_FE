@@ -3,6 +3,7 @@ import styles from './PlaceMapView.module.css';
 import { loadNaverMapScript } from '../../utils/loadNaverMap';
 import PlaceWithPerformancesCard from '../cards/PlaceWithPerformancesCard';
 import { createPlaceMarkerHTML } from './PlaceMarker';
+import { watchCurrentLocation, clearLocationWatch } from '../../utils/geolocation';
 
 /**
  * 여러 공연장 위치를 표시하는 네이버 지도 컴포넌트
@@ -22,6 +23,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
   const searchCenterMarkerRef = useRef(null); // 검색 기준 좌표 마커 (주황색)
   const searchRadiusCircleRef = useRef(null); // 검색 반경 원
   const scaleControlRef = useRef(null);
+  const locationWatchIdRef = useRef(null); // 실시간 위치 추적 ID
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
   
@@ -194,7 +196,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
 
     console.log('🧹 [마커 제거] 기존 공연장 마커 모두 제거 시작');
     
-    // 모든 마커를 동기적으로 제거
+    // 모든 공연장 마커를 동기적으로 제거
     const markersToRemove = [...markersRef.current];
     markersToRemove.forEach(marker => {
       if (marker) {
@@ -215,6 +217,29 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       }
     });
     
+    // 검색 기준 좌표 마커와 반경 원도 제거
+    if (searchCenterMarkerRef.current) {
+      searchCenterMarkerRef.current.setMap(null);
+      searchCenterMarkerRef.current = null;
+      console.log('🧹 [마커 제거] 검색 기준 좌표 마커 제거');
+    }
+    if (searchRadiusCircleRef.current) {
+      searchRadiusCircleRef.current.setMap(null);
+      searchRadiusCircleRef.current = null;
+      console.log('🧹 [마커 제거] 검색 반경 원 제거');
+    }
+    
+    // 선택된 공연장 카드 닫기 (시트가 보이도록)
+    if (selectedPlaceInfoWindowRef.current) {
+      selectedPlaceInfoWindowRef.current.close();
+      selectedPlaceInfoWindowRef.current = null;
+    }
+    setIsCardVisible(false);
+    setSelectedPlaceCardHeight(0);
+    setSelectedPlace(null);
+    selectedPlaceMarkerRef.current = null;
+    console.log('🧹 [마커 제거] 선택된 공연장 카드 닫기');
+    
     // ref를 즉시 비움
     markersRef.current = [];
     infoWindowsRef.current = [];
@@ -223,7 +248,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     await new Promise(resolve => setTimeout(resolve, 100));
     
     console.log('✅ [마커 제거] 기존 공연장 마커 제거 완료');
-  }, []);
+  }, []); // 의존성 배열은 비워둠 (상태 setter는 안정적이므로)
 
   // ref를 통해 clearMarkers 함수 노출
   useImperativeHandle(ref, () => ({
@@ -247,10 +272,35 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       mapReady: !!map
     });
 
-    // places가 비어있으면 마커 생성하지 않음 (목록이 비워진 상태)
+    // places가 빈 배열이면 기존 공연장 마커만 제거 (검색 기준 마커는 별도 처리)
     if (!places || places.length === 0) {
-      console.log('📭 [4단계] 공연장 목록이 비어있음 - 마커 생성하지 않음');
-      return;
+      console.log('📭 [마커 생성] places가 비어있음 - 기존 공연장 마커 제거');
+      // 기존 공연장 마커 모두 제거
+      const markersToRemove = [...markersRef.current];
+      markersToRemove.forEach(marker => {
+        if (marker) {
+          marker.setMap(null);
+          if (window.naver && window.naver.maps && window.naver.maps.Event) {
+            window.naver.maps.Event.clearInstanceListeners(marker);
+          }
+        }
+      });
+      markersRef.current = [];
+      
+      // 인포윈도우도 모두 닫기
+      const infoWindowsToRemove = [...infoWindowsRef.current];
+      infoWindowsToRemove.forEach(infoWindow => {
+        if (infoWindow) {
+          infoWindow.close();
+          if (window.naver && window.naver.maps && window.naver.maps.Event) {
+            window.naver.maps.Event.clearInstanceListeners(infoWindow);
+          }
+        }
+      });
+      infoWindowsRef.current = [];
+      
+      // places가 비어있어도 searchCenter가 있으면 검색 기준 마커와 반경 원은 생성해야 함
+      // 따라서 여기서 return하지 않고 계속 진행
     }
 
     // 유효한 위치 정보가 있는 공연장만 필터링
@@ -263,24 +313,23 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     console.log('✅ [디버깅] 유효한 공연장 개수:', validPlaces.length);
     if (validPlaces.length === 0 && places.length > 0) {
       console.warn('⚠️ [디버깅] places는 있지만 유효한 공연장이 없습니다. 원본 places:', places);
-      return;
+      // 공연장이 없어도 GPS 마커는 생성해야 하므로 return하지 않음
     }
 
-    // 기존 마커 제거 (GPS, 검색 기준 마커는 유지)
-    if (userMarkerRef.current) {
-      userMarkerRef.current.setMap(null);
-      userMarkerRef.current = null;
-    }
+    // 기존 검색 기준 마커와 반경 원 제거 (GPS 마커는 유지)
+    // searchCenter가 변경될 때마다 이전 마커 제거
     if (searchCenterMarkerRef.current) {
       searchCenterMarkerRef.current.setMap(null);
       searchCenterMarkerRef.current = null;
+      console.log('🧹 [마커 생성] 이전 검색 기준 좌표 마커 제거');
     }
     if (searchRadiusCircleRef.current) {
       searchRadiusCircleRef.current.setMap(null);
       searchRadiusCircleRef.current = null;
+      console.log('🧹 [마커 생성] 이전 검색 반경 원 제거');
     }
 
-    // GPS 위치 마커 생성 (파란색) - 항상 표시
+    // GPS 위치 마커 생성/업데이트 (파란색) - 항상 표시
     let gpsPosition = null;
     if (userLocation && userLocation.latitude && userLocation.longitude) {
       gpsPosition = new window.naver.maps.LatLng(
@@ -288,31 +337,41 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         userLocation.longitude
       );
 
-      // GPS 위치 마커 (파란색 원형 마커)
-      const gpsMarker = new window.naver.maps.Marker({
-        position: gpsPosition,
-        map: map,
-        icon: {
-          content: `
-            <div style="
-              width: 18px;
-              height: 18px;
-              background-color: #4285F4;
-              border: 2px solid #FFFFFF;
-              border-radius: 50%;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            "></div>
-          `,
-          anchor: window.naver && window.naver.maps && window.naver.maps.Point 
-            ? new window.naver.maps.Point(9, 9)
-            : undefined,
-        },
-        zIndex: 1000,
-        title: '내 위치 (GPS)',
-      });
+      // 기존 GPS 마커가 있으면 위치만 업데이트, 없으면 새로 생성
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setPosition(gpsPosition);
+        console.log('📍 GPS 위치 마커 업데이트:', { latitude: userLocation.latitude, longitude: userLocation.longitude });
+      } else {
+        // GPS 위치 마커 (파란색 원형 마커)
+        const gpsMarker = new window.naver.maps.Marker({
+          position: gpsPosition,
+          map: map,
+          icon: {
+            content: `
+              <div style="
+                width: 18px;
+                height: 18px;
+                background-color: #4285F4;
+                border: 2px solid #FFFFFF;
+                border-radius: 50%;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              "></div>
+            `,
+            anchor: window.naver && window.naver.maps && window.naver.maps.Point 
+              ? new window.naver.maps.Point(9, 9)
+              : undefined,
+          },
+          zIndex: 1000,
+          title: '내 위치 (GPS)',
+        });
 
-      userMarkerRef.current = gpsMarker;
-      console.log('📍 GPS 위치 마커 생성:', { latitude: userLocation.latitude, longitude: userLocation.longitude });
+        userMarkerRef.current = gpsMarker;
+        console.log('📍 GPS 위치 마커 생성:', { latitude: userLocation.latitude, longitude: userLocation.longitude });
+      }
+    } else if (userMarkerRef.current) {
+      // GPS 위치가 없으면 마커 제거
+      userMarkerRef.current.setMap(null);
+      userMarkerRef.current = null;
     }
 
     // 검색 기준 좌표 마커 생성 (주황색) - searchCenter가 있을 때만
@@ -410,7 +469,15 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     };
 
     // 지도 중심 및 줌 조정
-    if (centerPosition && validPlaces.length > 0) {
+    // GPS 위치가 있고 공연장이 없고 검색 기준 좌표도 없을 때 GPS 위치로 뷰포트 설정
+    if (gpsPosition && validPlaces.length === 0 && !searchCenterPosition) {
+      map.setCenter(gpsPosition);
+      map.setZoom(15);
+      console.log('📍 [초기 로드] GPS 위치로 지도 뷰포트 설정 (줌 레벨 15):', {
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude
+      });
+    } else if (centerPosition && validPlaces.length > 0) {
       // 검색 기준 좌표(또는 GPS 위치)를 정중앙에 두고, 모든 공연장 마커와 반경 원이 보이도록 조정
       const allBounds = new window.naver.maps.LatLngBounds();
       allBounds.extend(centerPosition);
@@ -632,9 +699,167 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
 
   }, [places, userLocation, searchCenter, searchRadius, mapLoading]); // places가 변경될 때만 마커 생성
 
+  // 지도 초기 로드 시 GPS 위치로 뷰포트 자동 설정 및 마커 생성
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.naver || !window.naver.maps || mapLoading) {
+      return;
+    }
+
+    // GPS 위치가 있고, 검색 기준 좌표가 없고, 공연장이 없을 때만 GPS 위치로 뷰포트 설정
+    if (userLocation && userLocation.latitude && userLocation.longitude && 
+        !searchCenter && (!places || places.length === 0)) {
+      const map = mapInstanceRef.current;
+      const gpsPosition = new window.naver.maps.LatLng(
+        userLocation.latitude,
+        userLocation.longitude
+      );
+      
+      // GPS 마커가 없으면 생성
+      if (!userMarkerRef.current) {
+        const gpsMarker = new window.naver.maps.Marker({
+          position: gpsPosition,
+          map: map,
+          icon: {
+            content: `
+              <div style="
+                width: 18px;
+                height: 18px;
+                background-color: #4285F4;
+                border: 2px solid #FFFFFF;
+                border-radius: 50%;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              "></div>
+            `,
+            anchor: window.naver && window.naver.maps && window.naver.maps.Point 
+              ? new window.naver.maps.Point(9, 9)
+              : undefined,
+          },
+          zIndex: 1000,
+          title: '내 위치 (GPS)',
+        });
+        userMarkerRef.current = gpsMarker;
+        console.log('📍 [초기 로드] GPS 위치 마커 생성:', {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude
+        });
+      } else {
+        // 기존 마커가 있으면 위치 업데이트
+        userMarkerRef.current.setPosition(gpsPosition);
+        userMarkerRef.current.setMap(map); // 지도에 표시
+      }
+      
+      // 현재 지도 중심이 기본 위치(서울 시청)인지 확인
+      const currentCenter = map.getCenter();
+      const defaultCenter = new window.naver.maps.LatLng(37.5665, 126.9780);
+      
+      // 기본 위치에 있거나 GPS 위치와 다르면 GPS 위치로 이동
+      if (!currentCenter || 
+          (Math.abs(currentCenter.lat() - defaultCenter.lat()) < 0.001 && 
+           Math.abs(currentCenter.lng() - defaultCenter.lng()) < 0.001) ||
+          (Math.abs(currentCenter.lat() - gpsPosition.lat()) > 0.001 || 
+           Math.abs(currentCenter.lng() - gpsPosition.lng()) > 0.001)) {
+        map.setCenter(gpsPosition);
+        map.setZoom(15);
+        console.log('📍 [자동 설정] GPS 위치로 지도 뷰포트 설정:', {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude
+        });
+      }
+    }
+  }, [userLocation, searchCenter, places, mapLoading]); // GPS 위치가 설정되면 뷰포트 업데이트
+
+  // 실시간 GPS 위치 추적 (GPS 마커만 업데이트)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.naver || !window.naver.maps || mapLoading) {
+      return;
+    }
+
+    const map = mapInstanceRef.current;
+
+    // 기존 watchPosition이 있으면 정리
+    if (locationWatchIdRef.current !== null) {
+      clearLocationWatch(locationWatchIdRef.current);
+      locationWatchIdRef.current = null;
+    }
+
+    // 실시간 위치 추적 시작
+    const watchId = watchCurrentLocation(
+      (newLocation) => {
+        // 위치가 변경될 때마다 GPS 마커만 업데이트 (다른 마커는 건드리지 않음)
+        if (!mapInstanceRef.current || !window.naver || !window.naver.maps) {
+          return;
+        }
+
+        const gpsPosition = new window.naver.maps.LatLng(
+          newLocation.latitude,
+          newLocation.longitude
+        );
+
+        // GPS 마커가 있으면 위치만 업데이트
+        if (userMarkerRef.current) {
+          userMarkerRef.current.setPosition(gpsPosition);
+          console.log('📍 [실시간] GPS 마커 위치 업데이트:', {
+            latitude: newLocation.latitude,
+            longitude: newLocation.longitude
+          });
+        } else {
+          // GPS 마커가 없으면 생성
+          const gpsMarker = new window.naver.maps.Marker({
+            position: gpsPosition,
+            map: map,
+            icon: {
+              content: `
+                <div style="
+                  width: 18px;
+                  height: 18px;
+                  background-color: #4285F4;
+                  border: 2px solid #FFFFFF;
+                  border-radius: 50%;
+                  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                "></div>
+              `,
+              anchor: window.naver && window.naver.maps && window.naver.maps.Point 
+                ? new window.naver.maps.Point(9, 9)
+                : undefined,
+            },
+            zIndex: 1000,
+            title: '내 위치 (GPS)',
+          });
+          userMarkerRef.current = gpsMarker;
+          console.log('📍 [실시간] GPS 마커 생성:', {
+            latitude: newLocation.latitude,
+            longitude: newLocation.longitude
+          });
+        }
+      },
+      (error) => {
+        console.error('❌ [실시간] GPS 위치 추적 실패:', error);
+        // 에러가 발생해도 기존 마커는 유지
+      }
+    );
+
+    locationWatchIdRef.current = watchId;
+    console.log('🔄 [실시간] GPS 위치 추적 시작');
+
+    // cleanup: 컴포넌트 언마운트 시 위치 추적 중지
+    return () => {
+      if (locationWatchIdRef.current !== null) {
+        clearLocationWatch(locationWatchIdRef.current);
+        locationWatchIdRef.current = null;
+        console.log('🛑 [실시간] GPS 위치 추적 중지');
+      }
+    };
+  }, [mapLoading]); // 지도가 로드되면 시작
+
   // 컴포넌트 언마운트 시 마커 정리
   useEffect(() => {
     return () => {
+      // 위치 추적 중지
+      if (locationWatchIdRef.current !== null) {
+        clearLocationWatch(locationWatchIdRef.current);
+        locationWatchIdRef.current = null;
+      }
+      
       // 컴포넌트가 언마운트될 때만 마커 정리
       if (userMarkerRef.current) {
         userMarkerRef.current.setMap(null);
@@ -731,7 +956,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
 
   // 현재 위치로 이동 버튼 클릭 핸들러
   const handleMoveToCurrentLocation = () => {
-    if (!mapInstanceRef.current || !userLocation) {
+    if (!mapInstanceRef.current || !userLocation || !window.naver || !window.naver.maps) {
       console.warn('⚠️ GPS 위치가 없어서 이동할 수 없습니다.');
       return;
     }
@@ -742,7 +967,41 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       userLocation.longitude
     );
     
-    // GPS 위치로 뷰포트만 이동 (검색 기준 좌표는 유지)
+    // GPS 마커가 없으면 생성
+    if (!userMarkerRef.current) {
+      const gpsMarker = new window.naver.maps.Marker({
+        position: gpsPosition,
+        map: map,
+        icon: {
+          content: `
+            <div style="
+              width: 18px;
+              height: 18px;
+              background-color: #4285F4;
+              border: 2px solid #FFFFFF;
+              border-radius: 50%;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            "></div>
+          `,
+          anchor: window.naver && window.naver.maps && window.naver.maps.Point 
+            ? new window.naver.maps.Point(9, 9)
+            : undefined,
+        },
+        zIndex: 1000,
+        title: '내 위치 (GPS)',
+      });
+      userMarkerRef.current = gpsMarker;
+      console.log('📍 GPS 위치 마커 생성 (버튼 클릭):', { 
+        latitude: userLocation.latitude, 
+        longitude: userLocation.longitude 
+      });
+    } else {
+      // 기존 마커가 있으면 위치 업데이트
+      userMarkerRef.current.setPosition(gpsPosition);
+      userMarkerRef.current.setMap(map); // 지도에 다시 표시
+    }
+    
+    // GPS 위치로 뷰포트 이동
     map.setCenter(gpsPosition);
     map.setZoom(15);
     console.log('📍 GPS 위치로 뷰포트 이동:', { 

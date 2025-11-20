@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchMyPerformanceReviews, fetchMyPlaceReviews, deletePerformanceReview, deletePlaceReview } from '../../../api/reviewApi';
+import { 
+  fetchMyPerformanceReviews, 
+  fetchMyPlaceReviews, 
+  fetchPerformanceReview,
+  fetchPlaceReview,
+  deletePerformanceReview, 
+  deletePlaceReview,
+  updatePerformanceReview,
+  updatePlaceReview
+} from '../../../api/reviewApi';
 import { normalizePerformanceReviews } from '../../../services/normalizePerformanceReview';
 import { normalizePlaceReviews } from '../../../services/normalizePlaceReview';
+import { normalizePerformanceReviewRequest } from '../../../services/normalizePerformanceReviewRequest';
+import { normalizePlaceReviewRequest } from '../../../services/normalizePlaceReviewRequest';
 import MyReviewCard from '../../../components/user/MyReviewCard';
 import styles from './MyReviewPage.module.css';
 
@@ -13,6 +24,11 @@ const MyReviewPage = () => {
   const [placeReviews, setPlaceReviews] = useState([]); // 공연장 리뷰 (PLACE)
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('AFTER'); // 'AFTER', 'EXPECTATION', 'PLACE'
+  
+  // 수정 모달 관련 상태
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [editForm, setEditForm] = useState({ title: '', content: '', rating: 5 });
 
   // 내가 작성한 리뷰 목록 가져오기
   useEffect(() => {
@@ -104,17 +120,137 @@ const MyReviewPage = () => {
   };
 
   // 리뷰 수정 핸들러
-  const handleEditReview = (review, reviewType) => {
-    if (reviewType === 'PLACE') {
-      const placeId = review.placeId || review.place?.id;
-      if (placeId) {
-        navigate(`/place/${placeId}?editReview=${review.id || review.reviewId}`);
+  const handleEditReview = async (review, reviewType) => {
+    const reviewId = review.id || review.performanceReviewId || review.placeReviewId || review.reviewId;
+    
+    if (!reviewId) {
+      alert('리뷰 ID를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      let normalizedReview;
+      
+      if (reviewType === 'PLACE') {
+        // 공연장 리뷰 단일 조회
+        const apiResponse = await fetchPlaceReview(reviewId);
+        normalizedReview = {
+          id: apiResponse.placeReviewId,
+          placeReviewId: apiResponse.placeReviewId,
+          placeId: apiResponse.placeId,
+          title: apiResponse.title || '',
+          content: apiResponse.contents || '',
+          contents: apiResponse.contents || '',
+          rating: apiResponse.rating || 5,
+          reviewType: apiResponse.reviewType || 'PLACE'
+        };
+      } else {
+        // 공연 리뷰 단일 조회
+        const apiResponse = await fetchPerformanceReview(reviewId);
+        normalizedReview = {
+          id: apiResponse.performanceReviewId,
+          performanceReviewId: apiResponse.performanceReviewId,
+          performanceId: apiResponse.performanceId,
+          title: apiResponse.title || '',
+          content: apiResponse.contents || '',
+          contents: apiResponse.contents || '',
+          rating: apiResponse.rating || 5,
+          reviewType: apiResponse.reviewType || reviewType
+        };
       }
-    } else {
-      const performanceId = review.performanceId || review.performance?.id;
-      if (performanceId) {
-        navigate(`/culture/${performanceId}?editReview=${review.id || review.performanceReviewId || review.reviewId}`);
+
+      setEditingReview(normalizedReview);
+      setEditForm({
+        title: normalizedReview.title || '',
+        content: normalizedReview.content || normalizedReview.contents || '',
+        rating: normalizedReview.rating || 5
+      });
+      setShowEditModal(true);
+    } catch (err) {
+      console.error('리뷰 조회 실패:', err);
+      // API 조회 실패 시 목록 데이터 사용 (fallback)
+      setEditingReview({ ...review, reviewType });
+      setEditForm({
+        title: review.title || '',
+        content: review.content || review.contents || '',
+        rating: review.rating || 5
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  // 수정 모달 닫기
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingReview(null);
+    setEditForm({ title: '', content: '', rating: 5 });
+  };
+
+  // 리뷰 수정 제출
+  const handleUpdateReview = async (e) => {
+    e.preventDefault();
+    
+    if (!editingReview) return;
+
+    try {
+      const reviewType = editingReview.reviewType;
+
+      if (reviewType === 'PLACE') {
+        // 공연장 리뷰 수정
+        const reviewId = editingReview.id || editingReview.placeReviewId || editingReview.reviewId;
+        const placeId = editingReview.placeId;
+        
+        if (!placeId) {
+          alert('공연장 정보를 찾을 수 없습니다.');
+          return;
+        }
+        
+        const updateDto = normalizePlaceReviewRequest(editForm, placeId);
+        await updatePlaceReview(reviewId, updateDto);
+        
+        // 목록에서 해당 리뷰 업데이트
+        setPlaceReviews(prev => prev.map(r => 
+          (r.id || r.reviewId) === reviewId 
+            ? { ...r, title: editForm.title, content: editForm.content, contents: editForm.content, rating: editForm.rating }
+            : r
+        ));
+      } else {
+        // 공연 리뷰 수정 (AFTER 또는 EXPECTATION)
+        const performanceId = editingReview.performanceId || editingReview.performance?.id;
+        if (!performanceId) {
+          alert('공연 정보를 찾을 수 없습니다.');
+          return;
+        }
+
+        const updateDto = normalizePerformanceReviewRequest(
+          editForm,
+          performanceId,
+          reviewType
+        );
+        
+        await updatePerformanceReview(reviewId, updateDto);
+        
+        // 목록에서 해당 리뷰 업데이트
+        if (reviewType === 'AFTER') {
+          setAfterReviews(prev => prev.map(r => 
+            (r.id || r.performanceReviewId || r.reviewId) === reviewId 
+              ? { ...r, title: editForm.title, content: editForm.content, contents: editForm.content, rating: editForm.rating }
+              : r
+          ));
+        } else if (reviewType === 'EXPECTATION') {
+          setExpectationReviews(prev => prev.map(r => 
+            (r.id || r.performanceReviewId || r.reviewId) === reviewId 
+              ? { ...r, title: editForm.title, content: editForm.content, contents: editForm.content }
+              : r
+          ));
+        }
       }
+
+      alert('리뷰가 수정되었습니다.');
+      handleCloseEditModal();
+    } catch (err) {
+      console.error('리뷰 수정 실패:', err);
+      alert(err.response?.data?.message || err.message || '리뷰 수정에 실패했습니다.');
     }
   };
 
@@ -192,6 +328,79 @@ const MyReviewPage = () => {
           </div>
         )}
       </div>
+
+      {/* 수정 모달 */}
+      {showEditModal && editingReview && (
+        <div className={styles.modalOverlay} onClick={handleCloseEditModal}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>리뷰 수정</h3>
+              <button className={styles.closeButton} onClick={handleCloseEditModal}>×</button>
+            </div>
+            
+            <form onSubmit={handleUpdateReview} className={styles.editForm}>
+              <div className={styles.formGroup}>
+                <label>제목</label>
+                <input 
+                  type="text" 
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                  placeholder="제목을 입력하세요"
+                  required
+                  className={styles.input}
+                />
+              </div>
+              
+              {/* 평점 - 기대평(EXPECTATION)일 때는 표시하지 않음 */}
+              {editingReview.reviewType !== 'EXPECTATION' && (
+                <div className={styles.formGroup}>
+                  <label>평점</label>
+                  <div className={styles.ratingInput}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button 
+                        key={star} 
+                        type="button"
+                        className={`${styles.ratingStar} ${star <= editForm.rating ? styles.filled : ''}`}
+                        onClick={() => setEditForm({...editForm, rating: star})}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className={styles.formGroup}>
+                <label>내용</label>
+                <textarea 
+                  value={editForm.content}
+                  onChange={(e) => setEditForm({...editForm, content: e.target.value})}
+                  placeholder="내용을 입력하세요"
+                  required
+                  rows={6}
+                  className={styles.textarea}
+                />
+              </div>
+              
+              <div className={styles.modalActions}>
+                <button 
+                  type="button" 
+                  className={styles.cancelButton}
+                  onClick={handleCloseEditModal}
+                >
+                  취소
+                </button>
+                <button 
+                  type="submit" 
+                  className={styles.submitButton}
+                >
+                  수정하기
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

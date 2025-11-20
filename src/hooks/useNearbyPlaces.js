@@ -25,22 +25,38 @@ export const useNearbyPlaces = (params = {}) => {
   const [totalCount, setTotalCount] = useState(0);
 
   const activeRequestId = useRef(0);
-  const isMountedRef = useRef(false);
+  const prevCoordinatesRef = useRef({ latitude: null, longitude: null });
 
   useEffect(() => {
     // 훅이 비활성화되어 있으면 스킵
     if (!enabled) {
       setPlaces([]);
       setLoading(false);
+      // prevCoordinatesRef 초기화 (페이지를 나갔다가 다시 들어올 때를 위해)
+      prevCoordinatesRef.current = { latitude: null, longitude: null };
       return;
     }
 
     const loadNearbyPlaces = async () => {
-      // 이미 마운트되지 않았으면 초기화
-      if (!isMountedRef.current) {
-        isMountedRef.current = true;
+      // 좌표가 변경되었는지 확인
+      const coordinatesChanged = 
+        prevCoordinatesRef.current.latitude !== providedLatitude ||
+        prevCoordinatesRef.current.longitude !== providedLongitude;
+      
+      // 좌표가 변경되었거나 처음 호출될 때 로딩 시작
+      // (prevCoordinatesRef.current.latitude === null이면 coordinatesChanged도 true가 됨)
+      if (coordinatesChanged || prevCoordinatesRef.current.latitude === null) {
         setLoading(true);
         setError(null);
+        console.log('🔄 [로딩 시작] 좌표 변경 감지:', {
+          prev: prevCoordinatesRef.current,
+          current: { latitude: providedLatitude, longitude: providedLongitude }
+        });
+        // 이전 좌표 저장
+        prevCoordinatesRef.current = {
+          latitude: providedLatitude,
+          longitude: providedLongitude
+        };
       }
 
       const reqId = ++activeRequestId.current;

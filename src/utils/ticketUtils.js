@@ -1,16 +1,103 @@
 /**
  * 티켓 데이터 관리 유틸리티
- * 모든 페이지에서 동일한 티켓 데이터를 사용하도록 통합
+ * 사용자별로 티켓 데이터를 분리하여 관리
  */
 
-const TICKET_STORAGE_KEY = 'myTickets';
+const TICKET_STORAGE_KEY_PREFIX = 'myTickets_';
 
 /**
- * localStorage에서 티켓 목록 가져오기
+ * 현재 로그인한 사용자 ID 가져오기
+ */
+const getCurrentUserId = () => {
+  try {
+    const userRaw = localStorage.getItem('user');
+    if (userRaw) {
+      const user = JSON.parse(userRaw);
+      return user?.userId || user?.id || null;
+    }
+  } catch (error) {
+    console.error('사용자 정보 파싱 실패:', error);
+  }
+  return null;
+};
+
+/**
+ * 사용자별 티켓 스토리지 키 생성
+ */
+const getTicketStorageKey = (userId = null) => {
+  const targetUserId = userId || getCurrentUserId();
+  if (!targetUserId) {
+    // 사용자 ID가 없으면 임시 키 사용 (비로그인 상태)
+    return `${TICKET_STORAGE_KEY_PREFIX}guest`;
+  }
+  return `${TICKET_STORAGE_KEY_PREFIX}${targetUserId}`;
+};
+
+/**
+ * 현재 사용자의 티켓 데이터 초기화 (빈 배열로 설정)
+ */
+export const initializeUserTickets = (userId = null) => {
+  try {
+    const storageKey = getTicketStorageKey(userId);
+    localStorage.setItem(storageKey, JSON.stringify([]));
+    // 다른 탭/컴포넌트에 변경사항 알림
+    window.dispatchEvent(new Event('ticketUpdated'));
+    return true;
+  } catch (error) {
+    console.error('티켓 데이터 초기화 실패:', error);
+    return false;
+  }
+};
+
+/**
+ * 사용자의 티켓 데이터가 존재하는지 확인
+ */
+export const hasUserTickets = (userId = null) => {
+  try {
+    const storageKey = getTicketStorageKey(userId);
+    const tickets = localStorage.getItem(storageKey);
+    if (!tickets) return false;
+    const parsedTickets = JSON.parse(tickets);
+    return Array.isArray(parsedTickets) && parsedTickets.length > 0;
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
+ * 이전 사용자의 티켓 데이터 정리 (선택적)
+ */
+export const clearPreviousUserTickets = (currentUserId) => {
+  try {
+    // 모든 티켓 관련 키 찾기
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(TICKET_STORAGE_KEY_PREFIX)) {
+        // 현재 사용자 키가 아니면 제거
+        const currentUserKey = getTicketStorageKey(currentUserId);
+        if (key !== currentUserKey) {
+          keysToRemove.push(key);
+        }
+      }
+    }
+    
+    // 이전 사용자 데이터 제거
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    return true;
+  } catch (error) {
+    console.error('이전 사용자 티켓 데이터 정리 실패:', error);
+    return false;
+  }
+};
+
+/**
+ * localStorage에서 티켓 목록 가져오기 (현재 사용자)
  */
 export const getTickets = () => {
   try {
-    const savedTickets = localStorage.getItem(TICKET_STORAGE_KEY);
+    const storageKey = getTicketStorageKey();
+    const savedTickets = localStorage.getItem(storageKey);
     return savedTickets ? JSON.parse(savedTickets) : [];
   } catch (error) {
     console.error('티켓 데이터 로드 실패:', error);
@@ -19,11 +106,12 @@ export const getTickets = () => {
 };
 
 /**
- * localStorage에 티켓 목록 저장하기
+ * localStorage에 티켓 목록 저장하기 (현재 사용자)
  */
 export const saveTickets = (tickets) => {
   try {
-    localStorage.setItem(TICKET_STORAGE_KEY, JSON.stringify(tickets));
+    const storageKey = getTicketStorageKey();
+    localStorage.setItem(storageKey, JSON.stringify(tickets));
     // 다른 탭/컴포넌트에 변경사항 알림
     window.dispatchEvent(new Event('ticketUpdated'));
     return true;

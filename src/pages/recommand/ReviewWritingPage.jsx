@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './ReviewWritingPage.module.css';
-import { addTicket } from '../../utils/ticketUtils';
+import { createTicket } from '../../api/reservationApi';
+import { createPerformanceReview } from '../../api/reviewApi';
+import { normalizePerformanceReviewRequest } from '../../services/normalizePerformanceReviewRequest';
+import { fetchPerformanceList } from '../../api/performanceApi';
+import { normalizePerformance } from '../../services/normalizePerformance';
+import { transformTicketDataForApi } from '../../utils/ticketDataTransform';
+import logApi from '../../api/logApi';
 
 const ReviewWritingPage = () => {
   const navigate = useNavigate();
@@ -19,7 +25,8 @@ const ReviewWritingPage = () => {
       performanceTime: stateData.performanceTime || '',
       section: stateData.section || '',
       row: stateData.row || '',
-      number: stateData.number || ''
+      number: stateData.number || '',
+      placeName: stateData.placeName || ''
     };
   });
 
@@ -35,16 +42,30 @@ const ReviewWritingPage = () => {
     title: '',
     rating: 5,
     performanceReview: '',
+    venueTitle: '',
+    venueRating: 5,
     venueReview: ''
   });
 
-  // location.state에 ticketData가 있으면 초기값으로 설정 (항상 티켓 등록 단계부터 시작)
+  // location.state에 ticketData가 있으면 초기값으로 설정
+  // 마이 페이지에서 온 경우(이미 등록된 티켓, id가 있음): 티켓 등록 단계 건너뛰고 바로 후기 작성
   useEffect(() => {
-    if (location.state?.ticketData && location.state.ticketData.performanceName) {
-      setTicketData(location.state.ticketData);
+    if (location.state?.ticketData) {
+      const ticket = location.state.ticketData;
+      setTicketData(ticket);
+      
+      // 마이 페이지에서 온 경우: 티켓 정보가 완전하고 id가 있으면 티켓 등록 단계 건너뛰고 바로 후기 작성
+      if (ticket.id && ticket.performanceName && ticket.performanceDate) {
+        // 이미 등록된 티켓이므로 티켓 등록 단계 건너뛰기
+        setStep('performanceReview');
+      } else {
+        // 공연 페이지에서 온 경우 또는 티켓 정보가 불완전한 경우: 티켓 등록 단계부터 시작
+        setStep('ticketScan');
+      }
+    } else {
+      // 티켓 데이터가 없으면 티켓 스캔 단계부터 시작
+      setStep('ticketScan');
     }
-    // 항상 티켓 스캔 단계부터 시작
-    setStep('ticketScan');
   }, [location.state]);
 
   // 카메라 시작
@@ -157,20 +178,46 @@ const ReviewWritingPage = () => {
   };
 
   // 직접 입력하기 완료 -> 공연 후기로
-  const handleTicketInputComplete = () => {
+  const handleTicketInputComplete = async () => {
     if (!ticketData.performanceName || !ticketData.performanceDate) {
       alert('공연명과 공연일자를 입력해주세요.');
       return;
     }
 
-    // 항상 새 티켓으로 저장 (기존 티켓이 있어도 새로 등록)
-    addTicket({
-      ...ticketData,
-      ticketImage: capturedImage
-    });
+    try {
+      // 프론트엔드 데이터를 백엔드 API 형식으로 변환
+      const apiDto = transformTicketDataForApi(ticketData);
 
-    // 공연 후기 작성 단계로 이동
-    setStep('performanceReview');
+      // 티켓 등록 API 호출
+      const ticketResponse = await createTicket(apiDto);
+
+      // 티켓 인증 완료 시 BOOKED 로그 기록
+      // 응답에서 performanceId 확인 (응답 구조에 따라 조정 필요)
+      // 백엔드 TicketDetailResponseDto에 performanceId가 포함되어 있을 것으로 예상
+      const ticketPerformanceId = ticketResponse?.performanceId || ticketResponse?.performance?.performanceId || ticketResponse?.performanceId;
+      if (ticketPerformanceId) {
+        try {
+          await logApi.createLog({
+            eventType: "BOOKED",
+            targetType: "PERFORMANCE",
+            targetId: String(ticketPerformanceId)
+          });
+        } catch (logErr) {
+          console.error('로그 기록 실패:', logErr);
+        }
+      } else {
+        // performanceId가 응답에 없는 경우, 나중에 handleRegister에서 performanceId를 찾을 때 로그 기록
+        // (현재는 생략하고, handleRegister에서 리뷰 작성 시 함께 처리)
+        console.warn('티켓 등록 응답에 performanceId가 없습니다. handleRegister에서 처리합니다.');
+      }
+
+      // 공연 후기 작성 단계로 이동
+      setStep('performanceReview');
+    } catch (err) {
+      console.error('티켓 등록 실패:', err);
+      const errorMessage = err.response?.data?.message || err.message || '티켓 등록에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
   // 티켓 입력 변경
@@ -203,18 +250,94 @@ const ReviewWritingPage = () => {
     handleRegister();
   };
 
-  // 리뷰 등록
-  const handleRegister = () => {
-    console.log('리뷰 등록:', { ticketData, reviewData });
-    // 리뷰 등록 로직
+  // 공연명으로 performanceId 찾기
+  const findPerformanceIdByName = async (performanceName) => {
+    if (!performanceName) return null;
     
-    // 공연 페이지에서 온 경우 공연 페이지로 돌아가기 (후기 탭 활성화)
-    const performanceId = location.state?.performanceId;
-    if (performanceId) {
-      navigate(`/culture/${performanceId}?tab=review`);
-    } else {
-      // 마이티켓에서 온 경우 마이티켓으로 돌아가기
-      navigate('/my/tickets');
+    try {
+      const res = await fetchPerformanceList({
+        keyword: performanceName,
+        page: 1,
+        size: 1
+      });
+      
+      if (res.performances && res.performances.length > 0) {
+        const normalized = normalizePerformance(res.performances[0]);
+        return normalized.id || normalized.performanceId;
+      }
+      return null;
+    } catch (err) {
+      console.error('공연 검색 실패:', err);
+      return null;
+    }
+  };
+
+  // 리뷰 등록
+  const handleRegister = async () => {
+    try {
+      // performanceId 찾기
+      let performanceId = location.state?.performanceId || ticketData?.performanceId;
+      
+      // performanceId가 없으면 공연명으로 검색
+      if (!performanceId && ticketData?.performanceName) {
+        performanceId = await findPerformanceIdByName(ticketData.performanceName);
+      }
+      
+      if (!performanceId) {
+        alert('공연 정보를 찾을 수 없습니다. 공연명을 확인해주세요.');
+        return;
+      }
+
+      // 공연 후기 등록
+      if (reviewData.title && reviewData.performanceReview) {
+        const requestDto = normalizePerformanceReviewRequest(
+          {
+            title: reviewData.title,
+            content: reviewData.performanceReview,
+            rating: reviewData.rating,
+            // 티켓 정보 추가
+            performanceDate: ticketData.performanceDate || '',
+            performanceTime: ticketData.performanceTime || '',
+            section: ticketData.section || '',
+            row: ticketData.row || '',
+            number: ticketData.number || ''
+          },
+          performanceId,
+          'AFTER'
+        );
+        
+        await createPerformanceReview(requestDto);
+        
+        // 공연 리뷰 작성 완료 시 REVIEW_WRITE 로그 기록
+        try {
+          await logApi.createLog({
+            eventType: "REVIEW_WRITE",
+            targetType: "PERFORMANCE",
+            targetId: String(performanceId)
+          });
+        } catch (logErr) {
+          console.error('로그 기록 실패:', logErr);
+        }
+      }
+
+      // 공연장 후기 등록 (있는 경우)
+      if (reviewData.venueTitle && reviewData.venueReview && ticketData?.placeId) {
+        // 공연장 후기는 별도 API가 필요하면 추가
+        // await createPlaceReview(...);
+      }
+
+      // 성공 후 이동
+      if (location.state?.performanceId) {
+        navigate(`/culture/${location.state.performanceId}?tab=review`);
+      } else {
+        // 마이티켓으로 돌아가기 (새로고침을 위해 이벤트 발생)
+        navigate('/my/tickets');
+        // 페이지 새로고침을 위한 이벤트 발생
+        window.dispatchEvent(new Event('ticketUpdated'));
+      }
+    } catch (err) {
+      console.error('후기 등록 실패:', err);
+      alert(err.response?.data?.message || err.message || '후기 등록에 실패했습니다.');
     }
   };
 
@@ -372,7 +495,7 @@ const ReviewWritingPage = () => {
             </div>
             <div className={styles.formGroup}>
               <label>좌석정보</label>
-              <div className={styles.seatInputsTwo}>
+              <div className={styles.seatInputs}>
                 <input
                   type="text"
                   value={ticketData.section}
@@ -387,7 +510,24 @@ const ReviewWritingPage = () => {
                   placeholder="열"
                   className={styles.seatInput}
                 />
+                <input
+                  type="text"
+                  value={ticketData.number}
+                  onChange={(e) => handleTicketInputChange('number', e.target.value)}
+                  placeholder="번"
+                  className={styles.seatInput}
+                />
               </div>
+            </div>
+            <div className={styles.formGroup}>
+              <label>공연장명</label>
+              <input
+                type="text"
+                value={ticketData.placeName}
+                onChange={(e) => handleTicketInputChange('placeName', e.target.value)}
+                placeholder="공연장명을 입력하세요 (선택)"
+                className={styles.input}
+              />
             </div>
           </div>
           
@@ -430,12 +570,14 @@ const ReviewWritingPage = () => {
 
     return (
       <div className={styles.container}>
-        <div className={styles.card}>
-          <div className={styles.modalHeader}>
-            <h3>공연 후기 작성</h3>
-            <button className={styles.closeButton} onClick={handleCancel}>×</button>
-          </div>
-          
+        {/* 상단 헤더 */}
+        <div className={styles.header}>
+          <div></div>
+          <h2 className={styles.headerTitle}>공연 후기 작성</h2>
+          <button className={styles.closeButton} onClick={handleCancel}>×</button>
+        </div>
+
+        <div className={styles.content}>
           <div className={styles.form}>
             <div className={styles.formGroup}>
               <label>제목</label>
@@ -510,13 +652,42 @@ const ReviewWritingPage = () => {
 
     return (
       <div className={styles.container}>
-        <div className={styles.card}>
-          <div className={styles.modalHeader}>
-            <h3>공연장 후기 작성</h3>
-            <button className={styles.closeButton} onClick={handleCancel}>×</button>
-          </div>
-          
+        {/* 상단 헤더 */}
+        <div className={styles.header}>
+          <div></div>
+          <h2 className={styles.headerTitle}>공연장 후기 작성</h2>
+          <button className={styles.closeButton} onClick={handleCancel}>×</button>
+        </div>
+
+        <div className={styles.content}>
           <div className={styles.form}>
+            <div className={styles.formGroup}>
+              <label>제목</label>
+              <input
+                type="text"
+                value={reviewData.venueTitle}
+                onChange={(e) => handleReviewInputChange('venueTitle', e.target.value)}
+                placeholder="제목을 입력하세요"
+                className={styles.input}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>평점</label>
+              <div className={styles.ratingInput}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    type="button"
+                    className={`${styles.ratingStar} ${star <= reviewData.venueRating ? styles.filled : ''}`}
+                    onClick={() => handleReviewInputChange('venueRating', star)}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className={styles.formGroup}>
               <label>공연장 리뷰</label>
               <textarea

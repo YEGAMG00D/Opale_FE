@@ -40,6 +40,14 @@ const placeSlice = createSlice({
       state.maxSearchRadius = null; // 검색 기준 좌표 초기화 시 최대 반경도 초기화
       state.nearbyPlaces = []; // 검색 기준 좌표 초기화 시 근처 공연장 목록도 초기화
     },
+    // 지도 상태 초기화 (페이지 진입 시 호출) - GPS 위치는 유지
+    resetPlaceMapState: (state) => {
+      state.searchCenter = null;
+      state.searchRadius = 5000; // 기본값으로 초기화
+      state.maxSearchRadius = null;
+      state.nearbyPlaces = [];
+      // GPS 위치는 유지 (gpsLocation은 초기화하지 않음)
+    },
   },
 });
 
@@ -51,7 +59,8 @@ export const {
   setMaxSearchRadius,
   setNearbyPlaces,
   clearNearbyPlaces,
-  clearSearchCenter 
+  clearSearchCenter,
+  resetPlaceMapState
 } = placeSlice.actions;
 export default placeSlice.reducer;
 
