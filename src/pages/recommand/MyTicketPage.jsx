@@ -7,6 +7,11 @@ import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
 import hanbokManPoster from '../../assets/poster/hanbok-man.jpg';
 import deathNotePoster from '../../assets/poster/death-note.gif';
 import rentPoster from '../../assets/poster/rent.gif';
+import { 
+  getTickets, 
+  addTicket, 
+  deleteTicket as deleteTicketUtil 
+} from '../../utils/ticketUtils';
 
 const MyTicketPage = () => {
   const navigate = useNavigate();
@@ -54,12 +59,30 @@ const MyTicketPage = () => {
     return wickedPoster;
   };
 
-  // 로컬 스토리지에서 티켓 목록 불러오기
+  // 티켓 목록 불러오기
+  const loadTickets = () => {
+    const allTickets = getTickets();
+    setTickets(allTickets);
+  };
+
+  // 초기 로드
   useEffect(() => {
-    const savedTickets = localStorage.getItem('myTickets');
-    if (savedTickets) {
-      setTickets(JSON.parse(savedTickets));
-    }
+    loadTickets();
+  }, []);
+
+  // 티켓 목록 업데이트를 위한 이벤트 리스너
+  useEffect(() => {
+    const handleTicketUpdate = () => {
+      loadTickets();
+    };
+
+    window.addEventListener('storage', handleTicketUpdate);
+    window.addEventListener('ticketUpdated', handleTicketUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleTicketUpdate);
+      window.removeEventListener('ticketUpdated', handleTicketUpdate);
+    };
   }, []);
 
   // 티켓 등록 관련 핸들러
@@ -96,15 +119,8 @@ const MyTicketPage = () => {
       return;
     }
 
-    const newTicket = {
-      id: Date.now(),
-      ...ticketData,
-      registeredDate: new Date().toISOString().split('T')[0]
-    };
-
-    const updatedTickets = [newTicket, ...tickets];
-    setTickets(updatedTickets);
-    localStorage.setItem('myTickets', JSON.stringify(updatedTickets));
+    addTicket(ticketData);
+    loadTickets();
     
     setShowTicketModal(false);
     setTicketStep('scan');
@@ -138,9 +154,8 @@ const MyTicketPage = () => {
 
   const handleDeleteTicket = (ticketId) => {
     if (window.confirm('티켓을 삭제하시겠습니까?')) {
-      const updatedTickets = tickets.filter(ticket => ticket.id !== ticketId);
-      setTickets(updatedTickets);
-      localStorage.setItem('myTickets', JSON.stringify(updatedTickets));
+      deleteTicketUtil(ticketId);
+      loadTickets();
       // 플립 상태도 제거
       setFlippedTickets(prev => {
         const newState = { ...prev };

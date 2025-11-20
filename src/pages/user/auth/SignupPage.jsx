@@ -4,6 +4,9 @@ import styles from './SignupPage.module.css';
 import Step1EmailVerification from './signup-steps/Step1EmailVerification';
 import Step2Password from './signup-steps/Step2Password';
 import Step3PersonalInfo from './signup-steps/Step3PersonalInfo';
+import TermsAgreementStep from './signup-steps/TermsAgreementStep';
+import GuardianInfoStep from './signup-steps/GuardianInfoStep';
+import GuardianAgreementStep from './signup-steps/GuardianAgreementStep';
 import {
   validateEmail,
   validateVerificationCode,
@@ -15,11 +18,14 @@ import {
   validatePhone,
   validateAddress,
   validateDetailAddress,
+  validateGuardianName,
 } from '../../../utils/validation';
 
 const SignupPage = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0); // 0: 초기, 1: 이메일/인증번호, 2: 비밀번호, 3: 개인정보
+  // currentStep: 'age-selection' | 'terms' | 'guardian-info' | 'guardian-agreement' | 'email' | 'password' | 'personal-info'
+  const [currentStep, setCurrentStep] = useState('age-selection');
+  const [isUnder14, setIsUnder14] = useState(null); // null | true | false
   const [formData, setFormData] = useState({
     email: '',
     verificationCode: '',
@@ -33,6 +39,8 @@ const SignupPage = () => {
     address: '',
     detailAddress: '',
     agreeToTerms: false,
+    guardianName: '',
+    guardianAgreed: false,
   });
   const [errors, setErrors] = useState({});
   const [validationMessages, setValidationMessages] = useState({});
@@ -44,32 +52,57 @@ const SignupPage = () => {
   const [codeVerifyStatus, setCodeVerifyStatus] = useState(null); // 'success' | 'error' | null
 
   const handleUnder14 = () => {
-    console.log('Under 14 signup');
+    setIsUnder14(true);
+    setCurrentStep('guardian-info');
   };
 
   const handleOver14 = () => {
-    console.log('Over 14 signup');
-    // Step1 상태 초기화
-    setIsCodeSent(false);
-    setIsCodeVerified(false);
-    setEmailSendStatus(null);
-    setCodeVerifyStatus(null);
-    setTimer(300);
-    setValidationMessages({});
-    setStep(1);
+    setIsUnder14(false);
+    setCurrentStep('terms');
   };
 
   const handleNext = () => {
     console.log('Next step');
-    if (step < 3) {
-      setStep(step + 1);
+    if (currentStep === 'terms') {
+      setCurrentStep('email');
+      // Step1 상태 초기화
+      setIsCodeSent(false);
+      setIsCodeVerified(false);
+      setEmailSendStatus(null);
+      setCodeVerifyStatus(null);
+      setTimer(300);
+      setValidationMessages({});
+    } else if (currentStep === 'guardian-info') {
+      setCurrentStep('guardian-agreement');
+    } else if (currentStep === 'guardian-agreement') {
+      setCurrentStep('terms');
+    } else if (currentStep === 'email') {
+      setCurrentStep('password');
+    } else if (currentStep === 'password') {
+      setCurrentStep('personal-info');
     }
   };
 
   const handlePrev = () => {
     console.log('Previous step');
-    if (step > 0) {
-      setStep(step - 1);
+    if (currentStep === 'email') {
+      setCurrentStep('terms');
+    } else if (currentStep === 'password') {
+      setCurrentStep('email');
+    } else if (currentStep === 'personal-info') {
+      setCurrentStep('password');
+    } else if (currentStep === 'terms') {
+      if (isUnder14) {
+        setCurrentStep('guardian-agreement');
+      } else {
+        setCurrentStep('age-selection');
+        setIsUnder14(null);
+      }
+    } else if (currentStep === 'guardian-agreement') {
+      setCurrentStep('guardian-info');
+    } else if (currentStep === 'guardian-info') {
+      setCurrentStep('age-selection');
+      setIsUnder14(null);
     }
   };
 
@@ -126,6 +159,9 @@ const SignupPage = () => {
         break;
       case 'detailAddress':
         validationResult = validateDetailAddress(value);
+        break;
+      case 'guardianName':
+        validationResult = validateGuardianName(value);
         break;
       default:
         break;
@@ -202,7 +238,7 @@ const SignupPage = () => {
 
   // 타이머 효과 (인증번호 전송 후에만 작동)
   React.useEffect(() => {
-    if (step === 1 && isCodeSent && timer > 0) {
+    if (currentStep === 'email' && isCodeSent && timer > 0) {
       const interval = setInterval(() => {
         setTimer(prev => {
           if (prev <= 1) {
@@ -218,7 +254,7 @@ const SignupPage = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [step, isCodeSent, timer]);
+  }, [currentStep, isCodeSent, timer]);
 
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -226,7 +262,8 @@ const SignupPage = () => {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  if (step === 0) {
+  // 14세 미만/이상 선택 화면
+  if (currentStep === 'age-selection') {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
@@ -271,10 +308,84 @@ const SignupPage = () => {
     );
   }
 
+  // 약관동의 화면 (14세 이상)
+  if (currentStep === 'terms') {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <button className={styles.backButton} onClick={handlePrev}>
+            ←
+          </button>
+          <h1 className={styles.headerTitle}>약관동의</h1>
+        </div>
+
+        <div className={styles.content}>
+          <div className={styles.card}>
+            <TermsAgreementStep
+              formData={formData}
+              handleInputChange={handleInputChange}
+              onNext={handleNext}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 보호자 정보 입력 화면 (14세 미만)
+  if (currentStep === 'guardian-info') {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <button className={styles.backButton} onClick={handlePrev}>
+            ←
+          </button>
+          <h1 className={styles.headerTitle}>보호자 정보 입력</h1>
+        </div>
+
+        <div className={styles.content}>
+          <div className={styles.card}>
+            <GuardianInfoStep
+              formData={formData}
+              handleInputChange={handleInputChange}
+              validationMessages={validationMessages}
+              onNext={handleNext}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 어린이 동의 화면 (14세 미만)
+  if (currentStep === 'guardian-agreement') {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <button className={styles.backButton} onClick={handlePrev}>
+            ←
+          </button>
+          <h1 className={styles.headerTitle}>보호자 정보 입력</h1>
+        </div>
+
+        <div className={styles.content}>
+          <div className={styles.card}>
+            <GuardianAgreementStep
+              formData={formData}
+              handleInputChange={handleInputChange}
+              onNext={handleNext}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 이메일, 비밀번호, 개인정보 입력 화면
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={() => navigate(-1)}>
+        <button className={styles.backButton} onClick={handlePrev}>
           ←
         </button>
         <h1 className={styles.headerTitle}>회원가입</h1>
@@ -282,7 +393,7 @@ const SignupPage = () => {
 
       <div className={styles.content}>
         <div className={styles.card}>
-          {step === 1 && (
+          {currentStep === 'email' && (
             <Step1EmailVerification
               formData={formData}
               handleInputChange={handleInputChange}
@@ -296,7 +407,7 @@ const SignupPage = () => {
             />
           )}
 
-          {step === 2 && (
+          {currentStep === 'password' && (
             <Step2Password
               formData={formData}
               handleInputChange={handleInputChange}
@@ -304,7 +415,7 @@ const SignupPage = () => {
             />
           )}
 
-          {step === 3 && (
+          {currentStep === 'personal-info' && (
             <Step3PersonalInfo
               formData={formData}
               handleInputChange={handleInputChange}
@@ -317,34 +428,20 @@ const SignupPage = () => {
         {/* Step Indicators and Navigation Buttons */}
         <div className={styles.bottomSection}>
           <div className={styles.stepIndicators}>
-            <div className={`${styles.stepDot} ${step >= 1 ? styles.active : ''}`}></div>
-            <div className={`${styles.stepDot} ${step >= 2 ? styles.active : ''}`}></div>
-            <div className={`${styles.stepDot} ${step >= 3 ? styles.active : ''}`}></div>
+            <div className={`${styles.stepDot} ${currentStep === 'email' || currentStep === 'password' || currentStep === 'personal-info' ? styles.active : ''}`}></div>
+            <div className={`${styles.stepDot} ${currentStep === 'password' || currentStep === 'personal-info' ? styles.active : ''}`}></div>
+            <div className={`${styles.stepDot} ${currentStep === 'personal-info' ? styles.active : ''}`}></div>
           </div>
 
           <div className={styles.navigationButtons}>
             <button
               className={styles.prevButton}
               onClick={handlePrev}
-              disabled={step === 0}
+              disabled={currentStep === 'age-selection'}
             >
               이전
             </button>
-            {step < 3 ? (
-              <button 
-                className={styles.nextButton} 
-                onClick={handleNext}
-                disabled={
-                  (step === 1 && !isCodeVerified) ||
-                  (step === 2 && (
-                    !validationMessages?.password?.isValid || 
-                    !validationMessages?.confirmPassword?.isValid
-                  ))
-                }
-              >
-                다음
-              </button>
-            ) : (
+            {currentStep === 'personal-info' ? (
               <button 
                 className={styles.signupButton} 
                 onClick={handleSignup}
@@ -360,6 +457,20 @@ const SignupPage = () => {
                 }
               >
                 가입
+              </button>
+            ) : (
+              <button 
+                className={styles.nextButton} 
+                onClick={handleNext}
+                disabled={
+                  (currentStep === 'email' && !isCodeVerified) ||
+                  (currentStep === 'password' && (
+                    !validationMessages?.password?.isValid || 
+                    !validationMessages?.confirmPassword?.isValid
+                  ))
+                }
+              >
+                다음
               </button>
             )}
           </div>

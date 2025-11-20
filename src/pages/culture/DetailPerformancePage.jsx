@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './DetailPerformancePage.module.css';
 import PerformancePoster from '../../components/culture/PerformancePoster';
 import PerformanceInfoCard from '../../components/culture/PerformanceInfoCard';
@@ -20,6 +20,7 @@ import { usePerformanceRelations } from '../../hooks/usePerformanceRelations';
 import { usePerformanceInfoImages } from '../../hooks/usePerformanceInfoImages';
 import { usePerformanceBooking } from '../../hooks/usePerformanceBooking';
 import { usePlaceBasic } from '../../hooks/usePlaceBasic';
+import { getTicketsByPerformanceName, getWatchedTickets, addTicket } from '../../utils/ticketUtils';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -30,6 +31,7 @@ import rentPoster from '../../assets/poster/rent.gif';
 const DetailPerformancePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('reservation');
   const [isFavorite, setIsFavorite] = useState(false);
   const [expandedExpectations, setExpandedExpectations] = useState({});
@@ -37,6 +39,20 @@ const DetailPerformancePage = () => {
   const [writeType, setWriteType] = useState('review'); // 'review' or 'expectation'
   const [writeForm, setWriteForm] = useState({ title: '', content: '', rating: 5 });
   const [activeReviewTab, setActiveReviewTab] = useState('review'); // 'review' or 'expectation'
+  const [showTicketInfoModal, setShowTicketInfoModal] = useState(false);
+  const [ticketStep, setTicketStep] = useState('scan'); // 'scan' or 'input'
+  const [ticketInfo, setTicketInfo] = useState({
+    performanceDate: '',
+    performanceTime: '',
+    section: '',
+    row: '',
+    number: ''
+  });
+  const [isScanning, setIsScanning] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const ticketVideoRef = useRef(null);
+  const ticketFileInputRef = useRef(null);
   
   // API 데이터 상태
   const [performance, setPerformance] = useState(null);
@@ -761,6 +777,18 @@ const DetailPerformancePage = () => {
     return posterImages[imageName] || wickedPoster;
   };
   
+  // 컴포넌트 언마운트 시 카메라 정리
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+      if (ticketVideoRef.current) {
+        ticketVideoRef.current.srcObject = null;
+      }
+    };
+  }, [cameraStream]);
+
   // API로 공연 기본 정보 조회
   useEffect(() => {
     const loadPerformanceData = async () => {
@@ -802,6 +830,23 @@ const DetailPerformancePage = () => {
 
     loadPerformanceData();
   }, [id]);
+
+  // URL 쿼리 파라미터로 탭 활성화
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'review') {
+      setActiveTab('review');
+      // 후기/기대평 섹션으로 스크롤
+      setTimeout(() => {
+        const reviewSection = document.querySelector(`[data-tab="review"]`);
+        if (reviewSection) {
+          reviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+      // 쿼리 파라미터 제거
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   // 공연 관심 여부 조회
   useEffect(() => {
@@ -902,7 +947,156 @@ const DetailPerformancePage = () => {
 
   const handleWriteClick = (type) => {
     setWriteType(type);
-    setShowWriteModal(true);
+    // 후기 작성의 경우 항상 티켓 등록 단계부터 시작
+    if (type === 'review') {
+      const performanceTitle = performance?.title || '';
+      // 공연 정보를 초기값으로 설정하고 티켓 등록 단계부터 시작
+      navigate('/recommend/review', {
+        state: {
+          ticketData: {
+            performanceName: performanceTitle,
+            performanceDate: '',
+            performanceTime: '',
+            section: '',
+            row: '',
+            number: ''
+          },
+          performanceId: performanceId || id
+        }
+      });
+    } else {
+      // 기대평 작성은 기존 로직 유지
+      setShowWriteModal(true);
+    }
+  };
+
+  const handleTicketInfoSubmit = () => {
+    if (!ticketInfo.performanceDate) {
+      alert('공연일자를 입력해주세요.');
+      return;
+    }
+    
+    // 티켓 정보를 저장
+    const ticketData = {
+      performanceName: performance?.title || '',
+      performanceDate: ticketInfo.performanceDate,
+      performanceTime: ticketInfo.performanceTime,
+      section: ticketInfo.section,
+      row: ticketInfo.row,
+      number: ticketInfo.number
+    };
+    
+    // 티켓이 없으면 등록
+    const existingTickets = getTicketsByPerformanceName(performance?.title || '');
+    if (existingTickets.length === 0) {
+      addTicket(ticketData);
+    }
+    
+    // ReviewWritingPage로 이동하면서 티켓 정보와 공연 정보 전달
+    navigate('/recommend/review', {
+      state: {
+        ticketData,
+        performanceId: performanceId || id // 공연 ID 전달
+      }
+    });
+  };
+
+  const handleTicketInfoCancel = () => {
+    setShowTicketInfoModal(false);
+    setTicketStep('scan');
+    setTicketInfo({
+      performanceDate: '',
+      performanceTime: '',
+      section: '',
+      row: '',
+      number: ''
+    });
+    setCapturedImage(null);
+    stopTicketCamera();
+  };
+
+  const handleTicketInfoChange = (field, value) => {
+    setTicketInfo(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // 티켓 카메라 시작
+  const startTicketCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' }
+      });
+      setCameraStream(stream);
+      if (ticketVideoRef.current) {
+        ticketVideoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error('카메라 접근 실패:', err);
+      alert('카메라 접근에 실패했습니다. 파일에서 선택해주세요.');
+    }
+  };
+
+  // 티켓 카메라 중지
+  const stopTicketCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    if (ticketVideoRef.current) {
+      ticketVideoRef.current.srcObject = null;
+    }
+  };
+
+  // 티켓 촬영
+  const captureTicketPhoto = () => {
+    if (ticketVideoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = ticketVideoRef.current.videoWidth;
+      canvas.height = ticketVideoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(ticketVideoRef.current, 0, 0);
+      
+      canvas.toBlob((blob) => {
+        const imageUrl = URL.createObjectURL(blob);
+        setCapturedImage(imageUrl);
+        stopTicketCamera();
+        setIsScanning(false);
+        setTicketStep('input');
+      }, 'image/jpeg');
+    }
+  };
+
+  // 티켓 파일 선택
+  const handleTicketFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target.result;
+        setCapturedImage(imageUrl);
+        setTicketStep('input');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // 티켓 카메라 버튼 클릭
+  const handleTicketCameraClick = async () => {
+    setIsScanning(true);
+    await startTicketCamera();
+  };
+
+  // 티켓 파일 선택 버튼 클릭
+  const handleTicketFileClick = () => {
+    ticketFileInputRef.current?.click();
+  };
+
+  // 티켓 스캔 건너뛰기
+  const handleSkipTicketScan = () => {
+    setTicketStep('input');
+    stopTicketCamera();
   };
 
   const handleWriteSubmit = async (e) => {
@@ -1028,7 +1222,7 @@ const DetailPerformancePage = () => {
       />
 
       {/* Tabs */}
-      <div className={styles.tabSection}>
+      <div className={styles.tabSection} data-tab={activeTab}>
         <div className={styles.tabs}>
           {tabs.map(tab => (
             <button
@@ -1362,12 +1556,181 @@ const DetailPerformancePage = () => {
         </div>
       </div>
 
+      {/* 티켓 정보 입력 모달 */}
+      {showTicketInfoModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h3>티켓 등록</h3>
+              <button className={styles.closeButton} onClick={handleTicketInfoCancel}>×</button>
+            </div>
+            
+            <div className={styles.writeForm}>
+              {ticketStep === 'scan' ? (
+                <>
+                  {cameraStream ? (
+                    <div className={styles.cameraArea}>
+                      <video
+                        ref={ticketVideoRef}
+                        autoPlay
+                        playsInline
+                        className={styles.videoPreview}
+                      />
+                      <div className={styles.cameraControls}>
+                        <button
+                          className={styles.captureButton}
+                          onClick={captureTicketPhoto}
+                        >
+                          촬영
+                        </button>
+                        <button
+                          className={styles.cancelButton}
+                          onClick={() => {
+                            stopTicketCamera();
+                            setIsScanning(false);
+                          }}
+                        >
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className={styles.scanArea}>
+                        <div className={styles.cameraIcon}>
+                          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                          </svg>
+                        </div>
+                        <p className={styles.scanInstruction}>
+                          티켓을 스캔하거나 사진을 업로드해주세요
+                        </p>
+                      </div>
+                      <input
+                        ref={ticketFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleTicketFileSelect}
+                        style={{ display: 'none' }}
+                      />
+                      <button 
+                        className={styles.primaryButton}
+                        onClick={handleTicketCameraClick}
+                        disabled={isScanning}
+                      >
+                        카메라로 촬영
+                      </button>
+                      <button 
+                        className={styles.secondaryButton}
+                        onClick={handleTicketFileClick}
+                      >
+                        파일에서 선택
+                      </button>
+                      <button 
+                        className={styles.tertiaryButton}
+                        onClick={handleSkipTicketScan}
+                      >
+                        직접 입력하기
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className={styles.ticketTitle}>티켓 정보 입력</div>
+                  {capturedImage && (
+                    <div className={styles.imagePreview}>
+                      <img src={capturedImage} alt="티켓 이미지" />
+                    </div>
+                  )}
+                  
+                  <div className={styles.ticketForm}>
+                    <div className={styles.formGroup}>
+                      <label>공연명</label>
+                      <input
+                        type="text"
+                        value={performance?.title || ''}
+                        disabled
+                        style={{ backgroundColor: '#f9fafb', color: '#6b7280' }}
+                      />
+                    </div>
+                    <div className={styles.formRow}>
+                      <div className={styles.formGroup}>
+                        <label>공연일자</label>
+                        <input
+                          type="date"
+                          value={ticketInfo.performanceDate}
+                          onChange={(e) => handleTicketInfoChange('performanceDate', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>시간</label>
+                        <input
+                          type="time"
+                          value={ticketInfo.performanceTime}
+                          onChange={(e) => handleTicketInfoChange('performanceTime', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>좌석정보</label>
+                      <div className={styles.seatInputs}>
+                        <input
+                          type="text"
+                          value={ticketInfo.section}
+                          onChange={(e) => handleTicketInfoChange('section', e.target.value)}
+                          placeholder="구역"
+                          className={styles.seatInput}
+                        />
+                        <input
+                          type="text"
+                          value={ticketInfo.row}
+                          onChange={(e) => handleTicketInfoChange('row', e.target.value)}
+                          placeholder="열"
+                          className={styles.seatInput}
+                        />
+                        <input
+                          type="text"
+                          value={ticketInfo.number}
+                          onChange={(e) => handleTicketInfoChange('number', e.target.value)}
+                          placeholder="번"
+                          className={styles.seatInput}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.buttonGroup}>
+                    <button 
+                      type="button" 
+                      className={styles.cancelButton} 
+                      onClick={handleTicketInfoCancel}
+                    >
+                      취소
+                    </button>
+                    <button 
+                      type="button" 
+                      className={styles.primaryButton}
+                      onClick={handleTicketInfoSubmit}
+                    >
+                      다음
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 글쓰기 모달 */}
       {showWriteModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <div className={styles.modalHeader}>
-              <h3>{writeType === 'review' ? '후기 작성' : '기대평 작성'}</h3>
+              <h3>{writeType === 'review' ? '공연 후기 작성' : '기대평 작성'}</h3>
               <button className={styles.closeButton} onClick={handleWriteCancel}>×</button>
             </div>
             

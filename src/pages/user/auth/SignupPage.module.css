@@ -451,6 +451,18 @@
   width: 18px;
   height: 18px;
   cursor: pointer;
+  accent-color: #ffb6c1;
+}
+
+.checkboxLabel span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.checkboxLabel span span {
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .bottomSection {

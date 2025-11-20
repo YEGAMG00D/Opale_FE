@@ -2,29 +2,78 @@
   width: 100%;
   max-width: 430px;
   margin: 0 auto;
+  background-color: #FFFFFF;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f3f4f6;
-  padding: 20px;
   overflow-x: hidden;
   box-sizing: border-box;
 }
 
-.card {
-  background-color: white;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  padding: 24px;
-  width: 100%;
+/* 헤더 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #6b7280;
+.headerTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+.content {
+  padding: 12px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ticketTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+}
+
+.modalHeader h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: #111827;
 }
 
 .form {
@@ -37,13 +86,69 @@
 .formGroup {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .formGroup label {
   font-size: 12px;
   font-weight: 500;
   color: #374151;
+}
+
+.input {
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #fef3f2;
+  color: #111827;
+  font-family: inherit;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #fbccdc;
+}
+
+.textarea {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #fef3f2;
+  color: #111827;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #fbccdc;
+}
+
+.ratingInput {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ratingStar {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #d1d5db;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.ratingStar.filled {
+  color: #fbbf24;
+}
+
+.ratingStar:hover {
+  color: #fbbf24;
 }
 
 .infoDisplay {
@@ -69,37 +174,250 @@
   color: #6b7280;
 }
 
-.textarea {
-  padding: 12px;
+/* 티켓 스캔 관련 스타일 */
+.scanArea {
+  width: 100%;
+  aspect-ratio: 1;
+  background-color: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.cameraIcon {
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+.scanInstruction {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+}
+
+.cameraArea {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.videoPreview {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  background-color: #000;
+}
+
+.cameraControls {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.captureButton {
+  flex: 1;
+  padding: 14px;
+  background-color: #ffb6c1;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.captureButton:hover {
+  background-color: #ffa5b8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.imagePreview {
+  margin-bottom: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 100px;
+}
+
+.imagePreview img {
+  width: 100%;
+  height: auto;
+  max-height: 100px;
+  object-fit: contain;
+  display: block;
+}
+
+.ticketForm {
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.seatInputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.seatInputsTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.seatInput {
+  padding: 8px 10px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 14px;
   background-color: #fef3f2;
   color: #111827;
-  resize: vertical;
   font-family: inherit;
 }
 
-.textarea:focus {
+.seatInput:focus {
   outline: none;
   border-color: #fbccdc;
 }
 
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  padding-bottom: 8px;
+}
+
 .primaryButton {
+  flex: 1;
+  padding: 14px;
+  background-color: #ffb6c1;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primaryButton:hover {
+  background-color: #ffa5b8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+}
+
+.primaryButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
   width: 100%;
   padding: 14px;
-  background-color: #fef3f2;
-  border: 1px solid #fbccdc;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   color: #111827;
   cursor: pointer;
   transition: all 0.2s;
+  margin-bottom: 4px;
 }
 
-.primaryButton:hover {
-  background-color: #fee4e2;
+.secondaryButton:hover {
+  background-color: #e5e7eb;
+}
+
+.tertiaryButton {
+  width: 100%;
+  padding: 14px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(107, 114, 128, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+
+.tertiaryButton:hover {
+  opacity: 0.8;
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.formActions {
+  display: flex;
+  gap: 12px;
+}
+
+.cancelButton {
+  flex: 0 0 auto;
+  min-width: 80px;
+  padding: 14px 20px;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.cancelButton:hover {
+  background-color: #e5e7eb;
+}
+
+.submitButton {
+  flex: 1;
+  padding: 14px;
+  background-color: #ffb6c1;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submitButton:hover {
+  background-color: #ffa5b8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
 }
 
 @media (max-width: 768px) {
