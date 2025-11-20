@@ -247,30 +247,20 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       mapReady: !!map
     });
 
-    // places가 비어있으면 마커 생성하지 않음 (목록이 비워진 상태)
-    if (!places || places.length === 0) {
-      console.log('📭 [4단계] 공연장 목록이 비어있음 - 마커 생성하지 않음');
-      return;
-    }
-
     // 유효한 위치 정보가 있는 공연장만 필터링
-    const validPlaces = places.filter(
+    const validPlaces = places && places.length > 0 ? places.filter(
       place => place.latitude && place.longitude && 
       !isNaN(parseFloat(place.latitude)) && 
       !isNaN(parseFloat(place.longitude))
-    );
+    ) : [];
 
     console.log('✅ [디버깅] 유효한 공연장 개수:', validPlaces.length);
-    if (validPlaces.length === 0 && places.length > 0) {
+    if (validPlaces.length === 0 && places && places.length > 0) {
       console.warn('⚠️ [디버깅] places는 있지만 유효한 공연장이 없습니다. 원본 places:', places);
-      return;
+      // 공연장이 없어도 GPS 마커는 생성해야 하므로 return하지 않음
     }
 
-    // 기존 마커 제거 (GPS, 검색 기준 마커는 유지)
-    if (userMarkerRef.current) {
-      userMarkerRef.current.setMap(null);
-      userMarkerRef.current = null;
-    }
+    // 기존 검색 기준 마커와 반경 원 제거 (GPS 마커는 유지)
     if (searchCenterMarkerRef.current) {
       searchCenterMarkerRef.current.setMap(null);
       searchCenterMarkerRef.current = null;
@@ -280,7 +270,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       searchRadiusCircleRef.current = null;
     }
 
-    // GPS 위치 마커 생성 (파란색) - 항상 표시
+    // GPS 위치 마커 생성/업데이트 (파란색) - 항상 표시
     let gpsPosition = null;
     if (userLocation && userLocation.latitude && userLocation.longitude) {
       gpsPosition = new window.naver.maps.LatLng(
@@ -288,31 +278,41 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         userLocation.longitude
       );
 
-      // GPS 위치 마커 (파란색 원형 마커)
-      const gpsMarker = new window.naver.maps.Marker({
-        position: gpsPosition,
-        map: map,
-        icon: {
-          content: `
-            <div style="
-              width: 18px;
-              height: 18px;
-              background-color: #4285F4;
-              border: 2px solid #FFFFFF;
-              border-radius: 50%;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            "></div>
-          `,
-          anchor: window.naver && window.naver.maps && window.naver.maps.Point 
-            ? new window.naver.maps.Point(9, 9)
-            : undefined,
-        },
-        zIndex: 1000,
-        title: '내 위치 (GPS)',
-      });
+      // 기존 GPS 마커가 있으면 위치만 업데이트, 없으면 새로 생성
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setPosition(gpsPosition);
+        console.log('📍 GPS 위치 마커 업데이트:', { latitude: userLocation.latitude, longitude: userLocation.longitude });
+      } else {
+        // GPS 위치 마커 (파란색 원형 마커)
+        const gpsMarker = new window.naver.maps.Marker({
+          position: gpsPosition,
+          map: map,
+          icon: {
+            content: `
+              <div style="
+                width: 18px;
+                height: 18px;
+                background-color: #4285F4;
+                border: 2px solid #FFFFFF;
+                border-radius: 50%;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              "></div>
+            `,
+            anchor: window.naver && window.naver.maps && window.naver.maps.Point 
+              ? new window.naver.maps.Point(9, 9)
+              : undefined,
+          },
+          zIndex: 1000,
+          title: '내 위치 (GPS)',
+        });
 
-      userMarkerRef.current = gpsMarker;
-      console.log('📍 GPS 위치 마커 생성:', { latitude: userLocation.latitude, longitude: userLocation.longitude });
+        userMarkerRef.current = gpsMarker;
+        console.log('📍 GPS 위치 마커 생성:', { latitude: userLocation.latitude, longitude: userLocation.longitude });
+      }
+    } else if (userMarkerRef.current) {
+      // GPS 위치가 없으면 마커 제거
+      userMarkerRef.current.setMap(null);
+      userMarkerRef.current = null;
     }
 
     // 검색 기준 좌표 마커 생성 (주황색) - searchCenter가 있을 때만
@@ -410,7 +410,15 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     };
 
     // 지도 중심 및 줌 조정
-    if (centerPosition && validPlaces.length > 0) {
+    // GPS 위치가 있고 공연장이 없고 검색 기준 좌표도 없을 때 GPS 위치로 뷰포트 설정
+    if (gpsPosition && validPlaces.length === 0 && !searchCenterPosition) {
+      map.setCenter(gpsPosition);
+      map.setZoom(15);
+      console.log('📍 [초기 로드] GPS 위치로 지도 뷰포트 설정 (줌 레벨 15):', {
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude
+      });
+    } else if (centerPosition && validPlaces.length > 0) {
       // 검색 기준 좌표(또는 GPS 위치)를 정중앙에 두고, 모든 공연장 마커와 반경 원이 보이도록 조정
       const allBounds = new window.naver.maps.LatLngBounds();
       allBounds.extend(centerPosition);
@@ -632,6 +640,75 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
 
   }, [places, userLocation, searchCenter, searchRadius, mapLoading]); // places가 변경될 때만 마커 생성
 
+  // 지도 초기 로드 시 GPS 위치로 뷰포트 자동 설정 및 마커 생성
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.naver || !window.naver.maps || mapLoading) {
+      return;
+    }
+
+    // GPS 위치가 있고, 검색 기준 좌표가 없고, 공연장이 없을 때만 GPS 위치로 뷰포트 설정
+    if (userLocation && userLocation.latitude && userLocation.longitude && 
+        !searchCenter && (!places || places.length === 0)) {
+      const map = mapInstanceRef.current;
+      const gpsPosition = new window.naver.maps.LatLng(
+        userLocation.latitude,
+        userLocation.longitude
+      );
+      
+      // GPS 마커가 없으면 생성
+      if (!userMarkerRef.current) {
+        const gpsMarker = new window.naver.maps.Marker({
+          position: gpsPosition,
+          map: map,
+          icon: {
+            content: `
+              <div style="
+                width: 18px;
+                height: 18px;
+                background-color: #4285F4;
+                border: 2px solid #FFFFFF;
+                border-radius: 50%;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              "></div>
+            `,
+            anchor: window.naver && window.naver.maps && window.naver.maps.Point 
+              ? new window.naver.maps.Point(9, 9)
+              : undefined,
+          },
+          zIndex: 1000,
+          title: '내 위치 (GPS)',
+        });
+        userMarkerRef.current = gpsMarker;
+        console.log('📍 [초기 로드] GPS 위치 마커 생성:', {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude
+        });
+      } else {
+        // 기존 마커가 있으면 위치 업데이트
+        userMarkerRef.current.setPosition(gpsPosition);
+        userMarkerRef.current.setMap(map); // 지도에 표시
+      }
+      
+      // 현재 지도 중심이 기본 위치(서울 시청)인지 확인
+      const currentCenter = map.getCenter();
+      const defaultCenter = new window.naver.maps.LatLng(37.5665, 126.9780);
+      
+      // 기본 위치에 있거나 GPS 위치와 다르면 GPS 위치로 이동
+      if (!currentCenter || 
+          (Math.abs(currentCenter.lat() - defaultCenter.lat()) < 0.001 && 
+           Math.abs(currentCenter.lng() - defaultCenter.lng()) < 0.001) ||
+          (Math.abs(currentCenter.lat() - gpsPosition.lat()) > 0.001 || 
+           Math.abs(currentCenter.lng() - gpsPosition.lng()) > 0.001)) {
+        map.setCenter(gpsPosition);
+        map.setZoom(15);
+        console.log('📍 [자동 설정] GPS 위치로 지도 뷰포트 설정:', {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude
+        });
+      }
+    }
+  }, [userLocation, searchCenter, places, mapLoading]); // GPS 위치가 설정되면 뷰포트 업데이트
+
   // 컴포넌트 언마운트 시 마커 정리
   useEffect(() => {
     return () => {
@@ -731,7 +808,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
 
   // 현재 위치로 이동 버튼 클릭 핸들러
   const handleMoveToCurrentLocation = () => {
-    if (!mapInstanceRef.current || !userLocation) {
+    if (!mapInstanceRef.current || !userLocation || !window.naver || !window.naver.maps) {
       console.warn('⚠️ GPS 위치가 없어서 이동할 수 없습니다.');
       return;
     }
@@ -742,7 +819,41 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       userLocation.longitude
     );
     
-    // GPS 위치로 뷰포트만 이동 (검색 기준 좌표는 유지)
+    // GPS 마커가 없으면 생성
+    if (!userMarkerRef.current) {
+      const gpsMarker = new window.naver.maps.Marker({
+        position: gpsPosition,
+        map: map,
+        icon: {
+          content: `
+            <div style="
+              width: 18px;
+              height: 18px;
+              background-color: #4285F4;
+              border: 2px solid #FFFFFF;
+              border-radius: 50%;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            "></div>
+          `,
+          anchor: window.naver && window.naver.maps && window.naver.maps.Point 
+            ? new window.naver.maps.Point(9, 9)
+            : undefined,
+        },
+        zIndex: 1000,
+        title: '내 위치 (GPS)',
+      });
+      userMarkerRef.current = gpsMarker;
+      console.log('📍 GPS 위치 마커 생성 (버튼 클릭):', { 
+        latitude: userLocation.latitude, 
+        longitude: userLocation.longitude 
+      });
+    } else {
+      // 기존 마커가 있으면 위치 업데이트
+      userMarkerRef.current.setPosition(gpsPosition);
+      userMarkerRef.current.setMap(map); // 지도에 다시 표시
+    }
+    
+    // GPS 위치로 뷰포트 이동
     map.setCenter(gpsPosition);
     map.setZoom(15);
     console.log('📍 GPS 위치로 뷰포트 이동:', { 
