@@ -14,7 +14,8 @@ import {
   setSearchRadius,
   setMaxSearchRadius,
   setNearbyPlaces,
-  clearNearbyPlaces
+  clearNearbyPlaces,
+  resetPlaceMapState
 } from '../../store/placeSlice';
 
 const MainPlacePage = () => {
@@ -30,6 +31,28 @@ const MainPlacePage = () => {
   const [selected, setSelected] = useState({ region: '전체', district: '전체' });
   const [searchQuery, setSearchQuery] = useState('');
   const mapViewRef = useRef(null); // PlaceMapView의 마커 제거 함수를 저장할 ref
+
+  // 페이지 진입 시 지도 상태 초기화 (완전 초기 상태로 리셋)
+  useEffect(() => {
+    console.log('🔄 MainPlacePage 마운트 - 지도 상태 초기화');
+    
+    // 전역 상태 초기화 (GPS 위치는 유지)
+    dispatch(resetPlaceMapState());
+    
+    // 지도에서 모든 마커 제거 (지도가 준비되면)
+    const clearAllMarkers = async () => {
+      // 약간의 지연을 두어 지도가 준비될 시간을 줌
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (mapViewRef.current && mapViewRef.current.clearMarkers) {
+        console.log('🧹 [초기화] 지도에서 모든 마커 제거');
+        await mapViewRef.current.clearMarkers();
+        console.log('✅ [초기화] 지도 마커 제거 완료');
+      }
+    };
+    
+    clearAllMarkers();
+  }, [dispatch]); // 컴포넌트 마운트 시에만 실행
 
   // 지역명을 API area 파라미터로 변환
   const getAreaFromRegion = (region) => {
@@ -70,16 +93,19 @@ const MainPlacePage = () => {
   const handleSearchAtCenter = async (center) => {
     console.log('🔍 [1단계] 공연장 버튼 클릭 - 검색 시작');
     
-    // 1단계: 기존 근처 공연장 목록의 마커 제거
+    // 1단계: 근처 공연장 목록을 전역 상태에서 비우기 (먼저 비워서 마커 생성 방지)
+    dispatch(clearNearbyPlaces());
+    console.log('📭 [1단계] 근처 공연장 목록 비우기 완료');
+    
+    // 2단계: 기존 근처 공연장 목록의 마커 제거
     if (mapViewRef.current && mapViewRef.current.clearMarkers) {
-      console.log('🧹 [1단계] 기존 마커 제거 시작');
+      console.log('🧹 [2단계] 기존 마커 제거 시작');
       await mapViewRef.current.clearMarkers();
-      console.log('✅ [1단계] 기존 마커 제거 완료');
+      console.log('✅ [2단계] 기존 마커 제거 완료');
     }
     
-    // 2단계: 근처 공연장 목록을 전역 상태에서 비우기
-    dispatch(clearNearbyPlaces());
-    console.log('📭 [2단계] 근처 공연장 목록 비우기 완료');
+    // 마커가 완전히 제거되도록 약간의 지연 추가
+    await new Promise(resolve => setTimeout(resolve, 50));
     
     // center에 radius가 포함되어 있으면 반경도 업데이트
     if (center.radius) {
@@ -308,7 +334,12 @@ const MainPlacePage = () => {
           )}
           {loading && (
             <div className={styles.loadingMessage}>
-              위치를 확인하고 근처 공연장을 불러오는 중...
+              <div className={styles.loadingSpinner}>
+                <div className={styles.spinnerDot}></div>
+                <div className={styles.spinnerDot}></div>
+                <div className={styles.spinnerDot}></div>
+              </div>
+              <p className={styles.loadingText}>위치를 확인하고 근처 공연장을 불러오는 중...</p>
             </div>
           )}
           <PlaceMapView 

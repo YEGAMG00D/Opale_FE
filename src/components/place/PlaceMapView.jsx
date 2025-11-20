@@ -196,7 +196,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
 
     console.log('🧹 [마커 제거] 기존 공연장 마커 모두 제거 시작');
     
-    // 모든 마커를 동기적으로 제거
+    // 모든 공연장 마커를 동기적으로 제거
     const markersToRemove = [...markersRef.current];
     markersToRemove.forEach(marker => {
       if (marker) {
@@ -216,6 +216,18 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         }
       }
     });
+    
+    // 검색 기준 좌표 마커와 반경 원도 제거
+    if (searchCenterMarkerRef.current) {
+      searchCenterMarkerRef.current.setMap(null);
+      searchCenterMarkerRef.current = null;
+      console.log('🧹 [마커 제거] 검색 기준 좌표 마커 제거');
+    }
+    if (searchRadiusCircleRef.current) {
+      searchRadiusCircleRef.current.setMap(null);
+      searchRadiusCircleRef.current = null;
+      console.log('🧹 [마커 제거] 검색 반경 원 제거');
+    }
     
     // ref를 즉시 비움
     markersRef.current = [];
@@ -249,27 +261,61 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       mapReady: !!map
     });
 
+    // places가 빈 배열이면 기존 공연장 마커만 제거 (검색 기준 마커는 별도 처리)
+    if (!places || places.length === 0) {
+      console.log('📭 [마커 생성] places가 비어있음 - 기존 공연장 마커 제거');
+      // 기존 공연장 마커 모두 제거
+      const markersToRemove = [...markersRef.current];
+      markersToRemove.forEach(marker => {
+        if (marker) {
+          marker.setMap(null);
+          if (window.naver && window.naver.maps && window.naver.maps.Event) {
+            window.naver.maps.Event.clearInstanceListeners(marker);
+          }
+        }
+      });
+      markersRef.current = [];
+      
+      // 인포윈도우도 모두 닫기
+      const infoWindowsToRemove = [...infoWindowsRef.current];
+      infoWindowsToRemove.forEach(infoWindow => {
+        if (infoWindow) {
+          infoWindow.close();
+          if (window.naver && window.naver.maps && window.naver.maps.Event) {
+            window.naver.maps.Event.clearInstanceListeners(infoWindow);
+          }
+        }
+      });
+      infoWindowsRef.current = [];
+      
+      // places가 비어있어도 searchCenter가 있으면 검색 기준 마커와 반경 원은 생성해야 함
+      // 따라서 여기서 return하지 않고 계속 진행
+    }
+
     // 유효한 위치 정보가 있는 공연장만 필터링
-    const validPlaces = places && places.length > 0 ? places.filter(
+    const validPlaces = places.filter(
       place => place.latitude && place.longitude && 
       !isNaN(parseFloat(place.latitude)) && 
       !isNaN(parseFloat(place.longitude))
-    ) : [];
+    );
 
     console.log('✅ [디버깅] 유효한 공연장 개수:', validPlaces.length);
-    if (validPlaces.length === 0 && places && places.length > 0) {
+    if (validPlaces.length === 0 && places.length > 0) {
       console.warn('⚠️ [디버깅] places는 있지만 유효한 공연장이 없습니다. 원본 places:', places);
       // 공연장이 없어도 GPS 마커는 생성해야 하므로 return하지 않음
     }
 
     // 기존 검색 기준 마커와 반경 원 제거 (GPS 마커는 유지)
+    // searchCenter가 변경될 때마다 이전 마커 제거
     if (searchCenterMarkerRef.current) {
       searchCenterMarkerRef.current.setMap(null);
       searchCenterMarkerRef.current = null;
+      console.log('🧹 [마커 생성] 이전 검색 기준 좌표 마커 제거');
     }
     if (searchRadiusCircleRef.current) {
       searchRadiusCircleRef.current.setMap(null);
       searchRadiusCircleRef.current = null;
+      console.log('🧹 [마커 생성] 이전 검색 반경 원 제거');
     }
 
     // GPS 위치 마커 생성/업데이트 (파란색) - 항상 표시
