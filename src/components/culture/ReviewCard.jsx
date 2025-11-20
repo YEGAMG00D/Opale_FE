@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './ReviewCard.module.css';
+import { isPerformanceReviewLiked, togglePerformanceReviewFavorite } from '../../api/favoriteApi';
 
 const ReviewCard = ({
   id,
@@ -9,10 +10,31 @@ const ReviewCard = ({
   rating,
   content,
   author,
-  date
+  date,
+  userId,
+  currentUserId,
+  onEdit,
+  onDelete
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+
+  // 관심 여부 조회
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      if (!id) return;
+      
+      try {
+        const liked = await isPerformanceReviewLiked(id);
+        setIsLiked(liked);
+      } catch (err) {
+        console.error('공연 리뷰 관심 여부 조회 실패:', err);
+        setIsLiked(false);
+      }
+    };
+
+    loadFavoriteStatus();
+  }, [id]);
 
   // 내용이 4줄 이상인지 확인 (대략적인 계산)
   // line-height: 1.6, font-size: 14px 기준으로 약 4줄 = 90px 정도
@@ -22,8 +44,15 @@ const ReviewCard = ({
     setIsExpanded(!isExpanded);
   };
 
-  const toggleLike = () => {
-    setIsLiked(!isLiked);
+  const toggleLike = async () => {
+    if (!id) return;
+    
+    try {
+      const result = await togglePerformanceReviewFavorite(id);
+      setIsLiked(result);
+    } catch (err) {
+      console.error('공연 리뷰 관심 토글 실패:', err);
+    }
   };
 
   return (
@@ -64,13 +93,37 @@ const ReviewCard = ({
       </div>
       
       <div className={styles.reviewFooter}>
-        <button 
-          className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
-          onClick={toggleLike}
-        >
-          {isLiked ? '♥' : '♡'}
-        </button>
-        <span className={styles.reviewAuthor}>{author} | {date}</span>
+        <div className={styles.reviewFooterLeft}>
+          <button 
+            className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
+            onClick={toggleLike}
+          >
+            {isLiked ? '♥' : '♡'}
+          </button>
+          <span className={styles.reviewAuthor}>{author} | {date}</span>
+        </div>
+        {userId && currentUserId && userId === currentUserId && (
+          <div className={styles.reviewActions}>
+            <button
+              className={styles.editButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onEdit) onEdit();
+              }}
+            >
+              수정
+            </button>
+            <button
+              className={styles.deleteButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onDelete) onDelete();
+              }}
+            >
+              삭제
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

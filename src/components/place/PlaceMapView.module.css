@@ -1,0 +1,361 @@
+.mapContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+/* 반경 정보 표시 */
+.radiusInfo {
+  position: absolute;
+  top: 90px; /* 버튼 그룹과 같은 라인에 맞춤 */
+  right: 5%;
+  z-index: 1000;
+  padding: 8px 12px;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #FF9800;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  display: flex;
+  align-items: center; /* 수직 중앙 정렬 */
+  height: 32px; /* 버튼들과 같은 높이로 고정 */
+  box-sizing: border-box;
+}
+
+/* 버튼 그룹 */
+.buttonGroup {
+  position: absolute;
+  top: 90px; /* 반경 정보와 같은 라인에 맞춤 */
+  left: 20%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 현재 위치로 이동 버튼 */
+.locationButton {
+  width: 32px; /* 반경 정보와 같은 높이로 조정 */
+  height: 32px; /* 반경 정보와 같은 높이로 조정 */
+  padding: 0;
+  background-color: #ffffff;
+  color: #797979;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.locationButton:hover {
+  background-color: #d8e6fa;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: scale(1.05);
+}
+
+.locationButton:hover .locationIcon {
+  color: #4285F4;
+}
+
+.locationButton:active {
+  transform: scale(0.95);
+}
+
+.locationIcon {
+  width: 20px;
+  height: 20px;
+  transition: all 0.2s ease;
+}
+
+/* 현 위치에서 검색 버튼 */
+.searchButton {
+  padding: 8px 16px; /* 반경 정보와 같은 padding으로 조정 */
+  background-color: #ffffff;
+  color: #797979;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px; /* 반경 정보와 같은 font-size로 조정 */
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  height: 32px; /* 반경 정보와 같은 높이로 고정 */
+  box-sizing: border-box;
+  display: flex;
+  align-items: center; /* 수직 중앙 정렬 */
+  justify-content: center;
+}
+
+.searchButton:hover {
+  background-color: #d8e6fa;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.searchButton:active {
+  transform: scale(0.98);
+}
+
+.loadingOverlay,
+.errorOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(249, 250, 251, 0.9);
+  color: #6b7280;
+  font-size: 14px;
+  z-index: 10;
+}
+
+.errorOverlay {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #dc2626;
+  padding: 20px;
+  text-align: center;
+  white-space: pre-line;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* 하단 시트 */
+.bottomSheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  z-index: 2000; /* 지도 위에 확실히 표시 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 150px; /* 최소 높이 보장 */
+  /* 드래그 중에는 transition 없음 (부드러운 드래그) */
+  transition: none;
+  transform: translateY(0);
+}
+
+/* 스냅 애니메이션 중일 때만 transition 적용 */
+.bottomSheet.transitioning {
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 부드러운 easing */
+}
+
+/* 드래그 중일 때 커서 변경 */
+.bottomSheet.dragging {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 드래그 핸들 */
+.sheetHandle {
+  width: 100%;
+  padding: 16px 0 12px 0;
+  cursor: grab;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  background-color: #ffffff;
+}
+
+.sheetHandle:active {
+  cursor: grabbing;
+}
+
+.sheetHandleBar {
+  width: 48px;
+  height: 5px;
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+
+/* 시트 헤더 */
+.sheetHeader {
+  padding: 8px 20px 16px 20px;
+  border-bottom: 1px solid #f1f3f5;
+  flex-shrink: 0;
+  background-color: #ffffff;
+}
+
+.sheetTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+/* 시트 내용 */
+.sheetContent {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheetContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sheetContent::-webkit-scrollbar-track {
+  background: #f1f3f5;
+}
+
+.sheetContent::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.sheetContent::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* 공연장 목록 */
+.placeList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* 선택된 공연장 카드 시트 (목록 위에 표시) */
+.selectedPlaceCard {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+  z-index: 3000; /* 목록 시트보다 위에 표시 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 0;
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(100%); /* 초기 상태: 아래에 숨김 */
+  opacity: 0;
+  pointer-events: none;
+}
+
+.selectedPlaceCard.cardVisible {
+  opacity: 1;
+  transform: translateY(0); /* 나타날 때: 원래 위치로 */
+  pointer-events: auto;
+}
+
+/* 선택된 공연장 카드 닫기 버튼 */
+.closeButton {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.closeButton:hover {
+  background-color: #e5e7eb;
+  transform: scale(1.1);
+}
+
+.closeButton:active {
+  transform: scale(0.95);
+}
+
+/* 선택된 공연장 카드 내용 */
+.selectedPlaceCardContent {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+  padding-top: 70px; /* 닫기 버튼 공간 확보 */
+}
+
+/* 선택된 카드 내부의 PlaceWithPerformancesCard 스타일 조정 */
+.selectedPlaceCardContent > * {
+  border-bottom: none !important;
+  padding: 0 !important;
+  cursor: pointer !important; /* 클릭 가능하도록 */
+}
+
+.selectedPlaceCardContent > *:hover {
+  background-color: #f9fafb !important; /* hover 효과 활성화 */
+}
+
+.selectedPlaceCardContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.selectedPlaceCardContent::-webkit-scrollbar-track {
+  background: #f1f3f5;
+}
+
+.selectedPlaceCardContent::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.selectedPlaceCardContent::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* 목록 시트가 숨겨져 있을 때 (선택된 카드가 열려있을 때) */
+.bottomSheet.sheetHidden {
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden;
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transform: translateY(100%) !important; /* 아래로 내려가서 사라짐 */
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 목록 시트가 나타날 때 (선택된 카드가 닫혔을 때) */
+.bottomSheet:not(.sheetHidden) {
+  animation: slideUpFromBottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUpFromBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+

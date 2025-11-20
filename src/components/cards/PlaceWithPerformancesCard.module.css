@@ -1,0 +1,167 @@
+.placeItem {
+  display: block;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f3f5;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.placeItem:hover {
+  background-color: #f9fafb;
+}
+
+.placeItem:last-child {
+  border-bottom: none;
+}
+
+.placeMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.placeNameRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.placeNameWithRating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.placeName {
+  font-weight: 700;
+  font-size: 15px;
+  color: #111827;
+}
+
+.distance {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.placeDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.placeAddress {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.placeTel {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.star {
+  color: #FF69B4;
+  font-size: 12px;
+}
+
+.rating {
+  font-size: 12px;
+  color: #111827;
+  font-weight: 500;
+}
+
+.count {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* 현재 상연중인 공연 섹션 */
+.performancesSection {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f3f5;
+}
+
+.performancesLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.performancesScroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.performancesScroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.performancesList {
+  display: flex;
+  gap: 10px;
+  padding-bottom: 4px;
+}
+
+.posterItem {
+  flex-shrink: 0;
+  width: 80px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.posterItem:hover {
+  transform: scale(1.05);
+}
+
+.posterItem:active {
+  transform: scale(0.95);
+}
+
+.posterImg {
+  width: 80px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 6px;
+  background-color: #f3f4f6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.posterTitle {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #111827;
+  font-weight: 500;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.loadingText {
+  font-size: 12px;
+  color: #9ca3af;
+  padding: 8px 0;
+  text-align: center;
+}
+

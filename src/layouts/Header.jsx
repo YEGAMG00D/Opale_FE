@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import opaleLogo from '../assets/opale_logo_crop.png';
 import './Header.css';
 
 const Header = ({ showBackButton = false, title = null }) => {
@@ -12,8 +13,8 @@ const Header = ({ showBackButton = false, title = null }) => {
     navigate(-1);
   };
 
-  // title이 있으면 좌측에 표시, 없으면 홈일 때만 opale 표시
-  const showLogo = !showBackButton && !title;
+  // 뒤로가기 버튼이 없을 때는 항상 로고 표시
+  const showLogo = !showBackButton;
 
   return (
     <header className="header">
@@ -21,12 +22,10 @@ const Header = ({ showBackButton = false, title = null }) => {
         <div className="header-left">
           {showBackButton ? (
             <button onClick={handleBackClick} className="back-button">←</button>
-          ) : showLogo ? (
-            <Link to="/" className="logo">opale</Link>
-          ) : title ? (
-            <div className="header-title">{title}</div>
           ) : (
-            <div></div>
+            <Link to="/" className="logo-link">
+              <img src={opaleLogo} alt="Opale" className="logo-image" />
+            </Link>
           )}
         </div>
         <div className="header-right">

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import styles from './DetailPerformancePage.module.css';
 import PerformancePoster from '../../components/culture/PerformancePoster';
 import PerformanceInfoCard from '../../components/culture/PerformanceInfoCard';
@@ -8,6 +9,20 @@ import PerformanceDetails from '../../components/culture/PerformanceDetails';
 import BookingLinks from '../../components/culture/BookingLinks';
 import OpenChatSection from '../../components/culture/OpenChatSection';
 import ReviewCard from '../../components/culture/ReviewCard';
+import PerformanceInfoImages from '../../components/culture/PerformanceInfoImages';
+import PlaceMap from '../../components/place/PlaceMap';
+import { fetchPerformanceBasic } from '../../api/performanceApi';
+import { fetchPerformanceReviewsByPerformance, fetchPerformanceReview, createPerformanceReview, updatePerformanceReview, deletePerformanceReview } from '../../api/reviewApi';
+import { isPerformanceLiked, togglePerformanceFavorite, isPerformanceReviewLiked, togglePerformanceReviewFavorite } from '../../api/favoriteApi';
+import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
+import { normalizePerformanceReviews } from '../../services/normalizePerformanceReview';
+import { normalizePerformanceReviewRequest } from '../../services/normalizePerformanceReviewRequest';
+import { usePerformanceRelations } from '../../hooks/usePerformanceRelations';
+import { usePerformanceInfoImages } from '../../hooks/usePerformanceInfoImages';
+import { usePerformanceBooking } from '../../hooks/usePerformanceBooking';
+import { usePlaceBasic } from '../../hooks/usePlaceBasic';
+import { getTicketsByPerformanceName, getWatchedTickets, addTicket } from '../../utils/ticketUtils';
+import logApi from '../../api/logApi';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -18,6 +33,9 @@ import rentPoster from '../../assets/poster/rent.gif';
 const DetailPerformancePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useSelector((state) => state.user);
+  const currentUserId = user?.userId || user?.id || null;
   const [activeTab, setActiveTab] = useState('reservation');
   const [isFavorite, setIsFavorite] = useState(false);
   const [expandedExpectations, setExpandedExpectations] = useState({});
@@ -25,48 +43,52 @@ const DetailPerformancePage = () => {
   const [writeType, setWriteType] = useState('review'); // 'review' or 'expectation'
   const [writeForm, setWriteForm] = useState({ title: '', content: '', rating: 5 });
   const [activeReviewTab, setActiveReviewTab] = useState('review'); // 'review' or 'expectation'
+  
+  // 수정 모달 관련 상태
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [editForm, setEditForm] = useState({ title: '', content: '', rating: 5 });
+  const [showTicketInfoModal, setShowTicketInfoModal] = useState(false);
+  const [ticketStep, setTicketStep] = useState('scan'); // 'scan' or 'input'
+  const [ticketInfo, setTicketInfo] = useState({
+    performanceDate: '',
+    performanceTime: '',
+    section: '',
+    row: '',
+    number: ''
+  });
+  const [isScanning, setIsScanning] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const ticketVideoRef = useRef(null);
+  const ticketFileInputRef = useRef(null);
+  
+  // API 데이터 상태
+  const [performance, setPerformance] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // 리뷰 데이터 상태
+  const [reviews, setReviews] = useState([]);
+  const [expectations, setExpectations] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState(null);
+  const [expectationLikes, setExpectationLikes] = useState({}); // 기대평 관심 상태
 
-  // 샘플 후기 데이터
-  const sampleReviews = [
-    {
-      id: 1,
-      title: '위키드 관람 후기',
-      content: '중력을 거슬러 저도 올라가고 싶어지네요. 엘파바의 목소리가 정말 감동적이었고, 글린다와의 우정도 아름다웠습니다. 특히 Defying Gravity 장면에서는 정말 소름이 돋았어요. 13년 만의 내한 공연이라 더욱 특별했던 것 같습니다. 외국인 관객들도 많아서 국제적인 분위기도 느낄 수 있었고, 뮤지컬을 통해 새로운 친구들도 만날 수 있어서 정말 좋았습니다.',
-      rating: 4.5,
-      author: '닉네임',
-      date: '2025.11.20',
-      performanceDate: '2025.11.05 19:00',
-      seat: '1층-15열-중간'
-    },
-    {
-      id: 2,
-      title: '위키드 2차 관람 후기',
-      content: '두 번째 관람이었는데도 여전히 감동적이었습니다. 이번에는 다른 배우분들의 연기를 보게 되어서 더욱 흥미로웠어요. 특히 글린다 역할의 배우분이 정말 귀여우면서도 깊이가 있었습니다.',
-      rating: 5,
-      author: '뮤지컬러버',
-      date: '2025.11.18',
-      performanceDate: '2025.11.10 14:00',
-      seat: '2층-8열-왼쪽'
-    }
-  ];
+  // 예매처 목록 조회
+  const performanceId = performance?.id || performance?.performanceId || id;
+  const { bookingSites } = usePerformanceRelations(performanceId);
+  
+  // 공연 소개 이미지 조회
+  const { images: infoImages, loading: imagesLoading } = usePerformanceInfoImages(performanceId);
+  
+  // 공연 예매 정보 조회
+  const { bookingInfo, loading: bookingLoading } = usePerformanceBooking(performanceId);
+  
+  // 공연장 정보 조회
+  const placeId = performance?.placeId;
+  const { placeInfo, loading: placeLoading } = usePlaceBasic(placeId);
 
-  // 샘플 기대평 데이터
-  const sampleExpectations = [
-    {
-      id: 1,
-      title: '위키드 너무 기다렸어...',
-      content: '위키드 너무 기다렸어... 중력을 거슬러 저도 올라가고 싶어지네요. It\'s time to fly defying gravity--- 정말 오랜만에 한국에서 공연한다고 해서 벌써부터 설레요. 원작 위키드를 한국에서 볼 수 있다니 꿈만 같아요. 엘파바와 글린다의 이야기가 어떻게 펼쳐질지 정말 기대됩니다!',
-      author: '위키드팬',
-      date: '2025.11.20'
-    },
-    {
-      id: 2,
-      title: '13년 만의 내한 공연!',
-      content: '13년 만의 내한 공연이라니! 이번 기회를 놓치면 언제 또 볼 수 있을지 모르니까 꼭 가야겠어요. 특히 Defying Gravity 장면을 직접 보고 싶어요.',
-      author: '뮤지컬매니아',
-      date: '2025.11.19'
-    }
-  ];
 
   // 모든 공연 데이터
   const allPerformances = {
@@ -744,11 +766,7 @@ const DetailPerformancePage = () => {
     }
   };
 
-  // ID를 숫자로 변환하고 공연 데이터 찾기
-  const performanceId = parseInt(id, 10);
-  const performance = allPerformances[performanceId] || allPerformances[1];
-  
-  // 포스터 이미지 매핑
+  // 포스터 이미지 매핑 (fallback용)
   const posterImages = {
     'wicked': wickedPoster,
     'moulin-rouge': moulinRougePoster,
@@ -758,15 +776,179 @@ const DetailPerformancePage = () => {
     'rent': rentPoster
   };
   
-  // 포스터 이미지가 없는 경우 기본 이미지 사용
-  const getPosterImage = (imageName) => {
+  // 포스터 이미지 가져오기 (API에서 받은 URL 우선, 없으면 fallback)
+  const getPosterImage = () => {
+    if (performance?.poster) {
+      return performance.poster;
+    }
+    // fallback: 기존 로직 유지
+    const imageName = performance?.image || 'wicked';
     return posterImages[imageName] || wickedPoster;
   };
   
-  // 페이지 로드 시 로그 (디버깅용)
+  // 컴포넌트 언마운트 시 카메라 정리
   useEffect(() => {
-    console.log('DetailPerformancePage mounted with id:', id);
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+      if (ticketVideoRef.current) {
+        ticketVideoRef.current.srcObject = null;
+      }
+    };
+  }, [cameraStream]);
+
+  // API로 공연 기본 정보 조회
+  useEffect(() => {
+    const loadPerformanceData = async () => {
+      if (!id) {
+        setError('공연 ID가 없습니다.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // API 호출
+        const apiData = await fetchPerformanceBasic(id);
+        
+        // 데이터 정규화
+        const normalizedData = normalizePerformanceDetail(apiData);
+        
+        if (normalizedData) {
+          setPerformance(normalizedData);
+          
+          // 공연 상세 페이지 진입 시 VIEW 로그 기록
+          try {
+            await logApi.createLog({
+              eventType: "VIEW",
+              targetType: "PERFORMANCE",
+              targetId: normalizedData.id || normalizedData.performanceId || id
+            });
+          } catch (logErr) {
+            console.error('로그 기록 실패:', logErr);
+          }
+        } else {
+          throw new Error('공연 정보를 불러올 수 없습니다.');
+        }
+      } catch (err) {
+        console.error('공연 정보 조회 실패:', err);
+        setError(err.message || '공연 정보를 불러오는 중 오류가 발생했습니다.');
+        
+        // 에러 발생 시 fallback 데이터 사용
+        const performanceId = parseInt(id, 10);
+        const fallbackData = allPerformances[performanceId] || allPerformances[1];
+        if (fallbackData) {
+          setPerformance(fallbackData);
+          
+          // fallback 데이터 사용 시에도 VIEW 로그 기록
+          try {
+            await logApi.createLog({
+              eventType: "VIEW",
+              targetType: "PERFORMANCE",
+              targetId: String(id)
+            });
+          } catch (logErr) {
+            console.error('로그 기록 실패:', logErr);
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPerformanceData();
   }, [id]);
+
+  // URL 쿼리 파라미터로 탭 활성화
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'review') {
+      setActiveTab('review');
+      // 후기/기대평 섹션으로 스크롤
+      setTimeout(() => {
+        const reviewSection = document.querySelector(`[data-tab="review"]`);
+        if (reviewSection) {
+          reviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+      // 쿼리 파라미터 제거
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
+  // 공연 관심 여부 조회
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      if (!performanceId) return;
+      
+      try {
+        const liked = await isPerformanceLiked(performanceId);
+        setIsFavorite(liked);
+      } catch (err) {
+        console.error('공연 관심 여부 조회 실패:', err);
+        setIsFavorite(false);
+      }
+    };
+
+    loadFavoriteStatus();
+  }, [performanceId]);
+
+  // 리뷰 데이터 로드 함수 (재사용 가능)
+  const loadReviews = async () => {
+    if (!performanceId) return;
+
+    try {
+      setReviewsLoading(true);
+      setReviewsError(null);
+
+      // 현재 활성화된 탭에 따라 reviewType 설정
+      const reviewType = activeReviewTab === 'review' ? 'AFTER' : 'EXPECTATION';
+      
+      const apiData = await fetchPerformanceReviewsByPerformance(performanceId, reviewType);
+      
+      // API 응답 구조 처리: apiData는 { reviews: [...], totalCount: ... } 형태 또는 빈 배열
+      const reviewsData = Array.isArray(apiData) ? { reviews: [] } : apiData;
+
+      const normalizedReviews = normalizePerformanceReviews(reviewsData);
+
+      if (activeReviewTab === 'review') {
+        setReviews(normalizedReviews);
+      } else {
+        setExpectations(normalizedReviews);
+        // 기대평 관심 여부 조회
+        const likesMap = {};
+        for (const expectation of normalizedReviews) {
+          try {
+            const liked = await isPerformanceReviewLiked(expectation.id);
+            likesMap[expectation.id] = liked;
+          } catch (err) {
+            console.error(`기대평 ${expectation.id} 관심 여부 조회 실패:`, err);
+            likesMap[expectation.id] = false;
+          }
+        }
+        setExpectationLikes(likesMap);
+      }
+    } catch (err) {
+      console.error('리뷰 조회 실패:', err);
+      setReviewsError(err.message || '리뷰를 불러오는 중 오류가 발생했습니다.');
+      // 에러 발생 시 빈 배열로 설정
+      if (activeReviewTab === 'review') {
+        setReviews([]);
+      } else {
+        setExpectations([]);
+      }
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  // 리뷰 데이터 로드
+  useEffect(() => {
+    loadReviews();
+  }, [performanceId, activeReviewTab]);
 
   const tabs = [
     { id: 'reservation', label: '예매정보' },
@@ -775,15 +957,27 @@ const DetailPerformancePage = () => {
     { id: 'venue', label: '공연장 정보' }
   ];
 
-  const bookingSites = [
-    { name: "티켓링크", logo: "TL" },
-    { name: "네이버 예약", logo: "N", color: "#03C75A" },
-    { name: "yes24", logo: "Y" },
-    { name: "NOL", logo: "N" }
-  ];
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+  const toggleFavorite = async () => {
+    if (!performanceId) return;
+    
+    try {
+      const result = await togglePerformanceFavorite(performanceId);
+      setIsFavorite(result);
+      
+      // 공연 찜/찜해제 시 FAVORITE 로그 기록
+      try {
+        await logApi.createLog({
+          eventType: "FAVORITE",
+          targetType: "PERFORMANCE",
+          targetId: String(performanceId)
+        });
+      } catch (logErr) {
+        console.error('로그 기록 실패:', logErr);
+      }
+    } catch (err) {
+      console.error('공연 관심 토글 실패:', err);
+    }
   };
 
   const toggleExpectationExpansion = (expectationId) => {
@@ -795,15 +989,203 @@ const DetailPerformancePage = () => {
 
   const handleWriteClick = (type) => {
     setWriteType(type);
-    setShowWriteModal(true);
+    // 후기 작성의 경우 항상 티켓 등록 단계부터 시작
+    if (type === 'review') {
+      const performanceTitle = performance?.title || '';
+      // 공연 정보를 초기값으로 설정하고 티켓 등록 단계부터 시작
+      navigate('/recommend/review', {
+        state: {
+          ticketData: {
+            performanceName: performanceTitle,
+            performanceDate: '',
+            performanceTime: '',
+            section: '',
+            row: '',
+            number: ''
+          },
+          performanceId: performanceId || id
+        }
+      });
+    } else {
+      // 기대평 작성은 기존 로직 유지
+      setShowWriteModal(true);
+    }
   };
 
-  const handleWriteSubmit = (e) => {
+  const handleTicketInfoSubmit = () => {
+    if (!ticketInfo.performanceDate) {
+      alert('공연일자를 입력해주세요.');
+      return;
+    }
+    
+    // 티켓 정보를 저장
+    const ticketData = {
+      performanceName: performance?.title || '',
+      performanceDate: ticketInfo.performanceDate,
+      performanceTime: ticketInfo.performanceTime,
+      section: ticketInfo.section,
+      row: ticketInfo.row,
+      number: ticketInfo.number
+    };
+    
+    // 티켓이 없으면 등록
+    const existingTickets = getTicketsByPerformanceName(performance?.title || '');
+    if (existingTickets.length === 0) {
+      addTicket(ticketData);
+    }
+    
+    // ReviewWritingPage로 이동하면서 티켓 정보와 공연 정보 전달
+    navigate('/recommend/review', {
+      state: {
+        ticketData,
+        performanceId: performanceId || id // 공연 ID 전달
+      }
+    });
+  };
+
+  const handleTicketInfoCancel = () => {
+    setShowTicketInfoModal(false);
+    setTicketStep('scan');
+    setTicketInfo({
+      performanceDate: '',
+      performanceTime: '',
+      section: '',
+      row: '',
+      number: ''
+    });
+    setCapturedImage(null);
+    stopTicketCamera();
+  };
+
+  const handleTicketInfoChange = (field, value) => {
+    setTicketInfo(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // 티켓 카메라 시작
+  const startTicketCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' }
+      });
+      setCameraStream(stream);
+      if (ticketVideoRef.current) {
+        ticketVideoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error('카메라 접근 실패:', err);
+      alert('카메라 접근에 실패했습니다. 파일에서 선택해주세요.');
+    }
+  };
+
+  // 티켓 카메라 중지
+  const stopTicketCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    if (ticketVideoRef.current) {
+      ticketVideoRef.current.srcObject = null;
+    }
+  };
+
+  // 티켓 촬영
+  const captureTicketPhoto = () => {
+    if (ticketVideoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = ticketVideoRef.current.videoWidth;
+      canvas.height = ticketVideoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(ticketVideoRef.current, 0, 0);
+      
+      canvas.toBlob((blob) => {
+        const imageUrl = URL.createObjectURL(blob);
+        setCapturedImage(imageUrl);
+        stopTicketCamera();
+        setIsScanning(false);
+        setTicketStep('input');
+      }, 'image/jpeg');
+    }
+  };
+
+  // 티켓 파일 선택
+  const handleTicketFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target.result;
+        setCapturedImage(imageUrl);
+        setTicketStep('input');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // 티켓 카메라 버튼 클릭
+  const handleTicketCameraClick = async () => {
+    setIsScanning(true);
+    await startTicketCamera();
+  };
+
+  // 티켓 파일 선택 버튼 클릭
+  const handleTicketFileClick = () => {
+    ticketFileInputRef.current?.click();
+  };
+
+  // 티켓 스캔 건너뛰기
+  const handleSkipTicketScan = () => {
+    setTicketStep('input');
+    stopTicketCamera();
+  };
+
+  const handleWriteSubmit = async (e) => {
     e.preventDefault();
-    // 여기서 실제 글 업로드 로직을 구현
-    console.log('글 작성:', writeForm);
-    setShowWriteModal(false);
-    setWriteForm({ title: '', content: '', rating: 5 });
+    
+    if (!performanceId) {
+      alert('공연 정보가 없습니다.');
+      return;
+    }
+
+    try {
+      // 요청 DTO 생성
+      const reviewType = writeType === 'review' ? 'AFTER' : 'EXPECTATION';
+      const requestDto = normalizePerformanceReviewRequest(
+        writeForm,
+        performanceId,
+        reviewType
+      );
+
+      // API 호출
+      await createPerformanceReview(requestDto);
+
+      // 리뷰 작성 완료 시 REVIEW_WRITE 로그 기록
+      try {
+        await logApi.createLog({
+          eventType: "REVIEW_WRITE",
+          targetType: "PERFORMANCE",
+          targetId: String(performanceId)
+        });
+      } catch (logErr) {
+        console.error('로그 기록 실패:', logErr);
+      }
+
+      // 성공 시 모달 닫고 폼 초기화
+      setShowWriteModal(false);
+      setWriteForm({ title: '', content: '', rating: 5 });
+
+      // 리뷰 목록 다시 조회
+      // activeReviewTab이 현재 작성한 타입과 일치하는 경우에만 리뷰 목록 갱신
+      if ((writeType === 'review' && activeReviewTab === 'review') ||
+          (writeType === 'expectation' && activeReviewTab === 'expectation')) {
+        await loadReviews();
+      }
+    } catch (err) {
+      console.error('후기 작성 실패:', err);
+      alert(err.response?.data?.message || err.message || '후기 작성에 실패했습니다.');
+    }
   };
 
   const handleWriteCancel = () => {
@@ -811,10 +1193,138 @@ const DetailPerformancePage = () => {
     setWriteForm({ title: '', content: '', rating: 5 });
   };
 
+  // 리뷰 수정 핸들러
+  const handleEditReview = async (review, reviewType) => {
+    const reviewId = review.id || review.performanceReviewId || review.reviewId;
+    
+    if (!reviewId) {
+      alert('리뷰 ID를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      // 단일 조회 API로 최신 데이터 가져오기
+      const apiResponse = await fetchPerformanceReview(reviewId);
+      
+      // API 응답을 프론트엔드 형식으로 변환
+      const normalizedReview = {
+        id: apiResponse.performanceReviewId,
+        performanceReviewId: apiResponse.performanceReviewId,
+        performanceId: apiResponse.performanceId,
+        title: apiResponse.title || '',
+        content: apiResponse.contents || '',
+        contents: apiResponse.contents || '',
+        rating: apiResponse.rating || 5,
+        reviewType: apiResponse.reviewType || reviewType
+      };
+
+      setEditingReview(normalizedReview);
+      setEditForm({
+        title: normalizedReview.title || '',
+        content: normalizedReview.content || normalizedReview.contents || '',
+        rating: normalizedReview.rating || 5
+      });
+      setShowEditModal(true);
+    } catch (err) {
+      console.error('리뷰 조회 실패:', err);
+      // API 조회 실패 시 목록 데이터 사용 (fallback)
+      setEditingReview({ ...review, reviewType });
+      setEditForm({
+        title: review.title || '',
+        content: review.content || review.contents || '',
+        rating: review.rating || 5
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  // 수정 모달 닫기
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingReview(null);
+    setEditForm({ title: '', content: '', rating: 5 });
+  };
+
+  // 리뷰 수정 제출
+  const handleUpdateReview = async (e) => {
+    e.preventDefault();
+    
+    if (!editingReview || !performanceId) return;
+
+    try {
+      const reviewId = editingReview.id || editingReview.performanceReviewId || editingReview.reviewId;
+      const reviewType = editingReview.reviewType || (activeReviewTab === 'review' ? 'AFTER' : 'EXPECTATION');
+
+      const updateDto = normalizePerformanceReviewRequest(
+        editForm,
+        performanceId,
+        reviewType
+      );
+      
+      await updatePerformanceReview(reviewId, updateDto);
+      
+      alert('리뷰가 수정되었습니다.');
+      handleCloseEditModal();
+      
+      // 리뷰 목록 다시 조회
+      await loadReviews();
+    } catch (err) {
+      console.error('리뷰 수정 실패:', err);
+      alert(err.response?.data?.message || err.message || '리뷰 수정에 실패했습니다.');
+    }
+  };
+
+  // 리뷰 삭제 핸들러
+  const handleDeleteReview = async (reviewId, reviewType) => {
+    if (!window.confirm('정말 이 리뷰를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await deletePerformanceReview(reviewId);
+      alert('리뷰가 삭제되었습니다.');
+      
+      // 리뷰 목록 다시 조회
+      await loadReviews();
+    } catch (err) {
+      console.error('리뷰 삭제 실패:', err);
+      alert(err.response?.data?.message || err.message || '리뷰 삭제에 실패했습니다.');
+    }
+  };
+
+  // 로딩 중이거나 데이터가 없을 때
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>로딩 중...</div>
+      </div>
+    );
+  }
+
+  if (error && !performance) {
+    return (
+      <div className={styles.container}>
+        <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (!performance) {
+    return (
+      <div className={styles.container}>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          공연 정보를 찾을 수 없습니다.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <PerformancePoster
-        imageUrl={getPosterImage(performance.image)}
+        imageUrl={getPosterImage()}
         isFavorite={isFavorite}
         onFavoriteToggle={toggleFavorite}
       />
@@ -833,11 +1343,11 @@ const DetailPerformancePage = () => {
       <PerformanceTrailer
         englishTitle={performance.englishTitle}
         title={performance.title}
-        trailerImage={performance.trailerImage}
+        trailerImage={performance.trailerImage || performance.image}
       />
 
       <PerformanceDetails
-        rating={performance.rating}
+        rating={performance.rating ? parseFloat(performance.rating).toFixed(1) : '0.0'}
         reviewCount={performance.reviewCount}
         hashtags={performance.hashtags}
         genre={performance.genre}
@@ -856,10 +1366,15 @@ const DetailPerformancePage = () => {
         </button>
       </div>
 
-      <OpenChatSection performanceId={performanceId} />
+      <OpenChatSection 
+        performanceId={performance.id || performance.performanceId}
+        performanceTitle={performance.title}
+        performanceGenre={performance.genre}
+        performancePoster={performance.poster}
+      />
 
       {/* Tabs */}
-      <div className={styles.tabSection}>
+      <div className={styles.tabSection} data-tab={activeTab}>
         <div className={styles.tabs}>
           {tabs.map(tab => (
             <button
@@ -878,20 +1393,44 @@ const DetailPerformancePage = () => {
             <div className={styles.reservationContent}>
               <h3 className={styles.contentTitle}>가격</h3>
               <div className={styles.priceList}>
-                {performance.prices.map((price, index) => (
-                  <div key={index} className={styles.priceItem}>
-                    <span className={styles.seatType}>{price.seat}</span>
-                    <span className={styles.seatPrice}>{price.price}</span>
+                {bookingLoading ? (
+                  <div className={styles.priceItem}>
+                    <span className={styles.seatType}>가격 정보를 불러오는 중...</span>
                   </div>
-                ))}
+                ) : bookingInfo?.price ? (
+                  <div className={styles.priceItem}>
+                    <span className={styles.seatType}>{bookingInfo.price}</span>
+                  </div>
+                ) : (
+                  <div className={styles.priceItem}>
+                    <span className={styles.seatType}>가격 정보 없음</span>
+                  </div>
+                )}
               </div>
               
               {/* 할인정보 섹션 */}
               <div className={styles.discountSection}>
                 <h3 className={styles.contentTitle}>할인정보</h3>
                 <div className={styles.infoPlaceholder}>
-                  {/* 크롤링 정보 또는 이미지가 들어갈 공간 */}
-                  <p className={styles.placeholderText}>할인 정보가 여기에 표시됩니다</p>
+                  {bookingLoading ? (
+                    <p className={styles.placeholderText}>정보를 불러오는 중...</p>
+                  ) : bookingInfo?.discountImages && bookingInfo.discountImages.length > 0 ? (
+                    <div className={styles.imageContainer}>
+                      {bookingInfo.discountImages.map((image, index) => (
+                        <img
+                          key={image.performanceImageId || index}
+                          src={image.imageUrl}
+                          alt={`할인 정보 이미지 ${index + 1}`}
+                          className={styles.infoImage}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.placeholderText}>할인 정보가 여기에 표시됩니다</p>
+                  )}
                 </div>
               </div>
 
@@ -899,8 +1438,25 @@ const DetailPerformancePage = () => {
               <div className={styles.castingSection}>
                 <h3 className={styles.contentTitle}>캐스팅</h3>
                 <div className={styles.infoPlaceholder}>
-                  {/* 크롤링 정보 또는 이미지가 들어갈 공간 */}
-                  <p className={styles.placeholderText}>캐스팅 정보가 여기에 표시됩니다</p>
+                  {bookingLoading ? (
+                    <p className={styles.placeholderText}>정보를 불러오는 중...</p>
+                  ) : bookingInfo?.castingImages && bookingInfo.castingImages.length > 0 ? (
+                    <div className={styles.imageContainer}>
+                      {bookingInfo.castingImages.map((image, index) => (
+                        <img
+                          key={image.performanceImageId || index}
+                          src={image.imageUrl}
+                          alt={`캐스팅 정보 이미지 ${index + 1}`}
+                          className={styles.infoImage}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.placeholderText}>캐스팅 정보가 여기에 표시됩니다</p>
+                  )}
                 </div>
               </div>
 
@@ -908,8 +1464,25 @@ const DetailPerformancePage = () => {
               <div className={styles.seatingChartSection}>
                 <h3 className={styles.contentTitle}>좌석배치도</h3>
                 <div className={styles.infoPlaceholder}>
-                  {/* 크롤링 정보 또는 이미지가 들어갈 공간 */}
-                  <p className={styles.placeholderText}>좌석배치도 이미지가 여기에 표시됩니다</p>
+                  {bookingLoading ? (
+                    <p className={styles.placeholderText}>정보를 불러오는 중...</p>
+                  ) : bookingInfo?.seatImages && bookingInfo.seatImages.length > 0 ? (
+                    <div className={styles.imageContainer}>
+                      {bookingInfo.seatImages.map((image, index) => (
+                        <img
+                          key={image.performanceImageId || index}
+                          src={image.imageUrl}
+                          alt={`좌석배치도 이미지 ${index + 1}`}
+                          className={styles.infoImage}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.placeholderText}>좌석배치도 이미지가 여기에 표시됩니다</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -930,15 +1503,7 @@ const DetailPerformancePage = () => {
               </div>
               
               {/* 제작사 제공 소개 이미지 섹션 */}
-              <div className={styles.productionImagesSection}>
-                <h3 className={styles.contentTitle}>공연 소개</h3>
-                <div className={styles.productionImagesContainer}>
-                  {/* 제작사에서 제공하는 소개 이미지들이 들어갈 공간 */}
-                  <div className={styles.imagePlaceholder}>
-                    <p className={styles.placeholderText}>제작사 제공 소개 이미지가 여기에 표시됩니다</p>
-                  </div>
-                </div>
-              </div>
+              <PerformanceInfoImages images={infoImages} loading={imagesLoading} />
             </div>
           )}
           
@@ -980,19 +1545,35 @@ const DetailPerformancePage = () => {
                     <span className={styles.sortOption}>인기순</span>
                   </div>
                   
-                  {sampleReviews.map(review => (
-                    <ReviewCard
-                      key={review.id}
-                      id={review.id}
-                      title={review.title}
-                      performanceDate={review.performanceDate}
-                      seat={review.seat}
-                      rating={review.rating}
-                      content={review.content}
-                      author={review.author}
-                      date={review.date}
-                    />
-                  ))}
+                  {reviewsLoading ? (
+                    <div style={{ padding: '2rem', textAlign: 'center' }}>로딩 중...</div>
+                  ) : reviewsError ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                      {reviewsError}
+                    </div>
+                  ) : reviews.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                      등록된 후기가 없습니다.
+                    </div>
+                  ) : (
+                    reviews.map(review => (
+                      <ReviewCard
+                        key={review.id}
+                        id={review.id}
+                        title={review.title}
+                        performanceDate={review.performanceDate}
+                        seat={review.seat}
+                        rating={review.rating}
+                        content={review.content}
+                        author={review.author}
+                        date={review.date}
+                        userId={review.userId}
+                        currentUserId={currentUserId}
+                        onEdit={() => handleEditReview(review, 'AFTER')}
+                        onDelete={() => handleDeleteReview(review.id || review.performanceReviewId || review.reviewId, 'AFTER')}
+                      />
+                    ))
+                  )}
                 </div>
               )}
 
@@ -1003,37 +1584,85 @@ const DetailPerformancePage = () => {
                     <h4>기대평 목록</h4>
                   </div>
                   
-                  {sampleExpectations.map(expectation => (
-                    <div key={expectation.id} className={styles.expectationItem}>
-                      <div className={styles.expectationHeader}>
-                        <h5 className={styles.expectationTitle}>{expectation.title}</h5>
-                      </div>
-                      
-                      <div className={styles.expectationContent}>
-                        <p className={styles.expectationText}>
-                          {expandedExpectations[expectation.id] 
-                            ? expectation.content 
-                            : expectation.content.length > 100 
-                              ? expectation.content.substring(0, 100) + '...' 
-                              : expectation.content
-                        }
-                      </p>
-                        {expectation.content.length > 100 && (
-                          <button 
-                            className={styles.expandButton}
-                            onClick={() => toggleExpectationExpansion(expectation.id)}
-                          >
-                            {expandedExpectations[expectation.id] ? '닫기' : '더보기'}
-                          </button>
-                        )}
-                      </div>
-                      
-                      <div className={styles.expectationFooter}>
-                        <button className={styles.likeButton}>♡</button>
-                        <span className={styles.expectationAuthor}>{expectation.author} | {expectation.date}</span>
-                      </div>
+                  {reviewsLoading ? (
+                    <div style={{ padding: '2rem', textAlign: 'center' }}>로딩 중...</div>
+                  ) : reviewsError ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                      {reviewsError}
                     </div>
-                  ))}
+                  ) : expectations.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                      등록된 기대평이 없습니다.
+                    </div>
+                  ) : (
+                    expectations.map(expectation => {
+                      const isMyReview = currentUserId && expectation.userId && expectation.userId === currentUserId;
+                      return (
+                        <div key={expectation.id} className={styles.expectationItem}>
+                          <div className={styles.expectationHeader}>
+                            <h5 className={styles.expectationTitle}>{expectation.title}</h5>
+                            {isMyReview && (
+                              <div className={styles.expectationActions}>
+                                <button
+                                  className={styles.editButton}
+                                  onClick={() => handleEditReview(expectation, 'EXPECTATION')}
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  className={styles.deleteButton}
+                                  onClick={() => handleDeleteReview(expectation.id || expectation.performanceReviewId || expectation.reviewId, 'EXPECTATION')}
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className={styles.expectationContent}>
+                            <p className={styles.expectationText}>
+                              {expandedExpectations[expectation.id] 
+                                ? expectation.content 
+                                : expectation.content.length > 100 
+                                  ? expectation.content.substring(0, 100) + '...' 
+                                  : expectation.content
+                            }
+                          </p>
+                            {expectation.content.length > 100 && (
+                              <button 
+                                className={styles.expandButton}
+                                onClick={() => toggleExpectationExpansion(expectation.id)}
+                              >
+                                {expandedExpectations[expectation.id] ? '닫기' : '더보기'}
+                              </button>
+                            )}
+                          </div>
+                          
+                          <div className={styles.expectationFooter}>
+                            <div className={styles.expectationFooterLeft}>
+                              <button 
+                                className={`${styles.likeButton} ${expectationLikes[expectation.id] ? styles.liked : ''}`}
+                                onClick={async () => {
+                                  try {
+                                    const result = await togglePerformanceReviewFavorite(expectation.id);
+                                    setExpectationLikes(prev => ({
+                                      ...prev,
+                                      [expectation.id]: result
+                                    }));
+                                  } catch (err) {
+                                    console.error('기대평 관심 토글 실패:', err);
+                                  }
+                                }}
+                              >
+                                {expectationLikes[expectation.id] ? '♥' : '♡'}
+                              </button>
+                              <span className={styles.expectationAuthor}>{expectation.author} | {expectation.date}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>
@@ -1042,22 +1671,243 @@ const DetailPerformancePage = () => {
           {activeTab === 'venue' && (
             <div className={styles.venueContent}>
               <h3 className={styles.contentTitle}>공연장 정보</h3>
-              <div className={styles.venueInfo}>
-                <p><strong>공연장명:</strong> {performance.venue}</p>
-                <p><strong>주소:</strong> {performance.address}</p>
-                <p><strong>교통편:</strong> 지하철 및 버스 이용 가능</p>
-              </div>
+              {placeLoading ? (
+                <div className={styles.venueLoading}>
+                  <p>공연장 정보를 불러오는 중...</p>
+                </div>
+              ) : (
+                <div className={styles.venueCard}>
+                  {/* 지도 영역 */}
+                  {(placeInfo?.latitude || placeInfo?.la) && (placeInfo?.longitude || placeInfo?.lo) && (
+                    <div className={styles.venueMapArea}>
+                      <PlaceMap
+                        latitude={placeInfo?.latitude || placeInfo?.la}
+                        longitude={placeInfo?.longitude || placeInfo?.lo}
+                        placeName={placeInfo?.placeName || placeInfo?.name || performance?.venue || '공연장'}
+                      />
+                    </div>
+                  )}
+                  
+                  <div className={styles.venueInfoItem}>
+                    <div className={styles.venueInfoIcon}>🏛️</div>
+                    <div className={styles.venueInfoContent}>
+                      <div className={styles.venueInfoLabel}>공연장명</div>
+                      <div className={styles.venueInfoValue}>
+                        {placeInfo?.placeName || performance?.venue || '정보 없음'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.venueInfoItem}>
+                    <div className={styles.venueInfoIcon}>📍</div>
+                    <div className={styles.venueInfoContent}>
+                      <div className={styles.venueInfoLabel}>주소</div>
+                      <div className={styles.venueInfoValue}>
+                        {placeInfo?.placeAddress || performance?.address || '정보 없음'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.venueInfoItem}>
+                    <div className={styles.venueInfoIcon}>🚇</div>
+                    <div className={styles.venueInfoContent}>
+                      <div className={styles.venueInfoLabel}>교통편</div>
+                      <div className={styles.venueInfoValue}>
+                        {placeInfo?.transportation || '지하철 및 버스 이용 가능'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {placeId && (
+                    <button
+                      onClick={() => navigate(`/place/${placeId}`)}
+                      className={styles.venueDetailButton}
+                    >
+                      공연장 상세 정보 보기
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {/* 티켓 정보 입력 모달 */}
+      {showTicketInfoModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h3>티켓 등록</h3>
+              <button className={styles.closeButton} onClick={handleTicketInfoCancel}>×</button>
+            </div>
+            
+            <div className={styles.writeForm}>
+              {ticketStep === 'scan' ? (
+                <>
+                  {cameraStream ? (
+                    <div className={styles.cameraArea}>
+                      <video
+                        ref={ticketVideoRef}
+                        autoPlay
+                        playsInline
+                        className={styles.videoPreview}
+                      />
+                      <div className={styles.cameraControls}>
+                        <button
+                          className={styles.captureButton}
+                          onClick={captureTicketPhoto}
+                        >
+                          촬영
+                        </button>
+                        <button
+                          className={styles.cancelButton}
+                          onClick={() => {
+                            stopTicketCamera();
+                            setIsScanning(false);
+                          }}
+                        >
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className={styles.scanArea}>
+                        <div className={styles.cameraIcon}>
+                          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                          </svg>
+                        </div>
+                        <p className={styles.scanInstruction}>
+                          티켓을 스캔하거나 사진을 업로드해주세요
+                        </p>
+                      </div>
+                      <input
+                        ref={ticketFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleTicketFileSelect}
+                        style={{ display: 'none' }}
+                      />
+                      <button 
+                        className={styles.primaryButton}
+                        onClick={handleTicketCameraClick}
+                        disabled={isScanning}
+                      >
+                        카메라로 촬영
+                      </button>
+                      <button 
+                        className={styles.secondaryButton}
+                        onClick={handleTicketFileClick}
+                      >
+                        파일에서 선택
+                      </button>
+                      <button 
+                        className={styles.tertiaryButton}
+                        onClick={handleSkipTicketScan}
+                      >
+                        직접 입력하기
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className={styles.ticketTitle}>티켓1 정보 입력</div>
+                  {capturedImage && (
+                    <div className={styles.imagePreview}>
+                      <img src={capturedImage} alt="티켓 이미지" />
+                    </div>
+                  )}
+                  
+                  <div className={styles.ticketForm}>
+                    <div className={styles.formGroup}>
+                      <label>공연명</label>
+                      <input
+                        type="text"
+                        value={performance?.title || ''}
+                        disabled
+                        style={{ backgroundColor: '#f9fafb', color: '#6b7280' }}
+                      />
+                    </div>
+                    <div className={styles.formRow}>
+                      <div className={styles.formGroup}>
+                        <label>공연일자</label>
+                        <input
+                          type="date"
+                          value={ticketInfo.performanceDate}
+                          onChange={(e) => handleTicketInfoChange('performanceDate', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>시간</label>
+                        <input
+                          type="time"
+                          value={ticketInfo.performanceTime}
+                          onChange={(e) => handleTicketInfoChange('performanceTime', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>좌석정보</label>
+                      <div className={styles.seatInputs}>
+                        <input
+                          type="text"
+                          value={ticketInfo.section}
+                          onChange={(e) => handleTicketInfoChange('section', e.target.value)}
+                          placeholder="구역"
+                          className={styles.seatInput}
+                        />
+                        <input
+                          type="text"
+                          value={ticketInfo.row}
+                          onChange={(e) => handleTicketInfoChange('row', e.target.value)}
+                          placeholder="열"
+                          className={styles.seatInput}
+                        />
+                        <input
+                          type="text"
+                          value={ticketInfo.number}
+                          onChange={(e) => handleTicketInfoChange('number', e.target.value)}
+                          placeholder="번"
+                          className={styles.seatInput}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.buttonGroup}>
+                    <button 
+                      type="button" 
+                      className={styles.cancelButton} 
+                      onClick={handleTicketInfoCancel}
+                    >
+                      취소
+                    </button>
+                    <button 
+                      type="button" 
+                      className={styles.primaryButton}
+                      onClick={handleTicketInfoSubmit}
+                    >
+                      다음
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 글쓰기 모달 */}
       {showWriteModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <div className={styles.modalHeader}>
-              <h3>{writeType === 'review' ? '후기 작성' : '기대평 작성'}</h3>
+              <h3>{writeType === 'review' ? '공연 후기 작성' : '기대평 작성'}</h3>
               <button className={styles.closeButton} onClick={handleWriteCancel}>×</button>
             </div>
             
@@ -1108,6 +1958,77 @@ const DetailPerformancePage = () => {
                 </button>
                 <button type="submit" className={styles.submitButton}>
                   작성하기
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 수정 모달 */}
+      {showEditModal && editingReview && (
+        <div className={styles.modalOverlay} onClick={handleCloseEditModal}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>리뷰 수정</h3>
+              <button className={styles.closeButton} onClick={handleCloseEditModal}>×</button>
+            </div>
+            
+            <form onSubmit={handleUpdateReview} className={styles.writeForm}>
+              <div className={styles.formGroup}>
+                <label>제목</label>
+                <input 
+                  type="text" 
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                  placeholder="제목을 입력하세요"
+                  required
+                />
+              </div>
+              
+              {/* 평점 - 기대평(EXPECTATION)일 때는 표시하지 않음 */}
+              {editingReview.reviewType !== 'EXPECTATION' && (
+                <div className={styles.formGroup}>
+                  <label>평점</label>
+                  <div className={styles.ratingInput}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button 
+                        key={star} 
+                        type="button"
+                        className={`${styles.ratingStar} ${star <= editForm.rating ? styles.filled : ''}`}
+                        onClick={() => setEditForm({...editForm, rating: star})}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className={styles.formGroup}>
+                <label>내용</label>
+                <textarea 
+                  value={editForm.content}
+                  onChange={(e) => setEditForm({...editForm, content: e.target.value})}
+                  placeholder="내용을 입력하세요"
+                  required
+                  rows={6}
+                />
+              </div>
+              
+              <div className={styles.formActions}>
+                <button 
+                  type="button" 
+                  className={styles.cancelButton}
+                  onClick={handleCloseEditModal}
+                >
+                  취소
+                </button>
+                <button 
+                  type="submit" 
+                  className={styles.submitButton}
+                >
+                  수정하기
                 </button>
               </div>
             </form>

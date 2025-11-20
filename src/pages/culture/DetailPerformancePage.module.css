@@ -575,6 +575,25 @@
   padding: 24px;
 }
 
+.infoPlaceholder .imageContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+  min-height: auto;
+  background-color: transparent;
+  border: none;
+}
+
+.infoImage {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
+}
+
 .placeholderText {
   font-size: 14px;
   color: #999999;
@@ -604,17 +623,31 @@
 
 .productionImagesContainer {
   margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.productionImage {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
 }
 
 .imagePlaceholder {
-  min-height: 300px;
-  background-color: #F8F9FA;
-  border: 1px dashed #E5E5E5;
+  width: 100%;
+  height: 200px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  color: #9ca3af;
+  font-size: 14px;
 }
 
 /* 후기/기대평 섹션 */
@@ -720,6 +753,10 @@
 .reviewHeader,
 .expectationHeader {
   margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .reviewTitle,
@@ -799,6 +836,51 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+}
+
+.expectationFooterLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.expectationActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.editButton,
+.deleteButton {
+  padding: 4px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #ffffff;
+}
+
+.editButton {
+  color: #666;
+}
+
+.editButton:hover {
+  background-color: #f5f5f5;
+  border-color: #d0d0d0;
+}
+
+.deleteButton {
+  color: #ff4444;
+  border-color: #ffcccc;
+}
+
+.deleteButton:hover {
+  background-color: #fff5f5;
+  border-color: #ff9999;
 }
 
 .likeButton {
@@ -816,6 +898,10 @@
 }
 
 .likeButton:hover {
+  color: #FF69B4;
+}
+
+.likeButton.liked {
   color: #FF69B4;
 }
 
@@ -837,24 +923,58 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .modalContent {
   background-color: #FFFFFF;
   border-radius: 12px;
   width: 100%;
-  max-width: 400px;
-  max-height: 80vh;
+  max-width: 430px;
+  max-height: 90vh;
   overflow-y: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 430px) {
+  .modalOverlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  
+  .modalContent {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .writeForm {
+    padding: 16px;
+  }
+  
+  .formGroup {
+    margin-bottom: 12px;
+  }
+  
+  .formGroup textarea {
+    min-height: 80px;
+    max-height: 150px;
+  }
 }
 
 .modalHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid #E5E5E5;
+  position: sticky;
+  top: 0;
+  background-color: #FFFFFF;
+  z-index: 10;
 }
 
 .modalHeader h3 {
@@ -888,11 +1008,16 @@
 }
 
 .writeForm {
-  padding: 24px;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .formGroup {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+}
+
+.formGroup:last-child {
+  margin-bottom: 0;
 }
 
 .formGroup label {
@@ -906,24 +1031,236 @@
 .formGroup input,
 .formGroup textarea {
   width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #E5E5E5;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 14px;
-  color: #000000;
-  background-color: #FFFFFF;
+  color: #111827;
+  background-color: #fef3f2;
   box-sizing: border-box;
+  font-family: inherit;
 }
 
 .formGroup input:focus,
 .formGroup textarea:focus {
   outline: none;
-  border-color: #007BFF;
+  border-color: #fbccdc;
+}
+
+.formGroup input:disabled {
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
 }
 
 .formGroup textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 100px;
+  max-height: 200px;
+}
+
+.formGroup .input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.formGroup .input:focus {
+  outline: none;
+  border-color: #007BFF;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* 좌석정보 입력 필드 그리드 */
+.seatInputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.seatInput {
+  padding: 8px 10px;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.seatInput:focus {
+  outline: none;
+  border-color: #fbccdc;
+}
+
+.ticketForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-bottom: 8px;
+}
+
+.primaryButton {
+  width: 100%;
+  padding: 14px;
+  background-color: #ffb6c1;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.primaryButton:hover {
+  background-color: #ffa5b8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ticketTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.scanArea {
+  width: 100%;
+  aspect-ratio: 1;
+  background-color: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.cameraArea {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.videoPreview {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  background-color: #000;
+}
+
+.cameraControls {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.captureButton {
+  flex: 1;
+  padding: 12px;
+  background-color: #111827;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.captureButton:hover {
+  background-color: #374151;
+}
+
+.cameraIcon {
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+.scanInstruction {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+}
+
+.imagePreview {
+  width: 100%;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.imagePreview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.secondaryButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.secondaryButton:hover {
+  background-color: #e5e7eb;
+}
+
+.tertiaryButton {
+  width: 100%;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  border-radius: 6px;
+  font-size: 12px;
+  color: rgba(107, 114, 128, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.tertiaryButton:hover {
+  opacity: 0.8;
+  background-color: rgba(255, 255, 255, 0.9);
 }
 
 .ratingInput {
@@ -963,9 +1300,10 @@
 .cancelButton,
 .submitButton {
   flex: 1;
-  padding: 12px 24px;
+  padding: 12px 16px;
   border-radius: 8px;
   font-size: 14px;
+  box-sizing: border-box;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -999,21 +1337,100 @@
   border-color: #0056B3;
 }
 
-.venueInfo {
+.venueLoading {
+  padding: 40px 0;
+  text-align: center;
+  color: #999999;
   font-size: 14px;
-  color: #666666;
-  line-height: 1.8;
 }
 
-.venueInfo p {
-  margin-bottom: 12px;
+.venueCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 16px;
 }
 
-.venueInfo strong {
-  color: #000000;
+.venueInfoItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.venueInfoItem:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.venueInfoIcon {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.venueInfoContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.venueInfoLabel {
+  font-size: 12px;
+  color: #999999;
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+.venueInfoValue {
+  font-size: 14px;
+  color: #000000;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.venueDetailButton {
+  width: 100%;
+  padding: 14px 24px;
+  background-color: #000000;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 32px;
+}
+
+.venueDetailButton:hover {
+  background-color: #333333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.venueDetailButton:active {
+  transform: translateY(0);
+}
+
+.venueMapArea {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.venueMapArea > * {
+  width: 100%;
+  margin-bottom: 0;
+}
 
 /* 반응형 디자인 */
 @media (max-width: 375px) {

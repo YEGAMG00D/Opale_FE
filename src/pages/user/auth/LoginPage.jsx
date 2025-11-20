@@ -5,10 +5,13 @@ import { loginSuccess } from "../../../store/userSlice";
 import styles from "./LoginPage.module.css";
 
 import { login as loginApi } from "../../../api/authApi";
+import { initializeUserTickets, clearPreviousUserTickets, hasUserTickets } from "../../../utils/ticketUtils";
+import { hasUserReviews } from "../../../utils/reviewUtils";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -33,19 +36,51 @@ const LoginPage = () => {
       if (result.success) {
         const { token, user } = result.data;
         const { accessToken, refreshToken } = token;
+        const userId = user?.userId || user?.id;
+
+        // ⬇️ 이전 사용자의 티켓 데이터 정리
+        clearPreviousUserTickets(userId);
 
         // ⬇️ localStorage 할당
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
         localStorage.setItem("user", JSON.stringify(user));
 
-        // ⬇️ Redux 반영
+        // ⬇️ Redux 반영 (먼저 로그인 상태로 만들어서 API 호출 가능하게 함)
         dispatch(
           loginSuccess({
             user,
             token: accessToken,
           })
         );
+
+        // ⬇️ 새 사용자인지 확인 (티켓과 리뷰 모두 확인)
+        const checkNewUser = async () => {
+          const hasTickets = hasUserTickets(userId);
+          let hasReviews = false;
+          
+          try {
+            // 서버에서 리뷰 확인
+            hasReviews = await hasUserReviews(userId);
+          } catch (error) {
+            console.warn('리뷰 확인 실패:', error);
+            // 에러 발생 시 리뷰가 없다고 간주
+            hasReviews = false;
+          }
+
+          // 티켓도 없고 리뷰도 없으면 새 사용자
+          if (userId && !hasTickets && !hasReviews) {
+            // 새 사용자: 티켓 데이터 초기화 (리뷰는 서버에서 자동으로 빈 상태)
+            initializeUserTickets(userId);
+          } else if (userId && !hasTickets) {
+            // 티켓만 없는 경우 (기존 사용자지만 티켓 데이터가 없는 경우)
+            initializeUserTickets(userId);
+          }
+          // 기존 사용자는 데이터 유지 (아무것도 하지 않음)
+        };
+
+        // 비동기로 새 사용자 확인 (로그인은 먼저 완료)
+        checkNewUser();
 
         navigate("/");
       } else {
@@ -84,14 +119,34 @@ const LoginPage = () => {
           </div>
 
           <div className={styles.inputGroup}>
-            <input
-              type="password"
-              className={styles.input}
-              placeholder="비밀번호 입력"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className={styles.passwordInputWrapper}>
+              <input
+                type={showPassword ? "text" : "password"}
+                className={styles.input}
+                placeholder="비밀번호 입력"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className={styles.passwordToggle}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+              >
+                {showPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                )}
+              </button>
+            </div>
             <Link to="/new-password" className={styles.findPasswordLink}>
               비밀번호 찾기
             </Link>

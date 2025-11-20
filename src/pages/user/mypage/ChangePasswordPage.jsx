@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styles from './ChangePasswordPage.module.css';
 import FormInputField from '../../../components/signup/FormInputField';
 import { validatePassword, validateConfirmPassword } from '../../../utils/validation';
+import { changePassword } from '../../../api/userApi';
 
 const ChangePasswordPage = () => {
   const navigate = useNavigate();
@@ -26,8 +27,8 @@ const ChangePasswordPage = () => {
     switch (name) {
       case 'currentPassword':
         // 현재 비밀번호는 비어있지 않으면 됨
-        if (!value) {
-          validationResult = { isValid: null, message: '' };
+        if (!value.trim()) {
+          validationResult = { isValid: false, message: '현재 비밀번호를 입력해주세요.' };
         } else {
           validationResult = { isValid: true, message: '' };
         }
@@ -60,38 +61,41 @@ const ChangePasswordPage = () => {
     e.preventDefault();
     
     // 최종 유효성 검사
-    const isCurrentPasswordValid = formData.currentPassword.trim().length > 0;
+    const isCurrentPasswordValid = validationMessages?.currentPassword?.isValid === true;
     const isNewPasswordValid = validationMessages?.newPassword?.isValid === true;
     const isConfirmPasswordValid = validationMessages?.confirmPassword?.isValid === true;
 
-    if (!isCurrentPasswordValid) {
-      alert('현재 비밀번호를 입력해주세요.');
-      return;
-    }
-
-    if (!isNewPasswordValid || !isConfirmPasswordValid) {
+    if (!isCurrentPasswordValid || !isNewPasswordValid || !isConfirmPasswordValid) {
       alert('입력한 정보를 확인해주세요.');
       return;
     }
 
-    // TODO: 실제 API 호출로 교체
-    // const response = await changePassword({
-    //   currentPassword: formData.currentPassword,
-    //   newPassword: formData.newPassword
-    // });
-
-    // 개발용: 성공 가정
-    console.log('비밀번호 변경 요청:', {
-      currentPassword: formData.currentPassword,
-      newPassword: formData.newPassword
-    });
-
-    alert('비밀번호가 변경되었습니다.');
-    navigate('/my');
+    try {
+      await changePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword
+      });
+      
+      alert('비밀번호가 변경되었습니다.');
+      navigate('/my');
+    } catch (err) {
+      console.error('비밀번호 변경 실패:', err);
+      
+      // 현재 비밀번호가 틀린 경우
+      if (err.response?.status === 400 || err.response?.status === 401) {
+        setValidationMessages(prev => ({
+          ...prev,
+          currentPassword: { isValid: false, message: '현재 비밀번호가 올바르지 않습니다.' }
+        }));
+        alert('현재 비밀번호가 올바르지 않습니다.');
+      } else {
+        alert(err.message || '비밀번호 변경에 실패했습니다.');
+      }
+    }
   };
 
   const isFormValid = 
-    formData.currentPassword.trim().length > 0 &&
+    validationMessages?.currentPassword?.isValid === true &&
     validationMessages?.newPassword?.isValid === true &&
     validationMessages?.confirmPassword?.isValid === true;
 

@@ -2,9 +2,21 @@ import React from 'react';
 import styles from '../SignupPage.module.css';
 import FormInputField from '../../../../components/signup/FormInputField';
 
-const Step2Password = ({ formData, handleInputChange, validationMessages }) => {
+const Step2Password = ({ formData, handleInputChange, validationMessages, onNext }) => {
   const passwordValidation = validationMessages?.password || { isValid: null, message: '' };
   const confirmPasswordValidation = validationMessages?.confirmPassword || { isValid: null, message: '' };
+
+  // 비밀번호 확인 필드에서 엔터 키 입력 시 다음 버튼 클릭
+  const handleEnterKeyPress = () => {
+    // 비밀번호와 비밀번호 확인이 모두 유효할 때만 다음 단계로 이동
+    if (
+      passwordValidation?.isValid === true &&
+      confirmPasswordValidation?.isValid === true &&
+      onNext
+    ) {
+      onNext();
+    }
+  };
 
   return (
     <div className={styles.stepContent}>
@@ -28,6 +40,7 @@ const Step2Password = ({ formData, handleInputChange, validationMessages }) => {
         value={formData.confirmPassword}
         onChange={handleInputChange}
         validation={confirmPasswordValidation}
+        onEnterKeyPress={handleEnterKeyPress}
       />
     </div>
   );

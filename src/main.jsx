@@ -9,13 +9,25 @@ import store from './store'
 
 import AppInitializer from "./AppInitializer";
 
+// dev preview에서만 StrictMode 끄기
+const isNetlifyPreview = window.location.hostname.includes("dev--")
+
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    {/* ✅ Redux Provider로 App 감싸기 */}
+  isNetlifyPreview ? (
+    // StrictMode OFF (dev 배포)
     <Provider store={store}>
       <AppInitializer>
+        <App />
+      </AppInitializer>
+    </Provider>
+  ) : (
+    // 로컬 + main 배포
+    <React.StrictMode>
+      <Provider store={store}>
+        <AppInitializer>
           <App />
         </AppInitializer>
-    </Provider>
-  </React.StrictMode>,
+      </Provider>
+    </React.StrictMode>
+  )
 )
