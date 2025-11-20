@@ -7,12 +7,10 @@ import kinkyBootsPoster from '../../../assets/poster/kinky-boots.gif';
 import hanbokManPoster from '../../../assets/poster/hanbok-man.jpg';
 import deathNotePoster from '../../../assets/poster/death-note.gif';
 import rentPoster from '../../../assets/poster/rent.gif';
-import { 
-  getTickets, 
-  deleteTicket as deleteTicketUtil, 
-  getBookedTickets, 
-  getWatchedTickets 
-} from '../../../utils/ticketUtils';
+import { getTicketList, deleteTicket as deleteTicketApi, getTicketReviews } from '../../../api/reservationApi';
+import { normalizeTicketList, categorizeTickets } from '../../../services/normalizeTicketList';
+import { normalizeTicketReviews } from '../../../services/normalizeTicketReviews';
+import { deletePerformanceReview, deletePlaceReview } from '../../../api/reviewApi';
 import { fetchPerformanceList } from '../../../api/performanceApi';
 import { normalizePerformance } from '../../../services/normalizePerformance';
 
@@ -38,10 +36,13 @@ const getImageUrl = (imageUrl) => {
 
 const MyTicketPage = () => {
   const navigate = useNavigate();
-  const [tickets, setTickets] = useState([]);
+  const [allTickets, setAllTickets] = useState([]); // API에서 받은 전체 티켓 목록
   const [flippedTickets, setFlippedTickets] = useState({});
   const [activeTab, setActiveTab] = useState('booked'); // 'booked' (예매한 공연) or 'watched' (관람한 공연)
   const [posterCache, setPosterCache] = useState({}); // 공연명 -> 포스터 URL 캐시
+  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
   // 포스터 이미지 매핑 (fallback용)
   const posterImages = {
@@ -129,45 +130,118 @@ const MyTicketPage = () => {
     return getFallbackPoster(performanceName);
   };
 
-  // 티켓 목록 불러오기
-  const loadTickets = () => {
-    const allTickets = getTickets();
-    setTickets(allTickets);
+  // 티켓 목록 불러오기 (API)
+  const loadTickets = async (pageNum = 1, append = false) => {
+    try {
+      setIsLoading(true);
+      const response = await getTicketList(pageNum, 50); // 한 번에 많이 가져오기
+      
+      // API 응답을 프론트엔드 형식으로 변환
+      const normalized = normalizeTicketList(response);
+      
+      if (append) {
+        // 추가 로드 (페이지네이션)
+        setAllTickets(prev => [...prev, ...normalized.tickets]);
+      } else {
+        // 초기 로드 또는 새로고침
+        setAllTickets(normalized.tickets);
+      }
+      
+      setHasMore(normalized.hasNext);
+      setPage(normalized.currentPage);
+      
+      // 포스터 캐시 초기화하여 다시 로드
+      setTicketPosters({});
+      setPosterCache({});
+    } catch (err) {
+      console.error('티켓 목록 조회 실패:', err);
+      alert('티켓 목록을 불러오는데 실패했습니다.');
+      setAllTickets([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 초기 로드
   useEffect(() => {
-    loadTickets();
+    loadTickets(1, false);
   }, []);
 
   // 티켓 목록 업데이트를 위한 이벤트 리스너
   useEffect(() => {
     const handleTicketUpdate = () => {
-      loadTickets();
-      // 포스터 캐시 초기화하여 다시 로드
-      setTicketPosters({});
-      setPosterCache({});
+      loadTickets(1, false);
     };
 
-    window.addEventListener('storage', handleTicketUpdate);
     window.addEventListener('ticketUpdated', handleTicketUpdate);
 
     return () => {
-      window.removeEventListener('storage', handleTicketUpdate);
       window.removeEventListener('ticketUpdated', handleTicketUpdate);
     };
   }, []);
 
-  const handleDeleteTicket = (ticketId) => {
-    if (window.confirm('티켓을 삭제하시겠습니까?')) {
-      deleteTicketUtil(ticketId);
-      loadTickets();
-      // 플립 상태도 제거
+  const handleDeleteTicket = async (ticketId) => {
+    if (!window.confirm('티켓을 삭제하시겠습니까?\n관련된 리뷰도 함께 삭제됩니다.')) {
+      return;
+    }
+
+    try {
+      // 1. 먼저 관련 리뷰 확인
+      const reviewsResponse = await getTicketReviews(ticketId);
+      const normalizedReviews = normalizeTicketReviews(reviewsResponse);
+
+      // 2. 공연 리뷰가 있으면 먼저 삭제
+      if (normalizedReviews.hasPerformanceReview && normalizedReviews.performanceReview) {
+        const performanceReviewId = normalizedReviews.performanceReview.performanceReviewId || 
+                                   normalizedReviews.performanceReview.id ||
+                                   normalizedReviews.performanceReview.reviewId;
+        
+        if (performanceReviewId) {
+          try {
+            await deletePerformanceReview(performanceReviewId);
+            console.log('공연 리뷰 삭제 완료');
+          } catch (err) {
+            console.error('공연 리뷰 삭제 실패:', err);
+            // 리뷰 삭제 실패해도 티켓 삭제는 계속 진행
+          }
+        }
+      }
+
+      // 3. 공연장 리뷰가 있으면 삭제
+      if (normalizedReviews.hasPlaceReview && normalizedReviews.placeReview) {
+        const placeReviewId = normalizedReviews.placeReview.placeReviewId || 
+                             normalizedReviews.placeReview.id ||
+                             normalizedReviews.placeReview.reviewId;
+        
+        if (placeReviewId) {
+          try {
+            await deletePlaceReview(placeReviewId);
+            console.log('공연장 리뷰 삭제 완료');
+          } catch (err) {
+            console.error('공연장 리뷰 삭제 실패:', err);
+            // 리뷰 삭제 실패해도 티켓 삭제는 계속 진행
+          }
+        }
+      }
+
+      // 4. 마지막으로 티켓 삭제
+      await deleteTicketApi(ticketId);
+      
+      // 5. 목록 새로고침
+      loadTickets(1, false);
+      
+      // 6. 플립 상태도 제거
       setFlippedTickets(prev => {
         const newState = { ...prev };
         delete newState[ticketId];
         return newState;
       });
+
+      alert('티켓이 삭제되었습니다.');
+    } catch (err) {
+      console.error('티켓 삭제 실패:', err);
+      const errorMessage = err.response?.data?.message || err.message || '티켓 삭제에 실패했습니다.';
+      alert(errorMessage);
     }
   };
 
@@ -178,10 +252,9 @@ const MyTicketPage = () => {
     }));
   };
 
-  // 탭별 티켓 필터링
-  const filteredTickets = activeTab === 'booked'
-    ? getBookedTickets()
-    : getWatchedTickets();
+  // 탭별 티켓 필터링 (예매한 공연/관람한 공연 분류)
+  const { booked, watched } = categorizeTickets(allTickets);
+  const filteredTickets = activeTab === 'booked' ? booked : watched;
 
   // 티켓별 포스터 이미지 상태
   const [ticketPosters, setTicketPosters] = useState({});
@@ -242,7 +315,12 @@ const MyTicketPage = () => {
 
       {/* 티켓 목록 */}
       <div className={styles.ticketList}>
-        {filteredTickets.length === 0 ? (
+        {isLoading ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>🎫</div>
+            <p className={styles.emptyText}>티켓 목록을 불러오는 중...</p>
+          </div>
+        ) : filteredTickets.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>🎫</div>
             <p className={styles.emptyText}>
@@ -330,7 +408,9 @@ const MyTicketPage = () => {
                           className={styles.editButton}
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate('/my/tickets/edit', { state: { ticket } });
+                            // API를 사용하므로 ticketId를 전달
+                            const ticketId = ticket.ticketId || ticket.id;
+                            navigate('/my/tickets/edit', { state: { ticketId } });
                           }}
                         >
                           수정하기

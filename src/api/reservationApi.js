@@ -93,6 +93,26 @@ export const getTicketList = async (page = 1, size = 10) => {
   }
 };
 
+
+/* ============================================================
+    6) 티켓 기반 공연 리뷰 + 공연장 리뷰 조회
+    GET /api/reservations/{ticketId}/reviews
+============================================================ */
+export const getTicketReviews = async (ticketId) => {
+  try {
+    const res = await axiosInstance.get(`${base}/${ticketId}/reviews`);
+
+    if (res.data.success) return res.data.data; // TicketReviewBundleResponseDto
+    throw new Error("티켓 기반 리뷰 조회 실패");
+  } catch (err) {
+    console.error("❌ getTicketReviews 오류:", err);
+    throw err;
+  }
+};
+
+
+
+
 /* ============================================================
     Export 묶음
 ============================================================ */
@@ -102,4 +122,5 @@ export default {
   deleteTicket,
   getTicket,
   getTicketList,
+  getTicketReviews, 
 };

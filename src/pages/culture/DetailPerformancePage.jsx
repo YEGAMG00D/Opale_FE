@@ -1736,7 +1736,7 @@ const DetailPerformancePage = () => {
                 </>
               ) : (
                 <>
-                  <div className={styles.ticketTitle}>티켓 정보 입력</div>
+                  <div className={styles.ticketTitle}>티켓1 정보 입력</div>
                   {capturedImage && (
                     <div className={styles.imagePreview}>
                       <img src={capturedImage} alt="티켓 이미지" />

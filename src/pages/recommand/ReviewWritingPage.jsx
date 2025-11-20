@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './ReviewWritingPage.module.css';
-import { addTicket } from '../../utils/ticketUtils';
+import { createTicket } from '../../api/reservationApi';
 import { createPerformanceReview } from '../../api/reviewApi';
 import { normalizePerformanceReviewRequest } from '../../services/normalizePerformanceReviewRequest';
 import { fetchPerformanceList } from '../../api/performanceApi';
 import { normalizePerformance } from '../../services/normalizePerformance';
+import { transformTicketDataForApi } from '../../utils/ticketDataTransform';
 
 const ReviewWritingPage = () => {
   const navigate = useNavigate();
@@ -23,7 +24,8 @@ const ReviewWritingPage = () => {
       performanceTime: stateData.performanceTime || '',
       section: stateData.section || '',
       row: stateData.row || '',
-      number: stateData.number || ''
+      number: stateData.number || '',
+      placeName: stateData.placeName || ''
     };
   });
 
@@ -175,20 +177,26 @@ const ReviewWritingPage = () => {
   };
 
   // 직접 입력하기 완료 -> 공연 후기로
-  const handleTicketInputComplete = () => {
+  const handleTicketInputComplete = async () => {
     if (!ticketData.performanceName || !ticketData.performanceDate) {
       alert('공연명과 공연일자를 입력해주세요.');
       return;
     }
 
-    // 항상 새 티켓으로 저장 (기존 티켓이 있어도 새로 등록)
-    addTicket({
-      ...ticketData,
-      ticketImage: capturedImage
-    });
+    try {
+      // 프론트엔드 데이터를 백엔드 API 형식으로 변환
+      const apiDto = transformTicketDataForApi(ticketData);
 
-    // 공연 후기 작성 단계로 이동
-    setStep('performanceReview');
+      // 티켓 등록 API 호출
+      await createTicket(apiDto);
+
+      // 공연 후기 작성 단계로 이동
+      setStep('performanceReview');
+    } catch (err) {
+      console.error('티켓 등록 실패:', err);
+      const errorMessage = err.response?.data?.message || err.message || '티켓 등록에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
   // 티켓 입력 변경
@@ -478,6 +486,16 @@ const ReviewWritingPage = () => {
                   className={styles.seatInput}
                 />
               </div>
+            </div>
+            <div className={styles.formGroup}>
+              <label>공연장명</label>
+              <input
+                type="text"
+                value={ticketData.placeName}
+                onChange={(e) => handleTicketInputChange('placeName', e.target.value)}
+                placeholder="공연장명을 입력하세요 (선택)"
+                className={styles.input}
+              />
             </div>
           </div>
           
