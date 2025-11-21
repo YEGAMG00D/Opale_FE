@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import styles from './DetailPlacePage.module.css';
 import PlaceShowHistory from '../../components/place/PlaceShowHistory';
 import PlaceReviewCard from '../../components/place/PlaceReviewCard';
@@ -15,6 +16,8 @@ import logApi from '../../api/logApi';
 const DetailPlacePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.user);
+  const currentUserId = user?.userId || user?.id || null;
   const { place, loading, error } = usePlaceDetail(id);
   const { convenienceFacilities, parkingFacilities } = usePlaceFacilities(id);
   const { stages } = usePlaceStages(id);
@@ -56,8 +59,8 @@ const DetailPlacePage = () => {
   useEffect(() => {
     loadReviews();
     
-    // 공연장 상세 페이지 진입 시 VIEW 로그 기록
-    if (id) {
+    // 공연장 상세 페이지 진입 시 VIEW 로그 기록 (로그인 상태일 때만)
+    if (id && currentUserId) {
       logApi.createLog({
         eventType: "VIEW",
         targetType: "PLACE",
@@ -66,7 +69,7 @@ const DetailPlacePage = () => {
         console.error('로그 기록 실패:', logErr);
       });
     }
-  }, [id]);
+  }, [id, currentUserId]);
 
   if (loading) {
     return (

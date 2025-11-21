@@ -831,7 +831,7 @@ const MainRecommandPage = () => {
                           id={performance.id || performance.performanceId}
                           title={performance.title}
                           image={imageUrl || 'wicked'}
-                          rating={performance.rating || 0}
+                          rating={parseFloat(performance.rating || 0).toFixed(1)}
                           reviewCount={performance.reviewCount || 0}
                           date={dateStr}
                           keywords={performance.keywords || []}
@@ -939,7 +939,7 @@ const MainRecommandPage = () => {
                             id={performance.id || performance.performanceId}
                             title={performance.title}
                             image={imageUrl || performance.poster || performance.image || 'wicked'}
-                            rating={performance.rating || 0}
+                            rating={parseFloat(performance.rating || 0).toFixed(1)}
                             reviewCount={performance.reviewCount || 0}
                             date={dateStr}
                             keywords={performance.keywords || []}
@@ -1044,7 +1044,7 @@ const MainRecommandPage = () => {
                             id={performance.id || performance.performanceId}
                             title={performance.title}
                             image={imageUrl || performance.poster || performance.image || 'wicked'}
-                            rating={performance.rating || 0}
+                            rating={parseFloat(performance.rating || 0).toFixed(1)}
                             reviewCount={performance.reviewCount || 0}
                             date={dateStr}
                             keywords={performance.keywords || []}
