@@ -96,7 +96,7 @@ const PerformanceCard = ({
         )}
         <div className={styles.cardRating}>
           <span className={styles.star}>★</span>
-          <span className={styles.ratingText}>{rating} ({reviewCount})</span>
+          <span className={styles.ratingText}>{rating ? parseFloat(rating).toFixed(1) : '0.0'} ({reviewCount})</span>
         </div>
         {variant === 'default' && keywords && keywords.length > 0 && (
           <div className={styles.cardKeywords}>
