@@ -820,15 +820,17 @@ const DetailPerformancePage = () => {
         if (normalizedData) {
           setPerformance(normalizedData);
           
-          // 공연 상세 페이지 진입 시 VIEW 로그 기록
-          try {
-            await logApi.createLog({
-              eventType: "VIEW",
-              targetType: "PERFORMANCE",
-              targetId: normalizedData.id || normalizedData.performanceId || id
-            });
-          } catch (logErr) {
-            console.error('로그 기록 실패:', logErr);
+          // 공연 상세 페이지 진입 시 VIEW 로그 기록 (로그인 상태일 때만)
+          if (currentUserId) {
+            try {
+              await logApi.createLog({
+                eventType: "VIEW",
+                targetType: "PERFORMANCE",
+                targetId: normalizedData.id || normalizedData.performanceId || id
+              });
+            } catch (logErr) {
+              console.error('로그 기록 실패:', logErr);
+            }
           }
         } else {
           throw new Error('공연 정보를 불러올 수 없습니다.');
@@ -843,15 +845,17 @@ const DetailPerformancePage = () => {
         if (fallbackData) {
           setPerformance(fallbackData);
           
-          // fallback 데이터 사용 시에도 VIEW 로그 기록
-          try {
-            await logApi.createLog({
-              eventType: "VIEW",
-              targetType: "PERFORMANCE",
-              targetId: String(id)
-            });
-          } catch (logErr) {
-            console.error('로그 기록 실패:', logErr);
+          // fallback 데이터 사용 시에도 VIEW 로그 기록 (로그인 상태일 때만)
+          if (currentUserId) {
+            try {
+              await logApi.createLog({
+                eventType: "VIEW",
+                targetType: "PERFORMANCE",
+                targetId: String(id)
+              });
+            } catch (logErr) {
+              console.error('로그 기록 실패:', logErr);
+            }
           }
         }
       } finally {
