@@ -1164,6 +1164,85 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     }, 200);
   }, [sheetHeight, getSnapHeight]);
 
+  // 시트가 최대 높이일 때 아래로 드래그하는 핸들러 (드래그 핸들, 헤더용)
+  const handleMaxHeightDragDown = useCallback((e) => {
+    const maxHeight = getMaxSheetHeight();
+    const isMaxHeight = Math.abs(sheetHeight - maxHeight) < 5;
+    
+    if (!isMaxHeight) return;
+    
+    const deltaY = e.touches[0].clientY - dragStateRef.current.startY;
+    
+    // 아래로 드래그하면 (양수) 시트를 내리기
+    if (deltaY > 5) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      scrollStateRef.current.isDraggingSheet = true;
+      
+      setIsDragging(true);
+      setIsTransitioning(false);
+      dragStateRef.current.startY = e.touches[0].clientY;
+      dragStateRef.current.startHeight = sheetHeight;
+      
+      // 기존 핸들러 제거
+      if (globalTouchHandlersRef.current.move) {
+        document.removeEventListener('touchmove', globalTouchHandlersRef.current.move);
+      }
+      if (globalTouchHandlersRef.current.end) {
+        document.removeEventListener('touchend', globalTouchHandlersRef.current.end);
+      }
+      
+      // 전역 터치 이벤트로 전환
+      const handleGlobalTouchMove = (globalE) => {
+        if (!scrollStateRef.current.isDraggingSheet) return;
+        
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        
+        animationFrameRef.current = requestAnimationFrame(() => {
+          const globalDeltaY = dragStateRef.current.startY - globalE.touches[0].clientY;
+          let newHeight = dragStateRef.current.startHeight + globalDeltaY;
+          
+          const maxHeight = getMaxSheetHeight();
+          newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
+          
+          setSheetHeight(newHeight);
+        });
+        
+        globalE.preventDefault();
+      };
+      
+      const handleGlobalTouchEnd = () => {
+        scrollStateRef.current.isDraggingSheet = false;
+        setIsDragging(false);
+        
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        
+        setIsTransitioning(true);
+        const snapHeight = getSnapHeight(sheetHeight);
+        setSheetHeight(snapHeight);
+        
+        setTimeout(() => {
+          setIsTransitioning(false);
+          document.removeEventListener('touchmove', handleGlobalTouchMove);
+          document.removeEventListener('touchend', handleGlobalTouchEnd);
+          globalTouchHandlersRef.current.move = null;
+          globalTouchHandlersRef.current.end = null;
+        }, 300);
+      };
+      
+      globalTouchHandlersRef.current.move = handleGlobalTouchMove;
+      globalTouchHandlersRef.current.end = handleGlobalTouchEnd;
+      
+      document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+      document.addEventListener('touchend', handleGlobalTouchEnd);
+    }
+  }, [sheetHeight, getMaxSheetHeight, getSnapHeight]);
+
   // 전역 마우스/터치 이벤트 리스너
   useEffect(() => {
     if (isDragging) {
@@ -1310,13 +1389,63 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
           <div 
             className={styles.sheetHandle}
             onMouseDown={handleSheetMouseDown}
-            onTouchStart={handleSheetTouchStart}
+            onTouchStart={(e) => {
+              const maxHeight = getMaxSheetHeight();
+              const isMaxHeight = Math.abs(sheetHeight - maxHeight) < 5;
+              
+              if (isMaxHeight) {
+                // 최대 높이일 때는 아래로 드래그할 수 있도록
+                dragStateRef.current.startY = e.touches[0].clientY;
+                scrollStateRef.current.isDraggingSheet = false;
+              } else {
+                // 일반 드래그
+                handleSheetTouchStart(e);
+              }
+            }}
+            onTouchMove={(e) => {
+              const maxHeight = getMaxSheetHeight();
+              const isMaxHeight = Math.abs(sheetHeight - maxHeight) < 5;
+              
+              if (isMaxHeight && !scrollStateRef.current.isDraggingSheet) {
+                handleMaxHeightDragDown(e);
+              } else if (!isMaxHeight) {
+                handleSheetTouchMove(e);
+              }
+            }}
+            onTouchEnd={(e) => {
+              const maxHeight = getMaxSheetHeight();
+              const isMaxHeight = Math.abs(sheetHeight - maxHeight) < 5;
+              
+              if (!isMaxHeight) {
+                handleSheetTouchEnd();
+              }
+            }}
           >
             <div className={styles.sheetHandleBar} />
           </div>
           
           {/* 시트 헤더 */}
-          <div className={styles.sheetHeader}>
+          <div 
+            className={styles.sheetHeader}
+            onTouchStart={(e) => {
+              const maxHeight = getMaxSheetHeight();
+              const isMaxHeight = Math.abs(sheetHeight - maxHeight) < 5;
+              
+              if (isMaxHeight) {
+                // 최대 높이일 때는 아래로 드래그할 수 있도록
+                dragStateRef.current.startY = e.touches[0].clientY;
+                scrollStateRef.current.isDraggingSheet = false;
+              }
+            }}
+            onTouchMove={(e) => {
+              const maxHeight = getMaxSheetHeight();
+              const isMaxHeight = Math.abs(sheetHeight - maxHeight) < 5;
+              
+              if (isMaxHeight && !scrollStateRef.current.isDraggingSheet) {
+                handleMaxHeightDragDown(e);
+              }
+            }}
+          >
             <h3 className={styles.sheetTitle}>근처 공연장 {places.length}곳</h3>
           </div>
           
