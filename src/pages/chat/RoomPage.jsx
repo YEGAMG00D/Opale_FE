@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import styles from "./RoomPage.module.css";
 import ChatRoomHeader from "../../components/chat/ChatRoomHeader";
 import MyMessage from "../../components/chat/MyMessage";
@@ -33,6 +34,8 @@ const parseJwt = (token) => {
 const RoomPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.user);
+  const reduxUserId = user?.userId || user?.id || null;
 
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -51,7 +54,7 @@ const RoomPage = () => {
     ? Number(payload.userId)
     : payload?.sub
     ? Number(payload.sub)
-    : null;
+    : reduxUserId;
 
   // 1️⃣ 채팅방 정보 불러오기
   useEffect(() => {
@@ -76,28 +79,30 @@ const RoomPage = () => {
         if (data) {
           setRoom(data);
           
-          // 채팅방 접속 시 VIEW 로그 기록
-          try {
-            // 공연 채팅방인 경우
-            if (data.roomType === "PERFORMANCE_PUBLIC" || data.roomType === "PERFORMANCE_GROUP") {
-              if (data.performanceId) {
-                await logApi.createLog({
-                  eventType: "VIEW",
-                  targetType: "PERFORMANCE",
-                  targetId: String(data.performanceId)
-                });
+          // 채팅방 접속 시 VIEW 로그 기록 (로그인 상태일 때만)
+          if (reduxUserId || token) {
+            try {
+              // 공연 채팅방인 경우
+              if (data.roomType === "PERFORMANCE_PUBLIC" || data.roomType === "PERFORMANCE_GROUP") {
+                if (data.performanceId) {
+                  await logApi.createLog({
+                    eventType: "VIEW",
+                    targetType: "PERFORMANCE",
+                    targetId: String(data.performanceId)
+                  });
+                }
               }
+              // 공연장 채팅방인 경우 (향후 추가 가능)
+              // else if (data.roomType === "PLACE_PUBLIC" && data.placeId) {
+              //   await logApi.createLog({
+              //     eventType: "VIEW",
+              //     targetType: "PLACE",
+              //     targetId: String(data.placeId)
+              //   });
+              // }
+            } catch (logErr) {
+              console.error('로그 기록 실패:', logErr);
             }
-            // 공연장 채팅방인 경우 (향후 추가 가능)
-            // else if (data.roomType === "PLACE_PUBLIC" && data.placeId) {
-            //   await logApi.createLog({
-            //     eventType: "VIEW",
-            //     targetType: "PLACE",
-            //     targetId: String(data.placeId)
-            //   });
-            // }
-          } catch (logErr) {
-            console.error('로그 기록 실패:', logErr);
           }
         } else {
           setRoom(null);
