@@ -1116,15 +1116,17 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     
     // requestAnimationFrame으로 부드러운 업데이트
     animationFrameRef.current = requestAnimationFrame(() => {
-      const deltaY = dragStateRef.current.startY - e.clientY; // 위로 드래그하면 양수
+      const currentY = e.clientY;
+      const startY = dragStateRef.current.startY;
+      const deltaY = startY - currentY; // 위로 드래그하면 양수
       let newHeight = dragStateRef.current.startHeight + deltaY;
       
       // 최소/최대 높이 제한 (header 밑까지)
       const maxHeight = getMaxSheetHeight();
       newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
       
-      // 아래로 드래그 중임을 표시 (높이가 줄어들면 아래로 드래그)
-      if (newHeight < dragStateRef.current.startHeight) {
+      // 아래로 드래그 중임을 표시 (마우스가 아래로 이동 = clientY 증가)
+      if (currentY > startY) {
         scrollStateRef.current.wasDraggingDown = true;
       }
       
@@ -1144,17 +1146,21 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     // 아래로 드래그한 경우 현재 위치 유지, 위로 드래그한 경우만 스냅
     const wasDraggingDown = scrollStateRef.current.wasDraggingDown;
     const finalHeight = sheetHeight;
+    const startHeight = dragStateRef.current.startHeight;
     
-    if (wasDraggingDown && finalHeight < getMaxSheetHeight() - 10) {
+    // 아래로 드래그했는지 확인 (wasDraggingDown 플래그 또는 높이 비교)
+    const actuallyDraggedDown = wasDraggingDown || (finalHeight < startHeight - 5);
+    
+    if (actuallyDraggedDown && finalHeight < getMaxSheetHeight() - 10) {
       // 아래로 드래그한 경우, 현재 위치에서 고정
       const targetHeight = Math.max(finalHeight, MIN_SHEET_HEIGHT);
-      setIsTransitioning(true);
+    setIsTransitioning(true);
       setSheetHeight(targetHeight);
     } else {
       // 위로 드래그한 경우에만 스냅 포인트 사용
       setIsTransitioning(true);
-      const snapHeight = getSnapHeight(finalHeight, wasDraggingDown);
-      setSheetHeight(snapHeight);
+      const snapHeight = getSnapHeight(finalHeight, actuallyDraggedDown);
+    setSheetHeight(snapHeight);
     }
     
     // transition 완료 후 transition 상태 해제
@@ -1182,14 +1188,16 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     
     // requestAnimationFrame으로 부드러운 업데이트
     animationFrameRef.current = requestAnimationFrame(() => {
-      const deltaY = dragStateRef.current.startY - e.touches[0].clientY;
+      const currentY = e.touches[0].clientY;
+      const startY = dragStateRef.current.startY;
+      const deltaY = startY - currentY;
       let newHeight = dragStateRef.current.startHeight + deltaY;
       
       const maxHeight = getMaxSheetHeight();
       newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
       
-      // 아래로 드래그 중임을 표시 (높이가 줄어들면 아래로 드래그)
-      if (newHeight < dragStateRef.current.startHeight) {
+      // 아래로 드래그 중임을 표시 (손가락이 아래로 이동 = clientY 증가)
+      if (currentY > startY) {
         scrollStateRef.current.wasDraggingDown = true;
       }
       
@@ -1208,17 +1216,21 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     // 아래로 드래그한 경우 현재 위치 유지, 위로 드래그한 경우만 스냅
     const wasDraggingDown = scrollStateRef.current.wasDraggingDown;
     const finalHeight = sheetHeight;
+    const startHeight = dragStateRef.current.startHeight;
     
-    if (wasDraggingDown && finalHeight < getMaxSheetHeight() - 10) {
+    // 아래로 드래그했는지 확인 (wasDraggingDown 플래그 또는 높이 비교)
+    const actuallyDraggedDown = wasDraggingDown || (finalHeight < startHeight - 5);
+    
+    if (actuallyDraggedDown && finalHeight < getMaxSheetHeight() - 10) {
       // 아래로 드래그한 경우, 현재 위치에서 고정
       const targetHeight = Math.max(finalHeight, MIN_SHEET_HEIGHT);
-      setIsTransitioning(true);
+    setIsTransitioning(true);
       setSheetHeight(targetHeight);
     } else {
       // 위로 드래그한 경우에만 스냅 포인트 사용
       setIsTransitioning(true);
-      const snapHeight = getSnapHeight(finalHeight, wasDraggingDown);
-      setSheetHeight(snapHeight);
+      const snapHeight = getSnapHeight(finalHeight, actuallyDraggedDown);
+    setSheetHeight(snapHeight);
     }
     
     // transition 완료 후 transition 상태 해제
@@ -1271,14 +1283,16 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         }
         
         animationFrameRef.current = requestAnimationFrame(() => {
-          const globalDeltaY = dragStateRef.current.startY - globalE.touches[0].clientY;
+          const currentY = globalE.touches[0].clientY;
+          const startY = dragStateRef.current.startY;
+          const globalDeltaY = startY - currentY;
           let newHeight = dragStateRef.current.startHeight + globalDeltaY;
           
           const maxHeight = getMaxSheetHeight();
           newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
           
-          // 아래로 드래그 중임을 표시 (높이가 줄어들면 아래로 드래그)
-          if (newHeight < dragStateRef.current.startHeight) {
+          // 아래로 드래그 중임을 표시 (손가락이 아래로 이동 = clientY 증가)
+          if (currentY > startY) {
             scrollStateRef.current.wasDraggingDown = true;
           }
           
@@ -1291,6 +1305,11 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       const handleGlobalTouchEnd = () => {
         const wasDraggingDown = scrollStateRef.current.wasDraggingDown;
         const finalHeight = sheetHeight; // 현재 높이 저장
+        const startHeight = dragStateRef.current.startHeight;
+        
+        // 아래로 드래그했는지 확인 (wasDraggingDown 플래그 또는 높이 비교)
+        const actuallyDraggedDown = wasDraggingDown || (finalHeight < startHeight - 5);
+        
         scrollStateRef.current.isDraggingSheet = false;
         scrollStateRef.current.wasDraggingDown = false;
         setIsDragging(false);
@@ -1300,7 +1319,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         }
         
         // 아래로 드래그한 경우, 현재 위치에서 고정 (최대 높이로 올라가지 않음)
-        if (wasDraggingDown && finalHeight < getMaxSheetHeight() - 10) {
+        if (actuallyDraggedDown && finalHeight < getMaxSheetHeight() - 10) {
           // 현재 높이를 그대로 유지 (최소 높이보다 작으면 최소 높이로만 조정)
           const targetHeight = Math.max(finalHeight, MIN_SHEET_HEIGHT);
           
@@ -1309,7 +1328,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         } else {
           // 위로 드래그한 경우에만 스냅 포인트 사용
           setIsTransitioning(true);
-          const snapHeight = getSnapHeight(finalHeight, wasDraggingDown);
+          const snapHeight = getSnapHeight(finalHeight, actuallyDraggedDown);
           setSheetHeight(snapHeight);
         }
         
@@ -1605,14 +1624,17 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
                   }
                   
                   animationFrameRef.current = requestAnimationFrame(() => {
-                    const globalDeltaY = dragStateRef.current.startY - globalE.touches[0].clientY;
+                    const currentY = globalE.touches[0].clientY;
+                    const startY = dragStateRef.current.startY;
+                    const globalDeltaY = startY - currentY;
                     let newHeight = dragStateRef.current.startHeight + globalDeltaY;
                     
                     const maxHeight = getMaxSheetHeight();
                     newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
                     
-                    // 아래로 드래그 중임을 표시 (높이가 줄어들면 아래로 드래그)
-                    if (newHeight < dragStateRef.current.startHeight) {
+                    // 아래로 드래그 중임을 표시 (손가락이 아래로 이동 = clientY 증가)
+                    // 아래로 드래그: currentY > startY → deltaY < 0 → newHeight 감소
+                    if (currentY > startY) {
                       scrollStateRef.current.wasDraggingDown = true;
                     }
                     
@@ -1625,6 +1647,11 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
                 const handleGlobalTouchEnd = () => {
                   const wasDraggingDown = scrollStateRef.current.wasDraggingDown;
                   const finalHeight = sheetHeight;
+                  const startHeight = dragStateRef.current.startHeight;
+                  
+                  // 아래로 드래그했는지 확인 (wasDraggingDown 플래그 또는 높이 비교)
+                  const actuallyDraggedDown = wasDraggingDown || (finalHeight < startHeight - 5);
+                  
                   scrollStateRef.current.isDraggingSheet = false;
                   scrollStateRef.current.wasDraggingDown = false;
                   scrollStateRef.current.isContentScrolling = false;
@@ -1635,14 +1662,14 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
                   }
                   
                   // 아래로 드래그한 경우, 현재 위치에서 고정
-                  if (wasDraggingDown && finalHeight < getMaxSheetHeight() - 10) {
+                  if (actuallyDraggedDown && finalHeight < getMaxSheetHeight() - 10) {
                     const targetHeight = Math.max(finalHeight, MIN_SHEET_HEIGHT);
-                    setIsTransitioning(true);
+                  setIsTransitioning(true);
                     setSheetHeight(targetHeight);
                   } else {
                     setIsTransitioning(true);
-                    const snapHeight = getSnapHeight(finalHeight, wasDraggingDown);
-                    setSheetHeight(snapHeight);
+                    const snapHeight = getSnapHeight(finalHeight, actuallyDraggedDown);
+                  setSheetHeight(snapHeight);
                   }
                   
                   setTimeout(() => {
