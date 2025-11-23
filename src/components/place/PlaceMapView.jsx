@@ -1229,8 +1229,8 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
           const maxHeight = getMaxSheetHeight();
           newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
           
-          // 아래로 드래그 중임을 표시
-          if (globalDeltaY < 0) {
+          // 아래로 드래그 중임을 표시 (높이가 줄어들면 아래로 드래그)
+          if (newHeight < dragStateRef.current.startHeight) {
             scrollStateRef.current.wasDraggingDown = true;
           }
           
@@ -1242,6 +1242,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       
       const handleGlobalTouchEnd = () => {
         const wasDraggingDown = scrollStateRef.current.wasDraggingDown;
+        const finalHeight = sheetHeight; // 현재 높이 저장
         scrollStateRef.current.isDraggingSheet = false;
         scrollStateRef.current.wasDraggingDown = false;
         setIsDragging(false);
@@ -1250,9 +1251,19 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
           cancelAnimationFrame(animationFrameRef.current);
         }
         
-        setIsTransitioning(true);
-        const snapHeight = getSnapHeight(sheetHeight, wasDraggingDown);
-        setSheetHeight(snapHeight);
+        // 아래로 드래그한 경우, 현재 위치에서 고정 (최대 높이로 올라가지 않음)
+        if (wasDraggingDown && finalHeight < getMaxSheetHeight() - 10) {
+          // 현재 높이를 그대로 유지 (최소 높이보다 작으면 최소 높이로만 조정)
+          const targetHeight = Math.max(finalHeight, MIN_SHEET_HEIGHT);
+          
+          setIsTransitioning(true);
+          setSheetHeight(targetHeight);
+        } else {
+          // 위로 드래그한 경우에만 스냅 포인트 사용
+          setIsTransitioning(true);
+          const snapHeight = getSnapHeight(finalHeight, wasDraggingDown);
+          setSheetHeight(snapHeight);
+        }
         
         setTimeout(() => {
           setIsTransitioning(false);
@@ -1533,8 +1544,8 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
                     const maxHeight = getMaxSheetHeight();
                     newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
                     
-                    // 아래로 드래그 중임을 표시
-                    if (globalDeltaY < 0) {
+                    // 아래로 드래그 중임을 표시 (높이가 줄어들면 아래로 드래그)
+                    if (newHeight < dragStateRef.current.startHeight) {
                       scrollStateRef.current.wasDraggingDown = true;
                     }
                     
@@ -1546,6 +1557,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
                 
                 const handleGlobalTouchEnd = () => {
                   const wasDraggingDown = scrollStateRef.current.wasDraggingDown;
+                  const finalHeight = sheetHeight; // 현재 높이 저장
                   scrollStateRef.current.isDraggingSheet = false;
                   scrollStateRef.current.wasDraggingDown = false;
                   setIsDragging(false);
@@ -1554,9 +1566,29 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
                     cancelAnimationFrame(animationFrameRef.current);
                   }
                   
-                  setIsTransitioning(true);
-                  const snapHeight = getSnapHeight(sheetHeight, wasDraggingDown);
-                  setSheetHeight(snapHeight);
+                  // 아래로 드래그한 경우, 현재 위치에서 고정 (최대 높이로 올라가지 않음)
+                  if (wasDraggingDown && finalHeight < getMaxSheetHeight() - 10) {
+                    // 현재 높이를 유지하거나, 최소/중간 높이 중 가까운 것으로만 스냅
+                    const maxHeight = getMaxSheetHeight();
+                    const midHeight = (MIN_SHEET_HEIGHT + maxHeight) / 2;
+                    
+                    // 현재 높이가 최소 높이보다 작으면 최소 높이로, 그 외에는 현재 높이 유지
+                    let targetHeight = Math.max(finalHeight, MIN_SHEET_HEIGHT);
+                    
+                    // 중간 높이에 가까우면 중간 높이로 스냅
+                    if (Math.abs(targetHeight - midHeight) < Math.abs(targetHeight - MIN_SHEET_HEIGHT) && 
+                        Math.abs(targetHeight - midHeight) < 50) {
+                      targetHeight = midHeight;
+                    }
+                    
+                    setIsTransitioning(true);
+                    setSheetHeight(targetHeight);
+                  } else {
+                    // 위로 드래그한 경우에만 스냅 포인트 사용
+                    setIsTransitioning(true);
+                    const snapHeight = getSnapHeight(finalHeight, wasDraggingDown);
+                    setSheetHeight(snapHeight);
+                  }
                   
                   setTimeout(() => {
                     setIsTransitioning(false);
