@@ -1078,8 +1078,16 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     const contentEl = sheetContentRef.current;
     if (!contentEl) return false;
     
-    return contentEl.scrollTop === 0;
+    // 스크롤이 맨 위에 있는지 확인 (5px 오차 허용)
+    return contentEl.scrollTop <= 5;
   }, [sheetHeight, getMaxSheetHeight]);
+  
+  // 스크롤이 맨 위에 있는지 확인
+  const isScrollAtTop = useCallback(() => {
+    const contentEl = sheetContentRef.current;
+    if (!contentEl) return false;
+    return contentEl.scrollTop <= 5;
+  }, []);
 
   // 하단 시트 드래그 시작
   const handleSheetMouseDown = useCallback((e) => {
@@ -1495,23 +1503,42 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
             ref={sheetContentRef}
             className={styles.sheetContent}
             onTouchStart={(e) => {
-              // 시트가 최대 높이이고 스크롤이 맨 위일 때만 드래그 시작
-              if (isAtTopAndMaxHeight()) {
+              // 시트가 최대 높이이고 스크롤이 맨 위일 때 드래그 시작 준비
+              const maxHeight = getMaxSheetHeight();
+              const isMaxHeight = Math.abs(sheetHeight - maxHeight) < 5;
+              
+              if (isMaxHeight && isScrollAtTop()) {
                 scrollStateRef.current.startY = e.touches[0].clientY;
                 scrollStateRef.current.isScrolling = false;
                 scrollStateRef.current.wasDraggingDown = false;
               }
             }}
             onTouchMove={(e) => {
-              if (!isAtTopAndMaxHeight() || scrollStateRef.current.isDraggingSheet) return;
+              // 이미 sheet를 드래그 중이면 전역 핸들러가 처리
+              if (scrollStateRef.current.isDraggingSheet) {
+                return;
+              }
+              
+              const maxHeight = getMaxSheetHeight();
+              const isMaxHeight = Math.abs(sheetHeight - maxHeight) < 5;
+              const isAtTop = isScrollAtTop();
+              
+              // 시트가 최대 높이이고 스크롤이 맨 위에 있어야 함
+              if (!isMaxHeight || !isAtTop) {
+                // 스크롤이 맨 위가 아니면 일반 스크롤 동작
+                return;
+              }
               
               const deltaY = e.touches[0].clientY - scrollStateRef.current.startY;
               
               // 아래로 드래그하면 (양수) 시트를 내리기
-              if (deltaY > 3 && !scrollStateRef.current.isScrolling) {
+              // 스크롤이 맨 위에 있고 아래로 드래그하면 sheet 자체를 내림
+              if (deltaY > 5) {
                 e.preventDefault();
                 e.stopPropagation();
-                scrollStateRef.current.isScrolling = true;
+                
+                // 스크롤이 아니라 sheet를 드래그하는 것으로 전환
+                scrollStateRef.current.isScrolling = false;
                 scrollStateRef.current.isDraggingSheet = true;
                 scrollStateRef.current.wasDraggingDown = true; // 아래로 드래그했음을 표시
                 
@@ -1568,18 +1595,8 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
                   
                   // 아래로 드래그한 경우, 현재 위치에서 고정 (최대 높이로 올라가지 않음)
                   if (wasDraggingDown && finalHeight < getMaxSheetHeight() - 10) {
-                    // 현재 높이를 유지하거나, 최소/중간 높이 중 가까운 것으로만 스냅
-                    const maxHeight = getMaxSheetHeight();
-                    const midHeight = (MIN_SHEET_HEIGHT + maxHeight) / 2;
-                    
-                    // 현재 높이가 최소 높이보다 작으면 최소 높이로, 그 외에는 현재 높이 유지
-                    let targetHeight = Math.max(finalHeight, MIN_SHEET_HEIGHT);
-                    
-                    // 중간 높이에 가까우면 중간 높이로 스냅
-                    if (Math.abs(targetHeight - midHeight) < Math.abs(targetHeight - MIN_SHEET_HEIGHT) && 
-                        Math.abs(targetHeight - midHeight) < 50) {
-                      targetHeight = midHeight;
-                    }
+                    // 현재 높이를 그대로 유지 (최소 높이보다 작으면 최소 높이로만 조정)
+                    const targetHeight = Math.max(finalHeight, MIN_SHEET_HEIGHT);
                     
                     setIsTransitioning(true);
                     setSheetHeight(targetHeight);
