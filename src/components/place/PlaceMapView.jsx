@@ -1101,6 +1101,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     setIsTransitioning(false); // 드래그 시작 시 transition 비활성화
     dragStateRef.current.startY = e.clientY;
     dragStateRef.current.startHeight = sheetHeight;
+    scrollStateRef.current.wasDraggingDown = false; // 초기화
     e.preventDefault();
   }, [sheetHeight]);
 
@@ -1122,6 +1123,11 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       const maxHeight = getMaxSheetHeight();
       newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
       
+      // 아래로 드래그 중임을 표시 (높이가 줄어들면 아래로 드래그)
+      if (newHeight < dragStateRef.current.startHeight) {
+        scrollStateRef.current.wasDraggingDown = true;
+      }
+      
       setSheetHeight(newHeight);
     });
   }, [isDragging, getMaxSheetHeight]);
@@ -1135,16 +1141,27 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       cancelAnimationFrame(animationFrameRef.current);
     }
     
-    // 스냅 포인트로 부드럽게 이동
-    setIsTransitioning(true);
-    const snapHeight = getSnapHeight(sheetHeight);
-    setSheetHeight(snapHeight);
+    // 아래로 드래그한 경우 현재 위치 유지, 위로 드래그한 경우만 스냅
+    const wasDraggingDown = scrollStateRef.current.wasDraggingDown;
+    const finalHeight = sheetHeight;
+    
+    if (wasDraggingDown && finalHeight < getMaxSheetHeight() - 10) {
+      // 아래로 드래그한 경우, 현재 위치에서 고정
+      const targetHeight = Math.max(finalHeight, MIN_SHEET_HEIGHT);
+      setIsTransitioning(true);
+      setSheetHeight(targetHeight);
+    } else {
+      // 위로 드래그한 경우에만 스냅 포인트 사용
+      setIsTransitioning(true);
+      const snapHeight = getSnapHeight(finalHeight, wasDraggingDown);
+      setSheetHeight(snapHeight);
+    }
     
     // transition 완료 후 transition 상태 해제
     setTimeout(() => {
       setIsTransitioning(false);
     }, 200);
-  }, [sheetHeight, getSnapHeight]);
+  }, [sheetHeight, getSnapHeight, getMaxSheetHeight]);
 
   // 터치 이벤트 핸들러
   const handleSheetTouchStart = useCallback((e) => {
@@ -1152,6 +1169,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     setIsTransitioning(false);
     dragStateRef.current.startY = e.touches[0].clientY;
     dragStateRef.current.startHeight = sheetHeight;
+    scrollStateRef.current.wasDraggingDown = false; // 초기화
   }, [sheetHeight]);
 
   const handleSheetTouchMove = useCallback((e) => {
@@ -1170,6 +1188,11 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       const maxHeight = getMaxSheetHeight();
       newHeight = Math.max(MIN_SHEET_HEIGHT, Math.min(maxHeight, newHeight));
       
+      // 아래로 드래그 중임을 표시 (높이가 줄어들면 아래로 드래그)
+      if (newHeight < dragStateRef.current.startHeight) {
+        scrollStateRef.current.wasDraggingDown = true;
+      }
+      
       setSheetHeight(newHeight);
     });
   }, [isDragging, getMaxSheetHeight]);
@@ -1182,16 +1205,27 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       cancelAnimationFrame(animationFrameRef.current);
     }
     
-    // 스냅 포인트로 부드럽게 이동
-    setIsTransitioning(true);
-    const snapHeight = getSnapHeight(sheetHeight);
-    setSheetHeight(snapHeight);
+    // 아래로 드래그한 경우 현재 위치 유지, 위로 드래그한 경우만 스냅
+    const wasDraggingDown = scrollStateRef.current.wasDraggingDown;
+    const finalHeight = sheetHeight;
+    
+    if (wasDraggingDown && finalHeight < getMaxSheetHeight() - 10) {
+      // 아래로 드래그한 경우, 현재 위치에서 고정
+      const targetHeight = Math.max(finalHeight, MIN_SHEET_HEIGHT);
+      setIsTransitioning(true);
+      setSheetHeight(targetHeight);
+    } else {
+      // 위로 드래그한 경우에만 스냅 포인트 사용
+      setIsTransitioning(true);
+      const snapHeight = getSnapHeight(finalHeight, wasDraggingDown);
+      setSheetHeight(snapHeight);
+    }
     
     // transition 완료 후 transition 상태 해제
     setTimeout(() => {
       setIsTransitioning(false);
     }, 200);
-  }, [sheetHeight, getSnapHeight]);
+  }, [sheetHeight, getSnapHeight, getMaxSheetHeight]);
 
   // 시트가 최대 높이일 때 아래로 드래그하는 핸들러 (드래그 핸들, 헤더용)
   const handleMaxHeightDragDown = useCallback((e) => {
