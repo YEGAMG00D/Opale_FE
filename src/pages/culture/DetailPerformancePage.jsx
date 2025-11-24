@@ -23,6 +23,7 @@ import { usePerformanceBooking } from '../../hooks/usePerformanceBooking';
 import { usePlaceBasic } from '../../hooks/usePlaceBasic';
 import { getTicketsByPerformanceName, getWatchedTickets, addTicket } from '../../utils/ticketUtils';
 import logApi from '../../api/logApi';
+import TicketSelectModal from '../../components/common/TicketSelectModal';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -62,6 +63,10 @@ const DetailPerformancePage = () => {
   const [capturedImage, setCapturedImage] = useState(null);
   const ticketVideoRef = useRef(null);
   const ticketFileInputRef = useRef(null);
+  
+  // 티켓 선택 관련 상태
+  const [showTicketSelectModal, setShowTicketSelectModal] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null); // 선택된 티켓 정보 { ticketId, performanceId }
   
   // API 데이터 상태
   const [performance, setPerformance] = useState(null);
@@ -1148,6 +1153,15 @@ const DetailPerformancePage = () => {
   const handleWriteSubmit = async (e) => {
     e.preventDefault();
     
+    // 공연 후기(AFTER)인 경우 티켓 선택 필수
+    if (writeType === 'review') {
+      if (!selectedTicket || !selectedTicket.ticketId) {
+        alert('리뷰를 작성하려면 티켓을 선택해주세요.');
+        setShowTicketSelectModal(true);
+        return;
+      }
+    }
+    
     if (!performanceId) {
       alert('공연 정보가 없습니다.');
       return;
@@ -1156,10 +1170,22 @@ const DetailPerformancePage = () => {
     try {
       // 요청 DTO 생성
       const reviewType = writeType === 'review' ? 'AFTER' : 'EXPECTATION';
+      
+      // 공연 후기인 경우 선택된 티켓의 performanceId와 ticketId 사용
+      // 기대평인 경우 공연 상세 페이지의 performanceId 사용 (티켓 선택 불필요)
+      const reviewPerformanceId = writeType === 'review' && selectedTicket?.performanceId 
+        ? selectedTicket.performanceId 
+        : performanceId;
+      
+      const reviewTicketId = writeType === 'review' && selectedTicket?.ticketId 
+        ? selectedTicket.ticketId 
+        : null;
+      
       const requestDto = normalizePerformanceReviewRequest(
         writeForm,
-        performanceId,
-        reviewType
+        reviewPerformanceId,
+        reviewType,
+        reviewTicketId
       );
 
       // API 호출
@@ -1195,6 +1221,30 @@ const DetailPerformancePage = () => {
   const handleWriteCancel = () => {
     setShowWriteModal(false);
     setWriteForm({ title: '', content: '', rating: 5 });
+    setSelectedTicket(null);
+  };
+
+  // 티켓 선택 모달 열기
+  const handleOpenTicketSelectModal = () => {
+    setShowTicketSelectModal(true);
+  };
+
+  // 티켓 선택 모달 닫기
+  const handleCloseTicketSelectModal = () => {
+    setShowTicketSelectModal(false);
+  };
+
+  // 티켓 선택 시 처리
+  const handleSelectTicket = (ticket) => {
+    const ticketId = ticket.ticketId || ticket.id;
+    const ticketPerformanceId = ticket.performanceId;
+    
+    setSelectedTicket({
+      ticketId: ticketId,
+      performanceId: ticketPerformanceId
+    });
+    
+    setShowTicketSelectModal(false);
   };
 
   // 리뷰 수정 핸들러
@@ -1215,6 +1265,7 @@ const DetailPerformancePage = () => {
         id: apiResponse.performanceReviewId,
         performanceReviewId: apiResponse.performanceReviewId,
         performanceId: apiResponse.performanceId,
+        ticketId: apiResponse.ticketId || null, // 리뷰 수정 시 ticketId 필요
         title: apiResponse.title || '',
         content: apiResponse.contents || '',
         contents: apiResponse.contents || '',
@@ -1258,11 +1309,15 @@ const DetailPerformancePage = () => {
     try {
       const reviewId = editingReview.id || editingReview.performanceReviewId || editingReview.reviewId;
       const reviewType = editingReview.reviewType || (activeReviewTab === 'review' ? 'AFTER' : 'EXPECTATION');
+      
+      // 리뷰 수정 시 기존 리뷰의 ticketId 사용
+      const reviewTicketId = editingReview.ticketId || null;
 
       const updateDto = normalizePerformanceReviewRequest(
         editForm,
         performanceId,
-        reviewType
+        reviewType,
+        reviewTicketId
       );
       
       await updatePerformanceReview(reviewId, updateDto);
@@ -1566,7 +1621,9 @@ const DetailPerformancePage = () => {
                         id={review.id}
                         title={review.title}
                         performanceDate={review.performanceDate}
+                        performanceTime={review.performanceTime}
                         seat={review.seat}
+                        performanceName={review.performanceName || review.performanceTitle}
                         rating={review.rating}
                         content={review.content}
                         author={review.author}
@@ -1928,21 +1985,40 @@ const DetailPerformancePage = () => {
               </div>
               
               {writeType === 'review' && (
-                <div className={styles.formGroup}>
-                  <label>평점</label>
-                  <div className={styles.ratingInput}>
-                    {[1,2,3,4,5].map(star => (
-                      <button 
-                        key={star} 
-                        type="button"
-                        className={`${styles.ratingStar} ${star <= writeForm.rating ? styles.filled : ''}`}
-                        onClick={() => setWriteForm({...writeForm, rating: star})}
-                      >
-                        ★
-                      </button>
-                    ))}
+                <>
+                  <div className={styles.formGroup}>
+                    <label>티켓 선택</label>
+                    <button
+                      type="button"
+                      className={styles.ticketSelectButton}
+                      onClick={handleOpenTicketSelectModal}
+                    >
+                      {selectedTicket 
+                        ? `선택된 티켓: ${selectedTicket.ticketId}번 티켓` 
+                        : '티켓을 선택해주세요'}
+                    </button>
+                    {selectedTicket && (
+                      <div className={styles.selectedTicketInfo}>
+                        티켓 ID: {selectedTicket.ticketId}, 공연 ID: {selectedTicket.performanceId}
+                      </div>
+                    )}
                   </div>
-                </div>
+                  <div className={styles.formGroup}>
+                    <label>평점</label>
+                    <div className={styles.ratingInput}>
+                      {[1,2,3,4,5].map(star => (
+                        <button 
+                          key={star} 
+                          type="button"
+                          className={`${styles.ratingStar} ${star <= writeForm.rating ? styles.filled : ''}`}
+                          onClick={() => setWriteForm({...writeForm, rating: star})}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
               
               <div className={styles.formGroup}>
@@ -1968,6 +2044,13 @@ const DetailPerformancePage = () => {
           </div>
         </div>
       )}
+
+      {/* 티켓 선택 모달 */}
+      <TicketSelectModal
+        isOpen={showTicketSelectModal}
+        onClose={handleCloseTicketSelectModal}
+        onSelectTicket={handleSelectTicket}
+      />
 
       {/* 수정 모달 */}
       {showEditModal && editingReview && (

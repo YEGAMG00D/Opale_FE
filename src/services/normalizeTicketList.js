@@ -43,6 +43,7 @@ export const normalizeTicketList = (apiResponse) => {
     return {
       id: ticket.ticketId,
       ticketId: ticket.ticketId,
+      performanceId: ticket.performanceId || null, // 티켓의 공연 ID
       performanceName: ticket.performanceName || '',
       performanceDate: frontendData?.performanceDate || '',
       performanceTime: frontendData?.performanceTime || '',

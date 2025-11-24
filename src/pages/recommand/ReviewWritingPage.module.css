@@ -362,6 +362,27 @@
   background-color: #e5e7eb;
 }
 
+.selectFromHistoryButton {
+  width: 100%;
+  padding: 14px;
+  background-color: #fff5f7;
+  border: 1px solid #ffb6c1;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #c2185b;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 4px;
+}
+
+.selectFromHistoryButton:hover {
+  background-color: #ffeef2;
+  border-color: #ffa5b8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.2);
+}
+
 .tertiaryButton {
   width: 100%;
   padding: 14px;

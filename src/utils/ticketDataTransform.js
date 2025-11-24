@@ -13,12 +13,24 @@
  * @param {string} frontendData.row - 열
  * @param {string} frontendData.number - 번
  * @param {string} frontendData.placeName - 공연장명 (선택)
+ * @param {number} frontendData.performanceId - 공연 ID (선택)
+ * @param {number} frontendData.placeId - 공연장 ID (선택)
  * @returns {Object} - 백엔드 API 요청 DTO
  */
 export const transformTicketDataForApi = (frontendData) => {
   const dto = {
     performanceName: frontendData.performanceName || '',
   };
+
+  // performanceId가 있으면 포함
+  if (frontendData.performanceId) {
+    dto.performanceId = frontendData.performanceId;
+  }
+
+  // placeId가 있으면 포함
+  if (frontendData.placeId) {
+    dto.placeId = frontendData.placeId;
+  }
 
   // 1) 날짜 + 시간 → LocalDateTime 형식으로 변환
   // performanceDate: yyyy-MM-dd, performanceTime: HH:mm
@@ -84,6 +96,8 @@ export const transformTicketDataFromApi = (apiResponse) => {
     performanceName: apiResponse.performanceName || '',
     placeName: apiResponse.placeName || '',
     ticketImageUrl: apiResponse.ticketImageUrl || null,
+    performanceId: apiResponse.performanceId || null,
+    placeId: apiResponse.placeId || null,
   };
 
   // 1) LocalDateTime → 날짜/시간 분리

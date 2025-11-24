@@ -6,7 +6,6 @@ import styles from "./LoginPage.module.css";
 
 import { login as loginApi } from "../../../api/authApi";
 import { initializeUserTickets, clearPreviousUserTickets, hasUserTickets } from "../../../utils/ticketUtils";
-import { hasUserReviews } from "../../../utils/reviewUtils";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -46,7 +45,7 @@ const LoginPage = () => {
         localStorage.setItem("refreshToken", refreshToken);
         localStorage.setItem("user", JSON.stringify(user));
 
-        // ⬇️ Redux 반영 (먼저 로그인 상태로 만들어서 API 호출 가능하게 함)
+        // ⬇️ Redux 반영
         dispatch(
           loginSuccess({
             user,
@@ -54,33 +53,10 @@ const LoginPage = () => {
           })
         );
 
-        // ⬇️ 새 사용자인지 확인 (티켓과 리뷰 모두 확인)
-        const checkNewUser = async () => {
-          const hasTickets = hasUserTickets(userId);
-          let hasReviews = false;
-          
-          try {
-            // 서버에서 리뷰 확인
-            hasReviews = await hasUserReviews(userId);
-          } catch (error) {
-            console.warn('리뷰 확인 실패:', error);
-            // 에러 발생 시 리뷰가 없다고 간주
-            hasReviews = false;
-          }
-
-          // 티켓도 없고 리뷰도 없으면 새 사용자
-          if (userId && !hasTickets && !hasReviews) {
-            // 새 사용자: 티켓 데이터 초기화 (리뷰는 서버에서 자동으로 빈 상태)
-            initializeUserTickets(userId);
-          } else if (userId && !hasTickets) {
-            // 티켓만 없는 경우 (기존 사용자지만 티켓 데이터가 없는 경우)
-            initializeUserTickets(userId);
-          }
-          // 기존 사용자는 데이터 유지 (아무것도 하지 않음)
-        };
-
-        // 비동기로 새 사용자 확인 (로그인은 먼저 완료)
-        checkNewUser();
+        // 티켓 데이터가 없으면 초기화
+        if (userId && !hasUserTickets(userId)) {
+          initializeUserTickets(userId);
+        }
 
         navigate("/");
       } else {

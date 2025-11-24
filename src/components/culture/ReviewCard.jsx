@@ -6,7 +6,9 @@ const ReviewCard = ({
   id,
   title,
   performanceDate,
+  performanceTime,
   seat,
+  performanceName,
   rating,
   content,
   author,
@@ -60,7 +62,23 @@ const ReviewCard = ({
       <div className={styles.reviewHeader}>
         <h5 className={styles.reviewTitle}>{title}</h5>
         <div className={styles.reviewMeta}>
-          <span className={styles.reviewDate}>{performanceDate} | {seat}</span>
+          {/* 티켓 정보 섹션 */}
+          {(performanceName || performanceDate || seat) && (
+            <div className={styles.ticketInfo}>
+              {performanceName && (
+                <span className={styles.ticketItem}>{performanceName}</span>
+              )}
+              {performanceDate && (
+                <span className={styles.ticketItem}>
+                  {performanceDate}
+                  {performanceTime && ` ${performanceTime}`}
+                </span>
+              )}
+              {seat && (
+                <span className={styles.ticketItem}>{seat}</span>
+              )}
+            </div>
+          )}
           <div className={styles.reviewRating}>
             {[...Array(5)].map((_, i) => (
               <span 

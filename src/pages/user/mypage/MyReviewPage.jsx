@@ -151,6 +151,7 @@ const MyReviewPage = () => {
           id: apiResponse.performanceReviewId,
           performanceReviewId: apiResponse.performanceReviewId,
           performanceId: apiResponse.performanceId,
+          ticketId: apiResponse.ticketId || null, // 리뷰 수정 시 ticketId 필요
           title: apiResponse.title || '',
           content: apiResponse.contents || '',
           contents: apiResponse.contents || '',
@@ -216,16 +217,27 @@ const MyReviewPage = () => {
         ));
       } else {
         // 공연 리뷰 수정 (AFTER 또는 EXPECTATION)
+        const reviewId = editingReview.id || editingReview.performanceReviewId || editingReview.reviewId;
+        
+        if (!reviewId) {
+          alert('리뷰 ID를 찾을 수 없습니다.');
+          return;
+        }
+        
         const performanceId = editingReview.performanceId || editingReview.performance?.id;
         if (!performanceId) {
           alert('공연 정보를 찾을 수 없습니다.');
           return;
         }
 
+        // 리뷰 수정 시 기존 리뷰의 ticketId 사용
+        const reviewTicketId = editingReview.ticketId || null;
+        
         const updateDto = normalizePerformanceReviewRequest(
           editForm,
           performanceId,
-          reviewType
+          reviewType,
+          reviewTicketId
         );
         
         await updatePerformanceReview(reviewId, updateDto);

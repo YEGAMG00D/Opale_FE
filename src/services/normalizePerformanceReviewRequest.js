@@ -2,12 +2,13 @@
 
 /**
  * 공연 리뷰 작성 요청 DTO 생성
- * @param {Object} formData - 폼 데이터 { title, content, rating, performanceDate, performanceTime, section, row, number }
+ * @param {Object} formData - 폼 데이터 { title, content, rating, performanceDate, performanceTime, section, row, number, ticketId }
  * @param {String} performanceId - 공연 ID
  * @param {String} reviewType - 리뷰 타입 ('AFTER' | 'EXPECTATION')
+ * @param {Number|String} ticketId - 티켓 ID (선택)
  * @returns {Object} - API 요청 DTO
  */
-export const normalizePerformanceReviewRequest = (formData, performanceId, reviewType = 'AFTER') => {
+export const normalizePerformanceReviewRequest = (formData, performanceId, reviewType = 'AFTER', ticketId = null) => {
   const dto = {
     title: formData.title || '',
     contents: formData.content || '', // API는 contents를 요구
@@ -16,7 +17,15 @@ export const normalizePerformanceReviewRequest = (formData, performanceId, revie
     performanceId: performanceId,
   };
 
-  // 티켓 정보가 있으면 추가
+  // ticketId가 있으면 추가 (백엔드 필수 필드)
+  if (ticketId) {
+    dto.ticketId = typeof ticketId === 'string' ? parseInt(ticketId, 10) : ticketId;
+  } else if (formData.ticketId) {
+    // formData에서 ticketId를 가져올 수도 있음
+    dto.ticketId = typeof formData.ticketId === 'string' ? parseInt(formData.ticketId, 10) : formData.ticketId;
+  }
+
+  // 티켓 정보가 있으면 추가 (하위 호환성을 위해 유지)
   if (formData.performanceDate) {
     dto.performanceDate = formData.performanceDate;
   }
