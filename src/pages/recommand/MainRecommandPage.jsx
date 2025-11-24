@@ -7,14 +7,20 @@ import { getUserRecommendations, getRecentViewedPerformance, getRecentSimilarRec
 import { fetchPerformanceBasic } from '../../api/performanceApi';
 import { normalizeRecommendation } from '../../services/normalizeRecommendation';
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
+import { hasUserTickets } from '../../utils/ticketUtils';
+import { hasUserReviews } from '../../utils/reviewUtils';
 import styles from './MainRecommandPage.module.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 const MainRecommandPage = () => {
   const navigate = useNavigate();
-  const { isLoggedIn } = useSelector((state) => state.user);
+  const { isLoggedIn, user } = useSelector((state) => state.user);
   const [myKeywords, setMyKeywords] = useState([]);
+  
+  // 새 사용자 확인 상태
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [isCheckingUser, setIsCheckingUser] = useState(true);
   
   // 로그인한 사용자용
   // 개인 맞춤 추천 공연 목록
@@ -167,9 +173,55 @@ const MainRecommandPage = () => {
   
 
 
-  // 로그인한 사용자: 관심 공연 기반 키워드 추출
+  // 로그인한 사용자: 새 사용자인지 확인
   useEffect(() => {
-    if (!isLoggedIn) return;
+    const checkNewUser = async () => {
+      if (!isLoggedIn) {
+        setIsNewUser(false);
+        setIsCheckingUser(false);
+        return;
+      }
+
+      try {
+        setIsCheckingUser(true);
+        const userId = user?.userId || user?.id;
+        
+        if (!userId) {
+          setIsNewUser(false);
+          setIsCheckingUser(false);
+          return;
+        }
+
+        // 티켓 확인 (localStorage)
+        const hasTickets = hasUserTickets(userId);
+        
+        // 리뷰 확인 (서버 API)
+        let hasReviews = false;
+        try {
+          hasReviews = await hasUserReviews(userId);
+        } catch (error) {
+          console.warn('리뷰 확인 실패 (새 사용자로 간주):', error);
+          hasReviews = false;
+        }
+
+        // 티켓도 없고 리뷰도 없으면 새 사용자
+        const isNew = !hasTickets && !hasReviews;
+        setIsNewUser(isNew);
+      } catch (err) {
+        console.error('새 사용자 확인 실패:', err);
+        // 에러 발생 시 새 사용자로 간주 (안전한 기본값)
+        setIsNewUser(true);
+      } finally {
+        setIsCheckingUser(false);
+      }
+    };
+
+    checkNewUser();
+  }, [isLoggedIn, user]);
+
+  // 로그인한 사용자: 관심 공연 기반 키워드 추출 (기존 사용자만)
+  useEffect(() => {
+    if (!isLoggedIn || isNewUser || isCheckingUser) return;
     
     const extractMyKeywords = async () => {
       try {
@@ -204,11 +256,11 @@ const MainRecommandPage = () => {
     };
 
     extractMyKeywords();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isNewUser, isCheckingUser]);
 
-  // 로그인한 사용자: 개인 맞춤 추천 공연 목록 조회
+  // 로그인한 사용자: 개인 맞춤 추천 공연 목록 조회 (기존 사용자만)
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || isNewUser || isCheckingUser) return;
     
     const loadUserRecommendations = async () => {
       try {
@@ -225,11 +277,11 @@ const MainRecommandPage = () => {
     };
 
     loadUserRecommendations();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isNewUser, isCheckingUser]);
 
-  // 로그인한 사용자: 최근 본 공연 조회 및 유사 공연 추천
+  // 로그인한 사용자: 최근 본 공연 조회 및 유사 공연 추천 (기존 사용자만)
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || isNewUser || isCheckingUser) return;
     
     const loadRecentAndSimilar = async () => {
       try {
@@ -283,11 +335,11 @@ const MainRecommandPage = () => {
     };
 
     loadRecentAndSimilar();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isNewUser, isCheckingUser]);
 
-  // 로그인하지 않은 사용자: 인기 공연 추천 조회
+  // 로그인하지 않은 사용자 또는 새 사용자: 인기 공연 추천 조회
   useEffect(() => {
-    if (isLoggedIn) return;
+    if (isLoggedIn && !isNewUser && !isCheckingUser) return;
     
     const loadPopularRecommendations = async () => {
       try {
@@ -304,11 +356,11 @@ const MainRecommandPage = () => {
     };
 
     loadPopularRecommendations();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isNewUser, isCheckingUser]);
 
-  // 로그인하지 않은 사용자: 장르 랜덤 선택 및 장르별 추천 조회
+  // 로그인하지 않은 사용자 또는 새 사용자: 장르 랜덤 선택 및 장르별 추천 조회
   useEffect(() => {
-    if (isLoggedIn) return;
+    if (isLoggedIn && !isNewUser && !isCheckingUser) return;
     
     const genres = ['뮤지컬', '연극', '대중음악', '서양음악(클래식)', '한국음악(국악)'];
     
@@ -346,7 +398,7 @@ const MainRecommandPage = () => {
       
       loadGenreRecommendations();
     });
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isNewUser, isCheckingUser]);
 
   // 이미지 URL 처리 헬퍼 함수
   const getImageUrl = (imageUrl) => {
@@ -756,8 +808,15 @@ const MainRecommandPage = () => {
         </div>
       </div>
 
-      {/* 로그인한 사용자: 내 키워드 섹션 */}
-      {isLoggedIn && myKeywords.length > 0 && (
+      {/* 사용자 확인 중 로딩 */}
+      {isCheckingUser ? (
+        <div style={{ padding: '40px', textAlign: 'center' }}>
+          추천 공연을 준비하는 중...
+        </div>
+      ) : (
+        <>
+      {/* 로그인한 사용자: 내 키워드 섹션 (기존 사용자만) */}
+      {isLoggedIn && !isNewUser && myKeywords.length > 0 && (
         <section className={styles.myKeywordsSection}>
           <h2 className={styles.sectionTitle}>내 키워드</h2>
           <div className={styles.keywordsContainer}>
@@ -774,8 +833,8 @@ const MainRecommandPage = () => {
         </section>
       )}
 
-      {/* 로그인한 사용자: 개인 맞춤 추천 공연 섹션 */}
-      {isLoggedIn && (
+      {/* 로그인한 사용자: 개인 맞춤 추천 공연 섹션 (기존 사용자만) */}
+      {isLoggedIn && !isNewUser && !isCheckingUser && (
         <section className={styles.seriesSection}>
           <h2 className={styles.sectionTitle}>추천하는 공연</h2>
           {userRecommendationsLoading ? (
@@ -880,8 +939,8 @@ const MainRecommandPage = () => {
         </section>
       )}
 
-      {/* 로그인한 사용자: 최근 본 공연과 유사한 공연 섹션 */}
-      {isLoggedIn && recentPerformance && (
+      {/* 로그인한 사용자: 최근 본 공연과 유사한 공연 섹션 (기존 사용자만) */}
+      {isLoggedIn && !isNewUser && !isCheckingUser && recentPerformance && (
         <section className={styles.seriesSection}>
           <h2 className={styles.sectionTitle}>
             {recentPerformance.title ? `'${recentPerformance.title}'과 비슷한 공연은` : '최근 본 공연과 비슷한 공연은'}
@@ -988,8 +1047,8 @@ const MainRecommandPage = () => {
         </section>
       )}
 
-      {/* 로그인하지 않은 사용자: 인기 공연 추천 섹션 */}
-      {!isLoggedIn && (
+      {/* 로그인하지 않은 사용자 또는 새 사용자: 인기 공연 추천 섹션 */}
+      {(!isLoggedIn || (isLoggedIn && isNewUser && !isCheckingUser)) && (
         <section className={styles.seriesSection}>
           <h2 className={styles.sectionTitle}>인기 공연</h2>
           {popularPerformancesLoading ? (
@@ -1093,8 +1152,8 @@ const MainRecommandPage = () => {
         </section>
       )}
 
-      {/* 로그인하지 않은 사용자: 장르별 추천 섹션 */}
-      {!isLoggedIn && selectedGenres.map((genre) => {
+      {/* 로그인하지 않은 사용자 또는 새 사용자: 장르별 추천 섹션 */}
+      {(!isLoggedIn || (isLoggedIn && isNewUser && !isCheckingUser)) && selectedGenres.map((genre) => {
         const performances = genreRecommendations[genre] || [];
         const loading = genreRecommendationsLoading[genre] || false;
         const state = genreSliderStates[genre] || { currentIndex: 0, displayIndex: 0, isTransitioning: true };
@@ -1317,6 +1376,8 @@ const MainRecommandPage = () => {
           </div>
         </div>
       </section>
+        </>
+      )}
 
     </div>
   );
