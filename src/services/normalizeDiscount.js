@@ -76,8 +76,49 @@ export const normalizeDiscountItem = (item) => {
     return imageUrl;
   };
 
+  // 인터파크 이미지 URL에서 상품 ID 추출
+  const extractInterparkGoodsId = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    // 인터파크 이미지 URL 패턴: https://ticketimage.interpark.com/Play/image/large/25/25009291_p.gif
+    // 또는 다른 패턴들도 있을 수 있음
+    const patterns = [
+      /\/Play\/image\/[^\/]+\/\d+\/(\d+)_[^\/]+\.(gif|jpg|png|webp)/i,  // /Play/image/large/25/25009291_p.gif
+      /\/goods\/(\d+)/i,  // /goods/25009291
+      /(\d{8,})/  // 8자리 이상 숫자 (상품 ID로 추정)
+    ];
+    
+    for (const pattern of patterns) {
+      const match = imageUrl.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    
+    return null;
+  };
+
+  // 링크 생성 - 인터파크의 경우 이미지 URL에서 상품 ID 추출
+  const normalizeLink = (link, imageUrl, site) => {
+    // 이미 링크가 있으면 그대로 사용
+    if (link && link.trim() !== '') {
+      return link;
+    }
+    
+    // 인터파크의 경우 이미지 URL에서 상품 ID 추출하여 링크 생성
+    if (site === 'INTERPARK' || site === 'interpark' || site?.toUpperCase() === 'INTERPARK') {
+      const goodsId = extractInterparkGoodsId(imageUrl);
+      if (goodsId) {
+        return `https://tickets.interpark.com/goods/${goodsId}`;
+      }
+    }
+    
+    return link || '';
+  };
+
   const site = item.site ?? '';
   const imageUrl = normalizeImageUrl(item.imageUrl ?? '', site);
+  const link = normalizeLink(item.link ?? '', imageUrl, site);
 
   return {
     site,
@@ -94,7 +135,7 @@ export const normalizeDiscountItem = (item) => {
     startDate: formatDate(item.startDate),
     endDate: formatDate(item.endDate),
     dateRange: formatDateRange(item.startDate, item.endDate),
-    link: item.link ?? '',
+    link,
     discountEndDatetime: item.discountEndDatetime ?? null,
   };
 };
