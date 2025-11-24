@@ -8,6 +8,7 @@ import { fetchPerformanceList } from '../../api/performanceApi';
 import { normalizePerformance } from '../../services/normalizePerformance';
 import { transformTicketDataForApi } from '../../utils/ticketDataTransform';
 import logApi from '../../api/logApi';
+import TicketSelectModal from '../../components/common/TicketSelectModal';
 
 const ReviewWritingPage = () => {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ const ReviewWritingPage = () => {
   const [ticketData, setTicketData] = useState(() => {
     const stateData = location.state?.ticketData || {};
     return {
+      id: stateData.id || stateData.ticketId || null,
+      ticketId: stateData.ticketId || stateData.id || null,
       performanceName: stateData.performanceName || '',
       performanceDate: stateData.performanceDate || '',
       performanceTime: stateData.performanceTime || '',
@@ -34,6 +37,7 @@ const ReviewWritingPage = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [showTicketSelectModal, setShowTicketSelectModal] = useState(false);
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -177,6 +181,48 @@ const ReviewWritingPage = () => {
     stopCamera();
   };
 
+  // 티켓 선택 모달 열기
+  const handleOpenTicketSelectModal = () => {
+    setShowTicketSelectModal(true);
+  };
+
+  // 티켓 선택 모달 닫기
+  const handleCloseTicketSelectModal = () => {
+    setShowTicketSelectModal(false);
+  };
+
+  // 티켓 선택 시 처리
+  const handleSelectTicket = (selectedTicket) => {
+    // 선택한 티켓 정보를 폼에 채우기
+    const ticketId = selectedTicket.ticketId || selectedTicket.id;
+    const isExistingTicket = !!ticketId;
+    
+    setTicketData({
+      id: ticketId || null,
+      ticketId: ticketId || null,
+      performanceName: selectedTicket.performanceName || '',
+      performanceDate: selectedTicket.performanceDate || '',
+      performanceTime: selectedTicket.performanceTime || '',
+      section: selectedTicket.section || '',
+      row: selectedTicket.row || '',
+      number: selectedTicket.number || '',
+      placeName: selectedTicket.placeName || ''
+    });
+
+    // 이미지 URL이 있으면 설정
+    if (selectedTicket.ticketImageUrl) {
+      setCapturedImage(selectedTicket.ticketImageUrl);
+    }
+
+    // 이미 등록된 티켓이면 티켓 등록 단계를 건너뛰고 바로 후기 작성 단계로 이동
+    if (isExistingTicket) {
+      setStep('performanceReview');
+    } else {
+      // 새 티켓이면 티켓 정보 입력 단계로 이동
+      setStep('ticketInput');
+    }
+  };
+
   // 직접 입력하기 완료 -> 공연 후기로
   const handleTicketInputComplete = async () => {
     if (!ticketData.performanceName || !ticketData.performanceDate) {
@@ -184,11 +230,20 @@ const ReviewWritingPage = () => {
       return;
     }
 
+    // 이미 등록된 티켓인지 확인 (등록된 티켓을 선택한 경우)
+    const isExistingTicket = !!(ticketData.ticketId || ticketData.id);
+    
+    if (isExistingTicket) {
+      // 이미 등록된 티켓이면 티켓 등록 API를 호출하지 않고 바로 후기 작성 단계로 이동
+      setStep('performanceReview');
+      return;
+    }
+
     try {
       // 프론트엔드 데이터를 백엔드 API 형식으로 변환
       const apiDto = transformTicketDataForApi(ticketData);
 
-      // 티켓 등록 API 호출
+      // 티켓 등록 API 호출 (새 티켓만 등록)
       const ticketResponse = await createTicket(apiDto);
 
       // 티켓 인증 완료 시 BOOKED 로그 기록
@@ -356,15 +411,16 @@ const ReviewWritingPage = () => {
   // 티켓 스캔 단계
   if (step === 'ticketScan') {
     return (
-      <div className={styles.container}>
-        {/* 상단 헤더 */}
-        <div className={styles.header}>
-          <div></div>
-          <h2 className={styles.headerTitle}>티켓 등록</h2>
-          <div></div>
-        </div>
+      <>
+        <div className={styles.container}>
+          {/* 상단 헤더 */}
+          <div className={styles.header}>
+            <div></div>
+            <h2 className={styles.headerTitle}>티켓 등록</h2>
+            <div></div>
+          </div>
 
-        <div className={styles.content}>
+          <div className={styles.content}>
           {cameraStream ? (
             <div className={styles.cameraArea}>
               <video
@@ -426,6 +482,12 @@ const ReviewWritingPage = () => {
                 파일에서 선택
               </button>
               <button 
+                className={styles.selectFromHistoryButton}
+                onClick={handleOpenTicketSelectModal}
+              >
+                등록한 예매 내역에서 선택
+              </button>
+              <button 
                 className={styles.tertiaryButton}
                 onClick={handleSkipTicketScan}
               >
@@ -433,15 +495,23 @@ const ReviewWritingPage = () => {
               </button>
             </>
           )}
+          </div>
         </div>
-      </div>
+        {/* 티켓 선택 모달 */}
+        <TicketSelectModal
+          isOpen={showTicketSelectModal}
+          onClose={handleCloseTicketSelectModal}
+          onSelectTicket={handleSelectTicket}
+        />
+      </>
     );
   }
 
   // 직접 입력하기 단계
   if (step === 'ticketInput') {
     return (
-      <div className={styles.container}>
+      <>
+        <div className={styles.container}>
         {/* 상단 헤더 */}
         <div className={styles.header}>
           <div></div>
@@ -554,6 +624,13 @@ const ReviewWritingPage = () => {
           </div>
         </div>
       </div>
+      {/* 티켓 선택 모달 */}
+      <TicketSelectModal
+        isOpen={showTicketSelectModal}
+        onClose={handleCloseTicketSelectModal}
+        onSelectTicket={handleSelectTicket}
+      />
+      </>
     );
   }
 
@@ -569,7 +646,8 @@ const ReviewWritingPage = () => {
     };
 
     return (
-      <div className={styles.container}>
+      <>
+        <div className={styles.container}>
         {/* 상단 헤더 */}
         <div className={styles.header}>
           <div></div>
@@ -636,6 +714,13 @@ const ReviewWritingPage = () => {
           </div>
         </div>
       </div>
+      {/* 티켓 선택 모달 */}
+      <TicketSelectModal
+        isOpen={showTicketSelectModal}
+        onClose={handleCloseTicketSelectModal}
+        onSelectTicket={handleSelectTicket}
+      />
+      </>
     );
   }
 
@@ -651,13 +736,14 @@ const ReviewWritingPage = () => {
     };
 
     return (
-      <div className={styles.container}>
-        {/* 상단 헤더 */}
-        <div className={styles.header}>
-          <div></div>
-          <h2 className={styles.headerTitle}>공연장 후기 작성</h2>
-          <button className={styles.closeButton} onClick={handleCancel}>×</button>
-        </div>
+      <>
+        <div className={styles.container}>
+          {/* 상단 헤더 */}
+          <div className={styles.header}>
+            <div></div>
+            <h2 className={styles.headerTitle}>공연장 후기 작성</h2>
+            <button className={styles.closeButton} onClick={handleCancel}>×</button>
+          </div>
 
         <div className={styles.content}>
           <div className={styles.form}>
@@ -718,6 +804,13 @@ const ReviewWritingPage = () => {
           </div>
         </div>
       </div>
+      {/* 티켓 선택 모달 */}
+      <TicketSelectModal
+        isOpen={showTicketSelectModal}
+        onClose={handleCloseTicketSelectModal}
+        onSelectTicket={handleSelectTicket}
+      />
+      </>
     );
   }
 

@@ -4,6 +4,7 @@ import styles from './TicketRegisterPage.module.css';
 import { createTicket, updateTicket as updateTicketApi, getTicket } from '../../../api/reservationApi';
 import { transformTicketDataForApi, transformTicketDataFromApi } from '../../../utils/ticketDataTransform';
 import logApi from '../../../api/logApi';
+import TicketSelectModal from '../../../components/common/TicketSelectModal';
 
 const TicketRegisterPage = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const TicketRegisterPage = () => {
   const [capturedImage, setCapturedImage] = useState(null);
   const [ticketImageUrl, setTicketImageUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(isEditMode); // 수정 모드일 때는 로딩 중
+  const [showTicketSelectModal, setShowTicketSelectModal] = useState(false);
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -172,6 +174,40 @@ const TicketRegisterPage = () => {
   };
 
   const handleTicketManualInput = () => {
+    setTicketStep('manual');
+  };
+
+  // 티켓 선택 모달 열기
+  const handleOpenTicketSelectModal = () => {
+    setShowTicketSelectModal(true);
+  };
+
+  // 티켓 선택 모달 닫기
+  const handleCloseTicketSelectModal = () => {
+    setShowTicketSelectModal(false);
+  };
+
+  // 티켓 선택 시 처리
+  const handleSelectTicket = (selectedTicket) => {
+    // 선택한 티켓 정보를 폼에 채우기
+    setTicketData({
+      performanceName: selectedTicket.performanceName || '',
+      performanceDate: selectedTicket.performanceDate || '',
+      performanceTime: selectedTicket.performanceTime || '',
+      section: selectedTicket.section || '',
+      row: selectedTicket.row || '',
+      number: selectedTicket.number || '',
+      placeName: selectedTicket.placeName || '',
+      ticketImage: null
+    });
+
+    // 이미지 URL이 있으면 설정
+    if (selectedTicket.ticketImageUrl) {
+      setTicketImageUrl(selectedTicket.ticketImageUrl);
+      setCapturedImage(selectedTicket.ticketImageUrl);
+    }
+
+    // 티켓 정보 입력 단계로 이동
     setTicketStep('manual');
   };
 
@@ -341,6 +377,12 @@ const TicketRegisterPage = () => {
                   파일에서 선택
                 </button>
                 <button 
+                  className={styles.selectFromHistoryButton}
+                  onClick={handleOpenTicketSelectModal}
+                >
+                  등록한 예매 내역에서 선택
+                </button>
+                <button 
                   className={styles.tertiaryButton}
                   onClick={handleTicketManualInput}
                 >
@@ -443,6 +485,13 @@ const TicketRegisterPage = () => {
           </>
         )}
       </div>
+      
+      {/* 티켓 선택 모달 */}
+      <TicketSelectModal
+        isOpen={showTicketSelectModal}
+        onClose={handleCloseTicketSelectModal}
+        onSelectTicket={handleSelectTicket}
+      />
     </div>
   );
 };
