@@ -87,10 +87,9 @@ const DiscountPromotionSection = () => {
                 discountPrice={item.discountPrice}
                 area={item.area}
                 category={item.category}
-                rating={item.rating}
-                ratingCount={item.ratingCount}
                 dateRange={item.dateRange}
                 link={item.link}
+                discountEndDatetime={item.discountEndDatetime}
               />
             ))}
           </div>
@@ -121,10 +120,9 @@ const DiscountPromotionSection = () => {
                 discountPrice={item.discountPrice}
                 area={item.area}
                 category={item.category}
-                rating={item.rating}
-                ratingCount={item.ratingCount}
                 dateRange={item.dateRange}
                 link={item.link}
+                discountEndDatetime={item.discountEndDatetime}
               />
             ))}
           </div>

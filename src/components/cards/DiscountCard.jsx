@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './DiscountCard.module.css';
 
 const DiscountCard = ({
@@ -10,12 +10,52 @@ const DiscountCard = ({
   discountPrice,
   area,
   category,
-  rating,
-  ratingCount,
   dateRange,
   link,
+  discountEndDatetime,
   onClick
 }) => {
+  const [timeRemaining, setTimeRemaining] = useState(null);
+
+  // 할인 종료 시간 타이머
+  useEffect(() => {
+    if (!discountEndDatetime) {
+      setTimeRemaining(null);
+      return;
+    }
+
+    const updateTimer = () => {
+      const now = new Date();
+      const endTime = new Date(discountEndDatetime);
+      const diff = endTime - now;
+
+      if (diff <= 0) {
+        setTimeRemaining('할인 종료');
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (days > 0) {
+        setTimeRemaining(`D-${days} ${hours}시간 ${minutes}분 ${seconds}초`);
+      } else if (hours > 0) {
+        setTimeRemaining(`${hours}시간 ${minutes}분 ${seconds}초`);
+      } else if (minutes > 0) {
+        setTimeRemaining(`${minutes}분 ${seconds}초`);
+      } else {
+        setTimeRemaining(`${seconds}초`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [discountEndDatetime]);
+
   const handleClick = () => {
     if (link) {
       window.open(link, '_blank', 'noopener,noreferrer');
@@ -64,21 +104,19 @@ const DiscountCard = ({
           <div className={styles.date}>{dateRange}</div>
         )}
 
-        {area && (
+        {area && area.trim() !== '' && (
           <div className={styles.area}>{area}</div>
         )}
 
-        {category && (
+        {category && category.trim() !== '' && (
           <div className={styles.category}>{category}</div>
         )}
 
-        <div className={styles.ratingRow}>
-          <span className={styles.star}>★</span>
-          <span className={styles.rating}>
-            {typeof rating === 'number' ? rating.toFixed(1) : parseFloat(rating || 0).toFixed(1)}
-          </span>
-          <span className={styles.count}>({ratingCount || 0})</span>
-        </div>
+        {timeRemaining && (
+          <div className={styles.timer}>
+            ⏰ {timeRemaining}
+          </div>
+        )}
 
         {discountPrice && (
           <div className={styles.discountPrice}>
