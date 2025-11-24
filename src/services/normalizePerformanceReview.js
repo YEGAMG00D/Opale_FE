@@ -48,12 +48,48 @@ export const normalizePerformanceReviews = (apiData) => {
       if (review.section || review.row) {
         const section = review.section || '';
         const row = review.row || '';
-        if (section && row) {
+        const number = review.number || '';
+        
+        if (section && row && number) {
+          return `${section} ${row}열 ${number}번`;
+        } else if (section && row) {
           return `${section} ${row}열`;
         } else if (section) {
           return section;
         } else if (row) {
           return `${row}열`;
+        } else if (number) {
+          return `${number}번`;
+        }
+      }
+      
+      // seatInfo 필드가 문자열로 있는 경우 파싱 (우선순위)
+      if (review.seatInfo) {
+        const seatStr = String(review.seatInfo).trim();
+        if (seatStr) {
+          // "구역 열 번호" 형태를 파싱
+          // 예: "나 구역 15열 23번" -> "나 구역 15열 23번" 또는 "나 구역 15열"
+          const rowMatch = seatStr.match(/(\d+)\s*열/);
+          const numberMatch = seatStr.match(/(\d+)\s*번/);
+          
+          if (rowMatch && numberMatch) {
+            // 열과 번이 모두 있는 경우
+            const rowIndex = seatStr.indexOf(rowMatch[0]);
+            const section = seatStr.substring(0, rowIndex).trim();
+            return `${section} ${rowMatch[1]}열 ${numberMatch[1]}번`;
+          } else if (rowMatch) {
+            // 열만 있는 경우
+            const rowIndex = seatStr.indexOf(rowMatch[0]);
+            const section = seatStr.substring(0, rowIndex).trim();
+            return `${section} ${rowMatch[1]}열`;
+          } else if (numberMatch) {
+            // 번만 있는 경우
+            const numberIndex = seatStr.indexOf(numberMatch[0]);
+            const section = seatStr.substring(0, numberIndex).trim();
+            return `${section} ${numberMatch[1]}번`;
+          }
+          // 패턴이 맞지 않으면 전체를 반환
+          return seatStr;
         }
       }
       
