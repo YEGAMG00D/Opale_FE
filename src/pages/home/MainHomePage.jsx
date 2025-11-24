@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PerformanceCard from '../../components/culture/PerformanceCard';
+import DiscountPromotionSection from '../../components/common/DiscountPromotionSection';
 import styles from './MainHomePage.module.css';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
@@ -294,6 +295,12 @@ const MainHomePage = () => {
           ))}
         </div>
       </section>
+
+      {/* Discount Promotion Section */}
+      <DiscountPromotionSection 
+        nolTicketData={[]}
+        timeTicketData={[]}
+      />
     </div>
   );
 };
