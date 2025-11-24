@@ -40,6 +40,7 @@ const TicketRegisterPage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [performanceDateRange, setPerformanceDateRange] = useState({ startDate: null, endDate: null }); // 공연 기간 정보
   const searchTimeoutRef = useRef(null);
   const searchInputRef = useRef(null);
   const searchResultsRef = useRef(null);
@@ -265,6 +266,9 @@ const TicketRegisterPage = () => {
       placeName: ''
     }));
 
+    // 공연명이 변경되면 날짜 범위 초기화
+    setPerformanceDateRange({ startDate: null, endDate: null });
+
     // 기존 타이머 취소
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -291,6 +295,16 @@ const TicketRegisterPage = () => {
           placeId: normalizedData.placeId,
           placeName: normalizedData.venue || performance.venue
         }));
+
+        // 공연 기간 정보 저장 (날짜 선택 제한용)
+        if (normalizedData.startDate && normalizedData.endDate) {
+          setPerformanceDateRange({
+            startDate: normalizedData.startDate,
+            endDate: normalizedData.endDate
+          });
+        } else {
+          setPerformanceDateRange({ startDate: null, endDate: null });
+        }
       } else {
         // 정규화 실패 시 기본 정보만 사용
         setTicketData(prev => ({
@@ -299,6 +313,7 @@ const TicketRegisterPage = () => {
           performanceId: performance.id,
           placeName: performance.venue
         }));
+        setPerformanceDateRange({ startDate: null, endDate: null });
       }
 
       setShowSearchResults(false);
@@ -312,6 +327,7 @@ const TicketRegisterPage = () => {
         performanceId: performance.id,
         placeName: performance.venue
       }));
+      setPerformanceDateRange({ startDate: null, endDate: null });
       setShowSearchResults(false);
       setSearchResults([]);
     }
@@ -573,6 +589,11 @@ const TicketRegisterPage = () => {
                     type="date"
                     value={ticketData.performanceDate}
                     onChange={(e) => handleTicketInputChange('performanceDate', e.target.value)}
+                    min={performanceDateRange.startDate || undefined}
+                    max={performanceDateRange.endDate || undefined}
+                    title={performanceDateRange.startDate && performanceDateRange.endDate 
+                      ? `${performanceDateRange.startDate}부터 ${performanceDateRange.endDate}까지 선택 가능합니다.`
+                      : undefined}
                   />
                 </div>
                 <div className={styles.formGroup}>
