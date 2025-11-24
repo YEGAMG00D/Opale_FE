@@ -1621,7 +1621,9 @@ const DetailPerformancePage = () => {
                         id={review.id}
                         title={review.title}
                         performanceDate={review.performanceDate}
+                        performanceTime={review.performanceTime}
                         seat={review.seat}
+                        performanceName={review.performanceName || review.performanceTitle}
                         rating={review.rating}
                         content={review.content}
                         author={review.author}
