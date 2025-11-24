@@ -246,10 +246,20 @@ const ReviewWritingPage = () => {
       // 티켓 등록 API 호출 (새 티켓만 등록)
       const ticketResponse = await createTicket(apiDto);
 
-      // 티켓 인증 완료 시 BOOKED 로그 기록
-      // 응답에서 performanceId 확인 (응답 구조에 따라 조정 필요)
-      // 백엔드 TicketDetailResponseDto에 performanceId가 포함되어 있을 것으로 예상
+      // 티켓 응답에서 ticketId와 performanceId 추출하여 ticketData에 저장
+      const responseTicketId = ticketResponse?.ticketId || ticketResponse?.id || ticketResponse?.ticket?.ticketId;
       const ticketPerformanceId = ticketResponse?.performanceId || ticketResponse?.performance?.performanceId || ticketResponse?.performanceId;
+      
+      if (responseTicketId) {
+        setTicketData(prev => ({
+          ...prev,
+          ticketId: responseTicketId,
+          id: responseTicketId,
+          performanceId: ticketPerformanceId || prev.performanceId
+        }));
+      }
+
+      // 티켓 인증 완료 시 BOOKED 로그 기록
       if (ticketPerformanceId) {
         try {
           await logApi.createLog({
@@ -345,6 +355,9 @@ const ReviewWritingPage = () => {
 
       // 공연 후기 등록
       if (reviewData.title && reviewData.performanceReview) {
+        // ticketId 가져오기 (ticketData에서)
+        const ticketId = ticketData?.ticketId || ticketData?.id || null;
+        
         const requestDto = normalizePerformanceReviewRequest(
           {
             title: reviewData.title,
@@ -358,7 +371,8 @@ const ReviewWritingPage = () => {
             number: ticketData.number || ''
           },
           performanceId,
-          'AFTER'
+          'AFTER',
+          ticketId
         );
         
         await createPerformanceReview(requestDto);

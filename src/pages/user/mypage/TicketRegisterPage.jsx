@@ -5,6 +5,10 @@ import { createTicket, updateTicket as updateTicketApi, getTicket } from '../../
 import { transformTicketDataForApi, transformTicketDataFromApi } from '../../../utils/ticketDataTransform';
 import logApi from '../../../api/logApi';
 import TicketSelectModal from '../../../components/common/TicketSelectModal';
+import { fetchPerformanceList } from '../../../api/performanceApi';
+import { fetchPerformanceBasic } from '../../../api/performanceApi';
+import { normalizePerformance } from '../../../services/normalizePerformance';
+import { normalizePerformanceDetail } from '../../../services/normalizePerformanceDetail';
 
 const TicketRegisterPage = () => {
   const navigate = useNavigate();
@@ -23,7 +27,9 @@ const TicketRegisterPage = () => {
     row: '',
     number: '',
     placeName: '',
-    ticketImage: null
+    ticketImage: null,
+    performanceId: null,
+    placeId: null
   });
   const [isScanning, setIsScanning] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
@@ -31,6 +37,12 @@ const TicketRegisterPage = () => {
   const [ticketImageUrl, setTicketImageUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(isEditMode); // 수정 모드일 때는 로딩 중
   const [showTicketSelectModal, setShowTicketSelectModal] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const searchResultsRef = useRef(null);
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -54,7 +66,9 @@ const TicketRegisterPage = () => {
               row: frontendData.row || '',
               number: frontendData.number || '',
               placeName: frontendData.placeName || '',
-              ticketImage: null
+              ticketImage: null,
+              performanceId: frontendData.performanceId || null,
+              placeId: frontendData.placeId || null
             });
             
             // 이미지 URL이 있으면 설정
@@ -198,7 +212,9 @@ const TicketRegisterPage = () => {
       row: selectedTicket.row || '',
       number: selectedTicket.number || '',
       placeName: selectedTicket.placeName || '',
-      ticketImage: null
+      ticketImage: null,
+      performanceId: selectedTicket.performanceId || null,
+      placeId: selectedTicket.placeId || null
     });
 
     // 이미지 URL이 있으면 설정
@@ -210,6 +226,124 @@ const TicketRegisterPage = () => {
     // 티켓 정보 입력 단계로 이동
     setTicketStep('manual');
   };
+
+  // 공연명 검색 함수
+  const searchPerformances = async (keyword) => {
+    if (!keyword || keyword.trim().length === 0) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const dto = {
+        keyword: keyword.trim(),
+        page: 1,
+        size: 10
+      };
+      const res = await fetchPerformanceList(dto);
+      const list = res.performances.map(normalizePerformance);
+      setSearchResults(list);
+      setShowSearchResults(list.length > 0);
+    } catch (err) {
+      console.error('공연 검색 실패:', err);
+      setSearchResults([]);
+      setShowSearchResults(false);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // 공연명 입력 변경 핸들러 (debounce 적용)
+  const handlePerformanceNameChange = (value) => {
+    setTicketData(prev => ({
+      ...prev,
+      performanceName: value,
+      performanceId: null,
+      placeId: null,
+      placeName: ''
+    }));
+
+    // 기존 타이머 취소
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // 300ms 후 검색 실행
+    searchTimeoutRef.current = setTimeout(() => {
+      searchPerformances(value);
+    }, 300);
+  };
+
+  // 공연 선택 핸들러
+  const handleSelectPerformance = async (performance) => {
+    try {
+      // 공연 상세 정보 가져오기
+      const apiData = await fetchPerformanceBasic(performance.id);
+      const normalizedData = normalizePerformanceDetail(apiData);
+
+      if (normalizedData) {
+        setTicketData(prev => ({
+          ...prev,
+          performanceName: normalizedData.title || performance.title,
+          performanceId: normalizedData.performanceId || normalizedData.id,
+          placeId: normalizedData.placeId,
+          placeName: normalizedData.venue || performance.venue
+        }));
+      } else {
+        // 정규화 실패 시 기본 정보만 사용
+        setTicketData(prev => ({
+          ...prev,
+          performanceName: performance.title,
+          performanceId: performance.id,
+          placeName: performance.venue
+        }));
+      }
+
+      setShowSearchResults(false);
+      setSearchResults([]);
+    } catch (err) {
+      console.error('공연 정보 조회 실패:', err);
+      // 에러 발생 시 기본 정보만 사용
+      setTicketData(prev => ({
+        ...prev,
+        performanceName: performance.title,
+        performanceId: performance.id,
+        placeName: performance.venue
+      }));
+      setShowSearchResults(false);
+      setSearchResults([]);
+    }
+  };
+
+  // 외부 클릭 시 검색 결과 닫기
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        searchResultsRef.current &&
+        !searchResultsRef.current.contains(event.target) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target)
+      ) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleTicketInputChange = (field, value) => {
     setTicketData(prev => ({
@@ -405,14 +539,32 @@ const TicketRegisterPage = () => {
               </div>
             )}
             <div className={styles.ticketForm}>
-              <div className={styles.formGroup}>
+              <div className={styles.formGroup} style={{ position: 'relative' }}>
                 <label>공연명</label>
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={ticketData.performanceName}
-                  onChange={(e) => handleTicketInputChange('performanceName', e.target.value)}
+                  onChange={(e) => handlePerformanceNameChange(e.target.value)}
                   placeholder="공연명을 입력하세요"
                 />
+                {showSearchResults && searchResults.length > 0 && (
+                  <div ref={searchResultsRef} className={styles.searchResults}>
+                    {isSearching && (
+                      <div className={styles.searchLoading}>검색 중...</div>
+                    )}
+                    {!isSearching && searchResults.map((performance) => (
+                      <div
+                        key={performance.id}
+                        className={styles.searchResultItem}
+                        onClick={() => handleSelectPerformance(performance)}
+                      >
+                        <div className={styles.searchResultTitle}>{performance.title}</div>
+                        <div className={styles.searchResultVenue}>{performance.venue}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
