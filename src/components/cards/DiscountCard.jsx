@@ -8,8 +8,6 @@ const DiscountCard = ({
   saleType,
   discountPercent,
   discountPrice,
-  area,
-  category,
   dateRange,
   link,
   discountEndDatetime,
@@ -102,14 +100,6 @@ const DiscountCard = ({
         
         {dateRange && (
           <div className={styles.date}>{dateRange}</div>
-        )}
-
-        {area && area.trim() !== '' && (
-          <div className={styles.area}>{area}</div>
-        )}
-
-        {category && category.trim() !== '' && (
-          <div className={styles.category}>{category}</div>
         )}
 
         {timeRemaining && (

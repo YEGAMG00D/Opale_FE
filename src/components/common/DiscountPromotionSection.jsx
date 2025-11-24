@@ -63,18 +63,21 @@ const DiscountPromotionSection = () => {
     loadTimeticketDiscounts();
   }, []);
 
+  // 데이터가 없거나 에러가 발생한 경우 영역을 숨김
+  const shouldShowInterpark = !isLoadingInterpark && !errorInterpark && interparkData.length > 0;
+  const shouldShowTimeticket = !isLoadingTimeticket && !errorTimeticket && timeticketData.length > 0;
+
+  // 둘 다 없으면 섹션 자체를 렌더링하지 않음
+  if (!shouldShowInterpark && !shouldShowTimeticket) {
+    return null;
+  }
+
   return (
     <section className={styles.promotionSection}>
       {/* 인터파크 영역 */}
-      <div className={styles.promotionBlock}>
-        <h2 className={styles.promotionTitle}>Nol ticket : 할인 프로모션</h2>
-        {isLoadingInterpark ? (
-          <div className={styles.loadingContainer}>
-            <LoadingSpinner />
-          </div>
-        ) : errorInterpark ? (
-          <div className={styles.errorMessage}>{errorInterpark}</div>
-        ) : interparkData.length > 0 ? (
+      {shouldShowInterpark && (
+        <div className={styles.promotionBlock}>
+          <h2 className={styles.promotionTitle}>Nol ticket : 할인 프로모션</h2>
           <div className={styles.promotionList}>
             {interparkData.map((item, index) => (
               <DiscountCard
@@ -85,29 +88,19 @@ const DiscountPromotionSection = () => {
                 saleType={item.saleType}
                 discountPercent={item.discountPercent}
                 discountPrice={item.discountPrice}
-                area={item.area}
-                category={item.category}
                 dateRange={item.dateRange}
                 link={item.link}
                 discountEndDatetime={item.discountEndDatetime}
               />
             ))}
           </div>
-        ) : (
-          <div className={styles.emptyMessage}>할인 정보가 없습니다.</div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 타임티켓 영역 */}
-      <div className={styles.promotionBlock}>
-        <h2 className={styles.promotionTitle}>타임티켓 : 할인 프로모션</h2>
-        {isLoadingTimeticket ? (
-          <div className={styles.loadingContainer}>
-            <LoadingSpinner />
-          </div>
-        ) : errorTimeticket ? (
-          <div className={styles.errorMessage}>{errorTimeticket}</div>
-        ) : timeticketData.length > 0 ? (
+      {shouldShowTimeticket && (
+        <div className={styles.promotionBlock}>
+          <h2 className={styles.promotionTitle}>타임티켓 : 할인 프로모션</h2>
           <div className={styles.promotionList}>
             {timeticketData.map((item, index) => (
               <DiscountCard
@@ -118,18 +111,14 @@ const DiscountPromotionSection = () => {
                 saleType={item.saleType}
                 discountPercent={item.discountPercent}
                 discountPrice={item.discountPrice}
-                area={item.area}
-                category={item.category}
                 dateRange={item.dateRange}
                 link={item.link}
                 discountEndDatetime={item.discountEndDatetime}
               />
             ))}
           </div>
-        ) : (
-          <div className={styles.emptyMessage}>할인 정보가 없습니다.</div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 };
