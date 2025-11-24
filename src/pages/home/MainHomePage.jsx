@@ -297,10 +297,7 @@ const MainHomePage = () => {
       </section>
 
       {/* Discount Promotion Section */}
-      <DiscountPromotionSection 
-        nolTicketData={[]}
-        timeTicketData={[]}
-      />
+      <DiscountPromotionSection />
     </div>
   );
 };
