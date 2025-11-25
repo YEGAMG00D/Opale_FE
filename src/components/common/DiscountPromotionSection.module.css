@@ -1,0 +1,63 @@
+.promotionSection {
+  padding: 20px 24px;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.promotionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.promotionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0;
+}
+
+.promotionList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.emptyMessage {
+  padding: 24px;
+  text-align: center;
+  color: #999999;
+  font-size: 14px;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.errorMessage {
+  padding: 16px;
+  text-align: center;
+  color: #FF4444;
+  font-size: 14px;
+  background-color: #FFF5F5;
+  border-radius: 8px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 375px) {
+  .promotionSection {
+    padding: 16px 20px;
+    gap: 24px;
+  }
+
+  .promotionTitle {
+    font-size: 16px;
+  }
+}
+

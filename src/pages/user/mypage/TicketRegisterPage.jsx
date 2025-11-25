@@ -1,36 +1,95 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './TicketRegisterPage.module.css';
-import { addTicket, updateTicket } from '../../../utils/ticketUtils';
+import { createTicket, updateTicket as updateTicketApi, getTicket } from '../../../api/reservationApi';
+import { transformTicketDataForApi, transformTicketDataFromApi } from '../../../utils/ticketDataTransform';
+import logApi from '../../../api/logApi';
+import TicketSelectModal from '../../../components/common/TicketSelectModal';
+import { fetchPerformanceList } from '../../../api/performanceApi';
+import { fetchPerformanceBasic } from '../../../api/performanceApi';
+import { normalizePerformance } from '../../../services/normalizePerformance';
+import { normalizePerformanceDetail } from '../../../services/normalizePerformanceDetail';
 
 const TicketRegisterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isEditMode = location.state?.ticket ? true : false;
-  const existingTicket = location.state?.ticket || null;
+  
+  // 수정 모드 확인: ticketId 또는 ticket 객체가 있으면 수정 모드
+  const ticketId = location.state?.ticketId || location.state?.ticket?.ticketId || location.state?.ticket?.id || null;
+  const isEditMode = !!ticketId;
   
   const [ticketStep, setTicketStep] = useState(isEditMode ? 'manual' : 'scan'); // 'scan' or 'manual'
   const [ticketData, setTicketData] = useState({
-    performanceName: existingTicket?.performanceName || '',
-    performanceDate: existingTicket?.performanceDate || '',
-    performanceTime: existingTicket?.performanceTime || '',
-    section: existingTicket?.section || '',
-    row: existingTicket?.row || '',
-    number: existingTicket?.number || '',
-    ticketImage: existingTicket?.ticketImage || null
+    performanceName: '',
+    performanceDate: '',
+    performanceTime: '',
+    section: '',
+    row: '',
+    number: '',
+    placeName: '',
+    ticketImage: null,
+    performanceId: null,
+    placeId: null
   });
   const [isScanning, setIsScanning] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
-  const [capturedImage, setCapturedImage] = useState(existingTicket?.ticketImage || null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [ticketImageUrl, setTicketImageUrl] = useState(null);
+  const [isLoading, setIsLoading] = useState(isEditMode); // 수정 모드일 때는 로딩 중
+  const [showTicketSelectModal, setShowTicketSelectModal] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [performanceDateRange, setPerformanceDateRange] = useState({ startDate: null, endDate: null }); // 공연 기간 정보
+  const searchTimeoutRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const searchResultsRef = useRef(null);
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // 수정 모드일 때 이미지 설정
+  // 수정 모드일 때 티켓 데이터 가져오기
   useEffect(() => {
-    if (isEditMode && existingTicket?.ticketImage) {
-      setCapturedImage(existingTicket.ticketImage);
-    }
-  }, [isEditMode, existingTicket]);
+    const loadTicketData = async () => {
+      if (isEditMode && ticketId) {
+        try {
+          setIsLoading(true);
+          const response = await getTicket(ticketId);
+          
+          // API 응답을 프론트엔드 형식으로 변환
+          const frontendData = transformTicketDataFromApi(response);
+          
+          if (frontendData) {
+            setTicketData({
+              performanceName: frontendData.performanceName || '',
+              performanceDate: frontendData.performanceDate || '',
+              performanceTime: frontendData.performanceTime || '',
+              section: frontendData.section || '',
+              row: frontendData.row || '',
+              number: frontendData.number || '',
+              placeName: frontendData.placeName || '',
+              ticketImage: null,
+              performanceId: frontendData.performanceId || null,
+              placeId: frontendData.placeId || null
+            });
+            
+            // 이미지 URL이 있으면 설정
+            if (frontendData.ticketImageUrl) {
+              setTicketImageUrl(frontendData.ticketImageUrl);
+              setCapturedImage(frontendData.ticketImageUrl);
+            }
+          }
+        } catch (err) {
+          console.error('티켓 정보 조회 실패:', err);
+          alert('티켓 정보를 불러오는데 실패했습니다.');
+          navigate('/my/tickets');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadTicketData();
+  }, [isEditMode, ticketId, navigate]);
 
   // 카메라 시작
   const startCamera = async () => {
@@ -133,6 +192,175 @@ const TicketRegisterPage = () => {
     setTicketStep('manual');
   };
 
+  // 티켓 선택 모달 열기
+  const handleOpenTicketSelectModal = () => {
+    setShowTicketSelectModal(true);
+  };
+
+  // 티켓 선택 모달 닫기
+  const handleCloseTicketSelectModal = () => {
+    setShowTicketSelectModal(false);
+  };
+
+  // 티켓 선택 시 처리
+  const handleSelectTicket = (selectedTicket) => {
+    // 선택한 티켓 정보를 폼에 채우기
+    setTicketData({
+      performanceName: selectedTicket.performanceName || '',
+      performanceDate: selectedTicket.performanceDate || '',
+      performanceTime: selectedTicket.performanceTime || '',
+      section: selectedTicket.section || '',
+      row: selectedTicket.row || '',
+      number: selectedTicket.number || '',
+      placeName: selectedTicket.placeName || '',
+      ticketImage: null,
+      performanceId: selectedTicket.performanceId || null,
+      placeId: selectedTicket.placeId || null
+    });
+
+    // 이미지 URL이 있으면 설정
+    if (selectedTicket.ticketImageUrl) {
+      setTicketImageUrl(selectedTicket.ticketImageUrl);
+      setCapturedImage(selectedTicket.ticketImageUrl);
+    }
+
+    // 티켓 정보 입력 단계로 이동
+    setTicketStep('manual');
+  };
+
+  // 공연명 검색 함수
+  const searchPerformances = async (keyword) => {
+    if (!keyword || keyword.trim().length === 0) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const dto = {
+        keyword: keyword.trim(),
+        page: 1,
+        size: 10
+      };
+      const res = await fetchPerformanceList(dto);
+      const list = res.performances.map(normalizePerformance);
+      setSearchResults(list);
+      setShowSearchResults(list.length > 0);
+    } catch (err) {
+      console.error('공연 검색 실패:', err);
+      setSearchResults([]);
+      setShowSearchResults(false);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // 공연명 입력 변경 핸들러 (debounce 적용)
+  const handlePerformanceNameChange = (value) => {
+    setTicketData(prev => ({
+      ...prev,
+      performanceName: value,
+      performanceId: null,
+      placeId: null,
+      placeName: ''
+    }));
+
+    // 공연명이 변경되면 날짜 범위 초기화
+    setPerformanceDateRange({ startDate: null, endDate: null });
+
+    // 기존 타이머 취소
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // 300ms 후 검색 실행
+    searchTimeoutRef.current = setTimeout(() => {
+      searchPerformances(value);
+    }, 300);
+  };
+
+  // 공연 선택 핸들러
+  const handleSelectPerformance = async (performance) => {
+    try {
+      // 공연 상세 정보 가져오기
+      const apiData = await fetchPerformanceBasic(performance.id);
+      const normalizedData = normalizePerformanceDetail(apiData);
+
+      if (normalizedData) {
+        setTicketData(prev => ({
+          ...prev,
+          performanceName: normalizedData.title || performance.title,
+          performanceId: normalizedData.performanceId || normalizedData.id,
+          placeId: normalizedData.placeId,
+          placeName: normalizedData.venue || performance.venue
+        }));
+
+        // 공연 기간 정보 저장 (날짜 선택 제한용)
+        if (normalizedData.startDate && normalizedData.endDate) {
+          setPerformanceDateRange({
+            startDate: normalizedData.startDate,
+            endDate: normalizedData.endDate
+          });
+        } else {
+          setPerformanceDateRange({ startDate: null, endDate: null });
+        }
+      } else {
+        // 정규화 실패 시 기본 정보만 사용
+        setTicketData(prev => ({
+          ...prev,
+          performanceName: performance.title,
+          performanceId: performance.id,
+          placeName: performance.venue
+        }));
+        setPerformanceDateRange({ startDate: null, endDate: null });
+      }
+
+      setShowSearchResults(false);
+      setSearchResults([]);
+    } catch (err) {
+      console.error('공연 정보 조회 실패:', err);
+      // 에러 발생 시 기본 정보만 사용
+      setTicketData(prev => ({
+        ...prev,
+        performanceName: performance.title,
+        performanceId: performance.id,
+        placeName: performance.venue
+      }));
+      setPerformanceDateRange({ startDate: null, endDate: null });
+      setShowSearchResults(false);
+      setSearchResults([]);
+    }
+  };
+
+  // 외부 클릭 시 검색 결과 닫기
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        searchResultsRef.current &&
+        !searchResultsRef.current.contains(event.target) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target)
+      ) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleTicketInputChange = (field, value) => {
     setTicketData(prev => ({
       ...prev,
@@ -140,33 +368,57 @@ const TicketRegisterPage = () => {
     }));
   };
 
-  const handleTicketRegister = () => {
+  const handleTicketRegister = async () => {
     if (!ticketData.performanceName || !ticketData.performanceDate) {
       alert('공연명과 공연일자를 입력해주세요.');
       return;
     }
 
-    if (isEditMode && existingTicket) {
-      // 수정 모드
-      updateTicket(existingTicket.id, {
-        performanceName: ticketData.performanceName,
-        performanceDate: ticketData.performanceDate,
-        performanceTime: ticketData.performanceTime,
-        section: ticketData.section,
-        row: ticketData.row,
-        number: ticketData.number,
-        ticketImage: capturedImage
-      });
-    } else {
-      // 등록 모드
-      addTicket({
-        ...ticketData,
-        ticketImage: capturedImage
-      });
+    try {
+      // 프론트엔드 데이터를 백엔드 API 형식으로 변환
+      const apiDto = transformTicketDataForApi(ticketData);
+
+      if (isEditMode && ticketId) {
+        // 수정 모드: API 호출
+        await updateTicketApi(ticketId, apiDto);
+        alert('티켓이 수정되었습니다.');
+      } else {
+        // 등록 모드: API 호출
+        const ticketResponse = await createTicket(apiDto);
+        alert('티켓이 등록되었습니다.');
+        
+        // 티켓 인증 완료 시 BOOKED 로그 기록
+        // 응답에서 performanceId 확인 (응답 구조에 따라 조정 필요)
+        // 백엔드 TicketDetailResponseDto에 performanceId가 포함되어 있을 것으로 예상
+        const performanceId = ticketResponse?.performanceId || ticketResponse?.performance?.performanceId || ticketResponse?.performanceId;
+        if (performanceId) {
+          try {
+            await logApi.createLog({
+              eventType: "BOOKED",
+              targetType: "PERFORMANCE",
+              targetId: String(performanceId)
+            });
+          } catch (logErr) {
+            console.error('로그 기록 실패:', logErr);
+          }
+        } else {
+          // performanceId가 응답에 없는 경우, performanceName으로 검색하여 로그 기록
+          // (선택사항: 성능상 이유로 생략 가능)
+          console.warn('티켓 등록 응답에 performanceId가 없습니다. BOOKED 로그를 기록하지 않습니다.');
+        }
+      }
+      
+      stopCamera();
+      
+      // 티켓 목록 새로고침을 위한 이벤트 발생
+      window.dispatchEvent(new Event('ticketUpdated'));
+      
+      navigate('/my/tickets');
+    } catch (err) {
+      console.error('티켓 등록/수정 실패:', err);
+      const errorMessage = err.response?.data?.message || err.message || '티켓 등록에 실패했습니다.';
+      alert(errorMessage);
     }
-    
-    stopCamera();
-    navigate('/my/tickets');
   };
 
   const handleCancel = () => {
@@ -185,6 +437,22 @@ const TicketRegisterPage = () => {
       }
     };
   }, [cameraStream]);
+
+  // 로딩 중일 때
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div></div>
+          <h2 className={styles.headerTitle}>{isEditMode ? '티켓 수정' : '티켓 등록'}</h2>
+          <div></div>
+        </div>
+        <div className={styles.content}>
+          <div style={{ textAlign: 'center', padding: '2rem' }}>티켓 정보를 불러오는 중...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -259,6 +527,12 @@ const TicketRegisterPage = () => {
                   파일에서 선택
                 </button>
                 <button 
+                  className={styles.selectFromHistoryButton}
+                  onClick={handleOpenTicketSelectModal}
+                >
+                  등록한 예매 내역에서 선택
+                </button>
+                <button 
                   className={styles.tertiaryButton}
                   onClick={handleTicketManualInput}
                 >
@@ -270,25 +544,43 @@ const TicketRegisterPage = () => {
         ) : (
           <>
             <div className={styles.ticketTitle}>티켓 정보 입력</div>
-            {capturedImage && (
+            {(capturedImage || ticketImageUrl) && (
               <div className={styles.imagePreview}>
-                <img src={capturedImage} alt="티켓 이미지" />
+                <img src={capturedImage || ticketImageUrl} alt="티켓 이미지" />
               </div>
             )}
-            {!capturedImage && (
+            {!capturedImage && !ticketImageUrl && (
               <div className={styles.imagePlaceholder}>
                 {/* 티켓 이미지 영역 */}
               </div>
             )}
             <div className={styles.ticketForm}>
-              <div className={styles.formGroup}>
+              <div className={styles.formGroup} style={{ position: 'relative' }}>
                 <label>공연명</label>
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={ticketData.performanceName}
-                  onChange={(e) => handleTicketInputChange('performanceName', e.target.value)}
+                  onChange={(e) => handlePerformanceNameChange(e.target.value)}
                   placeholder="공연명을 입력하세요"
                 />
+                {showSearchResults && searchResults.length > 0 && (
+                  <div ref={searchResultsRef} className={styles.searchResults}>
+                    {isSearching && (
+                      <div className={styles.searchLoading}>검색 중...</div>
+                    )}
+                    {!isSearching && searchResults.map((performance) => (
+                      <div
+                        key={performance.id}
+                        className={styles.searchResultItem}
+                        onClick={() => handleSelectPerformance(performance)}
+                      >
+                        <div className={styles.searchResultTitle}>{performance.title}</div>
+                        <div className={styles.searchResultVenue}>{performance.venue}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
@@ -297,6 +589,11 @@ const TicketRegisterPage = () => {
                     type="date"
                     value={ticketData.performanceDate}
                     onChange={(e) => handleTicketInputChange('performanceDate', e.target.value)}
+                    min={performanceDateRange.startDate || undefined}
+                    max={performanceDateRange.endDate || undefined}
+                    title={performanceDateRange.startDate && performanceDateRange.endDate 
+                      ? `${performanceDateRange.startDate}부터 ${performanceDateRange.endDate}까지 선택 가능합니다.`
+                      : undefined}
                   />
                 </div>
                 <div className={styles.formGroup}>
@@ -334,6 +631,15 @@ const TicketRegisterPage = () => {
                   />
                 </div>
               </div>
+              <div className={styles.formGroup}>
+                <label>공연장명</label>
+                <input
+                  type="text"
+                  value={ticketData.placeName}
+                  onChange={(e) => handleTicketInputChange('placeName', e.target.value)}
+                  placeholder="공연장명을 입력하세요 (선택)"
+                />
+              </div>
             </div>
             <div className={styles.buttonGroup}>
               <button 
@@ -352,6 +658,13 @@ const TicketRegisterPage = () => {
           </>
         )}
       </div>
+      
+      {/* 티켓 선택 모달 */}
+      <TicketSelectModal
+        isOpen={showTicketSelectModal}
+        onClose={handleCloseTicketSelectModal}
+        onSelectTicket={handleSelectTicket}
+      />
     </div>
   );
 };
