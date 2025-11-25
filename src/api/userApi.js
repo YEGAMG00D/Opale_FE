@@ -9,6 +9,8 @@
 ============================================================ */
 
 import axiosInstance from "./axiosInstance";
+import { normalizePasswordResetRequest } from "../services/normalizePasswordResetRequest";
+import { normalizePasswordResetResponse } from "../services/normalizePasswordResetResponse";
 
 const base = "/users";
 
@@ -125,6 +127,30 @@ export const deleteUser = async (dto) => {
 };
 
 /* ============================================================
+    8) 임시 비밀번호 발급
+    POST /api/users/password/reset
+============================================================ */
+export const resetPassword = async (email) => {
+  try {
+    const requestData = normalizePasswordResetRequest(email);
+    const res = await axiosInstance.post(`${base}/password/reset`, requestData);
+
+    if (res.data.success) {
+      return normalizePasswordResetResponse(res.data.data);
+    }
+    throw new Error("임시 비밀번호 발급 실패");
+  } catch (err) {
+    console.error("❌ resetPassword 오류:", err);
+    throw err;
+  }
+};
+
+
+
+
+
+
+/* ============================================================
     Export 묶음
 ============================================================ */
 export default {
@@ -135,4 +161,5 @@ export default {
   updateMyInfo,
   changePassword,
   deleteUser,
+  resetPassword, 
 };
