@@ -82,13 +82,18 @@ export const fetchPerformanceRelations = async (performanceId) => {
 export const fetchPerformanceVideos = async (performanceId) => {
   try {
     const res = await axiosInstance.get(`${base}/${performanceId}/video`);
-    if (res.data.success) return res.data.data ?? [];
+
+    if (res.data.success) {
+      return res.data.data?.items ?? [];
+    }
+
     throw new Error("공연 영상 목록 조회 실패");
   } catch (err) {
     console.error("❌ fetchPerformanceVideos 오류:", err);
     throw err;
   }
 };
+
 
 export const fetchPerformanceBooking = async (performanceId) => {
   try {

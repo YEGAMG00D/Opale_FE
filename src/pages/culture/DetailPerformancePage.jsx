@@ -11,12 +11,13 @@ import OpenChatSection from '../../components/culture/OpenChatSection';
 import ReviewCard from '../../components/culture/ReviewCard';
 import PerformanceInfoImages from '../../components/culture/PerformanceInfoImages';
 import PlaceMap from '../../components/place/PlaceMap';
-import { fetchPerformanceBasic } from '../../api/performanceApi';
+import { fetchPerformanceBasic, fetchPerformanceVideos } from '../../api/performanceApi';
 import { fetchPerformanceReviewsByPerformance, fetchPerformanceReview, createPerformanceReview, updatePerformanceReview, deletePerformanceReview } from '../../api/reviewApi';
 import { isPerformanceLiked, togglePerformanceFavorite, isPerformanceReviewLiked, togglePerformanceReviewFavorite } from '../../api/favoriteApi';
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
 import { normalizePerformanceReviews } from '../../services/normalizePerformanceReview';
 import { normalizePerformanceReviewRequest } from '../../services/normalizePerformanceReviewRequest';
+import { normalizePerformanceVideos } from '../../services/normalizePerformanceVideos';
 import { usePerformanceRelations } from '../../hooks/usePerformanceRelations';
 import { usePerformanceInfoImages } from '../../hooks/usePerformanceInfoImages';
 import { usePerformanceBooking } from '../../hooks/usePerformanceBooking';
@@ -79,6 +80,10 @@ const DetailPerformancePage = () => {
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState(null);
   const [expectationLikes, setExpectationLikes] = useState({}); // 기대평 관심 상태
+
+  // 영상 데이터 상태
+  const [videos, setVideos] = useState([]);
+  const [videosLoading, setVideosLoading] = useState(false);
 
   // 예매처 목록 조회
   const performanceId = performance?.id || performance?.performanceId || id;
@@ -905,6 +910,34 @@ const DetailPerformancePage = () => {
     loadFavoriteStatus();
   }, [performanceId]);
 
+  // 공연 영상 목록 조회
+  useEffect(() => {
+    const loadVideos = async () => {
+      if (!performanceId) {
+        setVideos([]);
+        return;
+      }
+
+      try {
+        setVideosLoading(true);
+        console.log("📹 영상 목록 조회 시작 - performanceId:", performanceId);
+        const response = await fetchPerformanceVideos(performanceId);
+        console.log("📹 API 응답 원본:", response);
+        const normalized = normalizePerformanceVideos(response);
+        console.log("📹 정제된 영상 목록:", normalized);
+        console.log("📹 영상 개수:", normalized.length);
+        setVideos(normalized);
+      } catch (err) {
+        console.error('❌ 공연 영상 목록 조회 실패:', err);
+        setVideos([]);
+      } finally {
+        setVideosLoading(false);
+      }
+    };
+
+    loadVideos();
+  }, [performanceId]);
+
   // 리뷰 데이터 로드 함수 (재사용 가능)
   const loadReviews = async () => {
     if (!performanceId) return;
@@ -1403,6 +1436,7 @@ const DetailPerformancePage = () => {
         englishTitle={performance.englishTitle}
         title={performance.title}
         trailerImage={performance.trailerImage || performance.image}
+        videos={videos}
       />
 
       <PerformanceDetails
