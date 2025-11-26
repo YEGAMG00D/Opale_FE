@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosInstance from "../../../api/axiosInstance";
+import { resetPassword } from "../../../api/userApi";
 import styles from "./NewPasswordPage.module.css";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const NewPasswordPage = () => {
   const [email, setEmail] = useState("");
@@ -15,26 +13,23 @@ const NewPasswordPage = () => {
     setError("");
 
     try {
-      const response = await axiosInstance.post(
-        `${API_BASE_URL}/auth/reset-password`,
-        { email }
-      );
+      const response = await resetPassword(email);
 
-      if (response.data.success) {
-        // 성공 시 다음 페이지로 이동 (예: 임시 비밀번호 발급 완료 페이지)
-        navigate("/new-password/success", { state: { email } });
+      if (response.success) {
+        // 성공 시 다음 페이지로 이동
+        navigate("/new-password/success", { state: { email: response.email || email } });
       } else {
-        setError(response.data.message || "일치하는 회원 정보가 없습니다.");
+        setError("임시 비밀번호 발급에 실패했습니다.");
       }
     } catch (err) {
       console.error("비밀번호 재발급 실패:", err);
-      // API 연동 전이므로 임시로 성공 처리
-      navigate("/new-password/success", { state: { email } });
-      // if (err.response?.status === 404 || err.response?.status === 400) {
-      //   setError("일치하는 회원 정보가 없습니다.");
-      // } else {
-      //   setError("서버 오류가 발생했습니다.");
-      // }
+      if (err.response?.status === 404 || err.response?.status === 400) {
+        setError("일치하는 회원 정보가 없습니다.");
+      } else if (err.response?.status === 422) {
+        setError("이메일 형식이 올바르지 않습니다.");
+      } else {
+        setError(err.response?.data?.message || "서버 오류가 발생했습니다.");
+      }
     }
   };
 

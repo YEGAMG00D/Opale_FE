@@ -54,23 +54,7 @@ const MainPlacePage = () => {
     clearAllMarkers();
   }, [dispatch]); // 컴포넌트 마운트 시에만 실행
 
-  // 지역명을 API area 파라미터로 변환
-  const getAreaFromRegion = (region) => {
-    if (!region || region === '전체') return null;
-    
-    // 지역명 매핑
-    const regionMap = {
-      '서울': '서울특별시',
-      '경기': '경기도',
-      '충청': '충청도', // 충청은 여러 도시가 있어서 null로 처리 (전체 조회)
-      '강원': '강원도',
-      '경상': '경상도', // 경상도는 여러 도시가 있어서 null로 처리 (전체 조회)
-      '전라': '전라도', // 전라도는 여러 도시가 있어서 null로 처리 (전체 조회)
-      '제주': '제주특별자치도',
-    };
-    
-    return regionMap[region] || null;
-  };
+
 
   const handleTabChange = (tab) => {
     dispatch(setActiveTab(tab));
@@ -284,7 +268,7 @@ const MainPlacePage = () => {
   }, [activeTab, gpsLocation, dispatch]);
 
   /** 지역목록 탭: 공연장 목록 조회 (검색어, 지역 필터 적용) */
-  const areaForApi = getAreaFromRegion(selected.region);
+  const areaForApi = selected.region === '전체' ? null : selected.region;
   const keywordForApi = searchQuery.trim() || null;
   
   const {

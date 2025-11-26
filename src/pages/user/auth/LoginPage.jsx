@@ -64,7 +64,13 @@ const LoginPage = () => {
       }
     } catch (err) {
       console.error("로그인 실패:", err);
-      if (err.response?.status === 401) {
+      
+      // 백엔드에서 보낸 메시지가 있으면 우선 사용
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.status === 400) {
+        setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+      } else if (err.response?.status === 401) {
         setError("이메일 또는 비밀번호가 올바르지 않습니다.");
       } else {
         setError("서버 오류가 발생했습니다.");
