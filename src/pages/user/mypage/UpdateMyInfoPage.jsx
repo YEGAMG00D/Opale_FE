@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styles from './UpdateMyInfoPage.module.css';
 import FormInputField from '../../../components/signup/FormInputField';
 import FormInputWithButton from '../../../components/signup/FormInputWithButton';
+import SuccessModal from '../../../components/common/SuccessModal';
 import { validateNickname, validatePhone, validateAddress, validateDetailAddress, validatePassword, validateConfirmPassword } from '../../../utils/validation';
 import { fetchMyInfo, updateMyInfo, checkNicknameDuplicate, changePassword } from '../../../api/userApi';
 
@@ -25,6 +26,7 @@ const UpdateMyInfoPage = () => {
   const [originalNickname, setOriginalNickname] = useState(''); // 원래 닉네임 저장 (중복 확인 스킵용)
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
+  const [showPasswordSuccessModal, setShowPasswordSuccessModal] = useState(false);
 
   // 페이지 진입 시 본인 정보 조회
   useEffect(() => {
@@ -202,7 +204,25 @@ const UpdateMyInfoPage = () => {
     const isConfirmPasswordValid = passwordValidationMessages?.confirmPassword?.isValid === true;
 
     if (!isCurrentPasswordValid || !isNewPasswordValid || !isConfirmPasswordValid) {
-      alert('입력한 정보를 확인해주세요.');
+      // 유효성 검사 실패 시 각 필드에 에러 메시지 표시
+      if (!isCurrentPasswordValid) {
+        setPasswordValidationMessages(prev => ({
+          ...prev,
+          currentPassword: { isValid: false, message: '현재 비밀번호를 입력해주세요.' }
+        }));
+      }
+      if (!isNewPasswordValid) {
+        setPasswordValidationMessages(prev => ({
+          ...prev,
+          newPassword: { isValid: false, message: '새 비밀번호를 올바르게 입력해주세요.' }
+        }));
+      }
+      if (!isConfirmPasswordValid) {
+        setPasswordValidationMessages(prev => ({
+          ...prev,
+          confirmPassword: { isValid: false, message: '비밀번호가 일치하지 않습니다.' }
+        }));
+      }
       return;
     }
 
@@ -212,14 +232,14 @@ const UpdateMyInfoPage = () => {
         newPassword: passwordData.newPassword
       });
       
-      alert('비밀번호가 변경되었습니다.');
+      // 성공 모달 표시
+      setShowPasswordSuccessModal(true);
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });
       setPasswordValidationMessages({});
-      setShowPasswordSection(false);
     } catch (err) {
       console.error('비밀번호 변경 실패:', err);
       
@@ -227,11 +247,13 @@ const UpdateMyInfoPage = () => {
       if (err.response?.status === 400 || err.response?.status === 401) {
         setPasswordValidationMessages(prev => ({
           ...prev,
-          currentPassword: { isValid: false, message: '현재 비밀번호가 올바르지 않습니다.' }
+          currentPassword: { isValid: false, message: err.response?.data?.message || '현재 비밀번호가 올바르지 않습니다.' }
         }));
-        alert('현재 비밀번호가 올바르지 않습니다.');
       } else {
-        alert(err.message || '비밀번호 변경에 실패했습니다.');
+        setPasswordValidationMessages(prev => ({
+          ...prev,
+          currentPassword: { isValid: false, message: err.response?.data?.message || '비밀번호 변경에 실패했습니다.' }
+        }));
       }
     }
   };
@@ -452,6 +474,17 @@ const UpdateMyInfoPage = () => {
           )}
         </div>
       </div>
+
+      {/* 비밀번호 변경 성공 모달 */}
+      <SuccessModal
+        isOpen={showPasswordSuccessModal}
+        onClose={() => {
+          setShowPasswordSuccessModal(false);
+          setShowPasswordSection(false);
+        }}
+        title="비밀번호가 변경되었습니다"
+        message="새로운 비밀번호로 로그인하실 수 있습니다."
+      />
     </div>
   );
 };
