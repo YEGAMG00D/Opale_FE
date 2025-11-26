@@ -296,8 +296,20 @@ const MainHomePage = () => {
         </div>
       </section>
 
+
+      {/* 임시: 공연 정보 관리 페이지 버튼 */}
+      <section className={styles.adminSection}>
+        <div 
+          className={styles.adminButton} 
+          onClick={() => navigate('/admin/performance')}
+        >
+          <div className={styles.adminButtonText}>공연 정보 관리 (임시)</div>
+        </div>
+      </section>
+      
       {/* Discount Promotion Section */}
       <DiscountPromotionSection />
+
     </div>
   );
 };

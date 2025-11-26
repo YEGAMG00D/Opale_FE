@@ -363,3 +363,29 @@
     max-width: 430px;
   }
 }
+
+/* Admin Section (임시) */
+.adminSection {
+  padding: 20px 24px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.adminButton {
+  padding: 16px 20px;
+  border-radius: 8px;
+  background-color: #ff6b6b;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.adminButton:hover {
+  opacity: 0.8;
+}
+
+.adminButtonText {
+  font-size: 16px;
+  font-weight: 500;
+  color: #ffffff;
+  text-align: center;
+}
