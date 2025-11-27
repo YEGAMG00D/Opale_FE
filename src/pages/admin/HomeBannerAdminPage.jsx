@@ -104,7 +104,7 @@ const HomeBannerAdminPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.titleText.trim()) {
+    if (!formData.subtitleText.trim()) {
       alert("메인 문구를 입력해주세요.");
       return;
     }
