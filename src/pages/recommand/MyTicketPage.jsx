@@ -7,6 +7,7 @@ import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
 import hanbokManPoster from '../../assets/poster/hanbok-man.jpg';
 import deathNotePoster from '../../assets/poster/death-note.gif';
 import rentPoster from '../../assets/poster/rent.gif';
+import defaultTicketImage from '../../assets/디폴트 티켓 이미지.jpg';
 import { 
   getTickets, 
   addTicket, 
@@ -47,7 +48,7 @@ const MyTicketPage = () => {
 
   // 공연명에서 포스터 찾기
   const getPosterImage = (performanceName) => {
-    if (!performanceName) return null;
+    if (!performanceName) return defaultTicketImage;
     
     const nameLower = performanceName.toLowerCase();
     for (const [key, image] of Object.entries(posterImages)) {
@@ -55,8 +56,8 @@ const MyTicketPage = () => {
         return image;
       }
     }
-    // 기본값으로 위키드 포스터 반환
-    return wickedPoster;
+    // 기본값으로 디폴트 티켓 이미지 반환
+    return defaultTicketImage;
   };
 
   // 티켓 목록 불러오기
