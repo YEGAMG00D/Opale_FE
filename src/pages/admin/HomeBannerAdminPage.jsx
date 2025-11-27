@@ -8,6 +8,8 @@ const HomeBannerAdminPage = () => {
   const [loading, setLoading] = useState(false);
   const [editingBanner, setEditingBanner] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
   
   // 폼 상태
   const [formData, setFormData] = useState({
@@ -47,6 +49,8 @@ const HomeBannerAdminPage = () => {
 
   // 폼 초기화
   const resetForm = () => {
+    // 새 배너 등록 시: 현재 배너 개수 + 1로 자동 설정
+    const newDisplayOrder = banners.length + 1;
     setFormData({
       performanceId: "",
       titleText: "",
@@ -54,7 +58,7 @@ const HomeBannerAdminPage = () => {
       descriptionText: "",
       dateText: "",
       placeText: "",
-      displayOrder: banners.length > 0 ? Math.max(...banners.map(b => b.displayOrder || 0)) + 1 : 1,
+      displayOrder: newDisplayOrder,
       isActive: true,
       linkUrl: "",
     });
@@ -142,6 +146,86 @@ const HomeBannerAdminPage = () => {
       console.error("배너 삭제 실패:", err);
       alert("배너 삭제에 실패했습니다.");
     }
+  };
+
+  // 드래그 시작
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target);
+    e.target.style.opacity = '0.5';
+  };
+
+  // 드래그 오버
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  // 드래그 리브
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  // 드롭
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // 새로운 순서로 배열 재정렬
+    const newBanners = [...banners];
+    const draggedBanner = newBanners[draggedIndex];
+    newBanners.splice(draggedIndex, 1);
+    newBanners.splice(dropIndex, 0, draggedBanner);
+
+    // displayOrder 재계산 (1부터 시작)
+    const updatedBanners = newBanners.map((banner, index) => ({
+      ...banner,
+      displayOrder: index + 1,
+    }));
+
+    // UI 즉시 업데이트
+    setBanners(updatedBanners);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+
+    // 변경된 배너들 모두 업데이트
+    try {
+      const updatePromises = updatedBanners.map((banner) => {
+        const updateData = {
+          performanceId: banner.performanceId || "",
+          titleText: banner.titleText || "",
+          subtitleText: banner.subtitleText || "",
+          descriptionText: banner.descriptionText || "",
+          dateText: banner.dateText || "",
+          placeText: banner.placeText || "",
+          displayOrder: banner.displayOrder,
+          isActive: banner.isActive ?? true,
+          linkUrl: banner.linkUrl || "",
+        };
+        return updateBanner(banner.bannerId, updateData, null);
+      });
+
+      await Promise.all(updatePromises);
+      alert("배너 순서가 변경되었습니다.");
+    } catch (err) {
+      console.error("배너 순서 변경 실패:", err);
+      alert("배너 순서 변경에 실패했습니다. 페이지를 새로고침합니다.");
+      loadBanners(); // 실패 시 원래 상태로 복구
+    }
+  };
+
+  // 드래그 종료
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = '1';
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   return (
@@ -260,16 +344,21 @@ const HomeBannerAdminPage = () => {
                 />
               </div>
 
-              <div className={styles.formRow}>
-                <label>노출 순서 *</label>
-                <input
-                  type="number"
-                  value={formData.displayOrder}
-                  onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })}
-                  min="0"
-                  required
-                />
-              </div>
+              {editingBanner && (
+                <div className={styles.formRow}>
+                  <label>노출 순서 *</label>
+                  <input
+                    type="number"
+                    value={formData.displayOrder}
+                    onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })}
+                    min="1"
+                    required
+                  />
+                  <small style={{ color: '#999', fontSize: '12px' }}>
+                    순서는 드래그 앤 드롭으로도 변경할 수 있습니다.
+                  </small>
+                </div>
+              )}
 
               <div className={styles.formRow}>
                 <label>
@@ -301,8 +390,27 @@ const HomeBannerAdminPage = () => {
         {!loading && banners.length === 0 && (
           <div className={styles.emptyMessage}>등록된 배너가 없습니다.</div>
         )}
-        {!loading && banners.map((banner) => (
-          <div key={banner.bannerId} className={styles.bannerItem}>
+        {!loading && banners.map((banner, index) => (
+          <div 
+            key={banner.bannerId} 
+            className={`${styles.bannerItem} ${draggedIndex === index ? styles.dragging : ''} ${dragOverIndex === index ? styles.dragOver : ''}`}
+            draggable
+            onDragStart={(e) => handleDragStart(e, index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
+          >
+            <div className={styles.dragHandle}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="9" cy="5" r="1"></circle>
+                <circle cx="9" cy="12" r="1"></circle>
+                <circle cx="9" cy="19" r="1"></circle>
+                <circle cx="15" cy="5" r="1"></circle>
+                <circle cx="15" cy="12" r="1"></circle>
+                <circle cx="15" cy="19" r="1"></circle>
+              </svg>
+            </div>
             <div className={styles.bannerImage}>
               {banner.imageUrl ? (
                 <img src={banner.imageUrl} alt={banner.titleText} />

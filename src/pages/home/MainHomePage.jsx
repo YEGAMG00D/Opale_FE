@@ -398,15 +398,6 @@ const MainHomePage = () => {
       </section>
 
 
-      {/* 임시: 운영자 페이지 버튼 */}
-      <section className={styles.adminSection}>
-        <div 
-          className={styles.adminButton} 
-          onClick={() => navigate('/admin')}
-        >
-          <div className={styles.adminButtonText}>운영자 페이지 (임시)</div>
-        </div>
-      </section>
       
       {/* Discount Promotion Section */}
       <DiscountPromotionSection />
