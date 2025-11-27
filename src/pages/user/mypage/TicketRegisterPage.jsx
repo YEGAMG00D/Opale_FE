@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './TicketRegisterPage.module.css';
-import { createTicket, updateTicket as updateTicketApi, getTicket } from '../../../api/reservationApi';
+import { createTicket, updateTicket as updateTicketApi, getTicket, extractTicketByOcr } from '../../../api/reservationApi';
 import { transformTicketDataForApi, transformTicketDataFromApi } from '../../../utils/ticketDataTransform';
 import logApi from '../../../api/logApi';
 import TicketSelectModal from '../../../components/common/TicketSelectModal';
@@ -9,6 +9,8 @@ import { fetchPerformanceList } from '../../../api/performanceApi';
 import { fetchPerformanceBasic } from '../../../api/performanceApi';
 import { normalizePerformance } from '../../../services/normalizePerformance';
 import { normalizePerformanceDetail } from '../../../services/normalizePerformanceDetail';
+import { normalizeTicketOcr } from '../../../services/normalizeTicketOcr';
+import OcrLoadingSpinner from '../../../components/common/OcrLoadingSpinner';
 
 const TicketRegisterPage = () => {
   const navigate = useNavigate();
@@ -36,6 +38,7 @@ const TicketRegisterPage = () => {
   const [capturedImage, setCapturedImage] = useState(null);
   const [ticketImageUrl, setTicketImageUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(isEditMode); // 수정 모드일 때는 로딩 중
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
   const [showTicketSelectModal, setShowTicketSelectModal] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -95,14 +98,26 @@ const TicketRegisterPage = () => {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } // 후면 카메라 우선
+        video: { 
+          facingMode: 'environment', // 후면 카메라 우선
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
       });
       setCameraStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      // video 요소가 준비될 때까지 약간의 지연
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          // video 재생 강제
+          videoRef.current.play().catch(err => {
+            console.error('비디오 재생 실패:', err);
+          });
+        }
+      }, 100);
     } catch (err) {
       console.error('카메라 접근 실패:', err);
+      setIsScanning(false);
       alert('카메라 접근에 실패했습니다. 파일에서 선택해주세요.');
     }
   };
@@ -119,7 +134,9 @@ const TicketRegisterPage = () => {
   };
 
   // 카메라로 촬영
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
+    console.log('📸 [capturePhoto] 카메라 촬영 시작');
+    
     if (videoRef.current) {
       const canvas = document.createElement('canvas');
       canvas.width = videoRef.current.videoWidth;
@@ -127,51 +144,121 @@ const TicketRegisterPage = () => {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(videoRef.current, 0, 0);
       
-      canvas.toBlob((blob) => {
+      canvas.toBlob(async (blob) => {
+        console.log('📸 [capturePhoto] 이미지 Blob 생성 완료, 크기:', blob.size, 'bytes');
+        
         const imageUrl = URL.createObjectURL(blob);
         setCapturedImage(imageUrl);
         setTicketData(prev => ({ ...prev, ticketImage: blob }));
         stopCamera();
         setIsScanning(false);
-        // OCR 처리 시뮬레이션 (실제로는 OCR API 호출)
-        setTimeout(() => {
-          setTicketData(prev => ({
-            ...prev,
-            performanceName: '뮤지컬 위키드 내한공연',
-            performanceDate: '2025-10-23',
-            performanceTime: '19:00',
-            section: '나 구역',
-            row: '15',
-            number: '23'
-          }));
+        
+        // OCR API 호출
+        try {
+          console.log('🚀 [capturePhoto] OCR API 호출 시작...');
+          setIsOcrLoading(true);
+          
+          const ocrResponse = await extractTicketByOcr(blob);
+          console.log('✅ [capturePhoto] OCR API 응답 받음:', ocrResponse);
+          
+          const normalizedData = normalizeTicketOcr(ocrResponse);
+          console.log('🔄 [capturePhoto] 정제된 데이터:', normalizedData);
+          
+          setTicketData(prev => {
+            const newData = {
+              ...prev,
+              performanceName: normalizedData.performanceName || prev.performanceName,
+              performanceDate: normalizedData.performanceDate || prev.performanceDate,
+              performanceTime: normalizedData.performanceTime || prev.performanceTime,
+              section: normalizedData.section || prev.section,
+              row: normalizedData.row || prev.row,
+              number: normalizedData.number || prev.number,
+              placeName: normalizedData.placeName || prev.placeName,
+            };
+            console.log('📝 [capturePhoto] ticketData 업데이트:', newData);
+            return newData;
+          });
+          
           setTicketStep('manual');
-        }, 1000);
+          console.log('✅ [capturePhoto] OCR 처리 완료, manual 단계로 이동');
+        } catch (err) {
+          console.error('❌ [capturePhoto] OCR 처리 실패:', err);
+          console.error('❌ [capturePhoto] 에러 상세:', {
+            message: err.message,
+            response: err.response?.data,
+            status: err.response?.status
+          });
+          alert('티켓 이미지 인식에 실패했습니다.');
+          // OCR 실패해도 수동 입력 단계로 이동
+          setTicketStep('manual');
+        } finally {
+          setIsOcrLoading(false);
+          console.log('🏁 [capturePhoto] OCR 처리 종료');
+        }
       }, 'image/jpeg');
     }
   };
 
   // 파일에서 이미지 선택
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
+    console.log('📁 [handleFileSelect] 파일 선택 시작');
+    
     const file = e.target.files[0];
     if (file) {
+      console.log('📁 [handleFileSelect] 선택된 파일:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+      
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         const imageUrl = event.target.result;
         setCapturedImage(imageUrl);
         setTicketData(prev => ({ ...prev, ticketImage: file }));
-        // OCR 처리 시뮬레이션
-        setTimeout(() => {
-          setTicketData(prev => ({
-            ...prev,
-            performanceName: '뮤지컬 위키드 내한공연',
-            performanceDate: '2025-10-23',
-            performanceTime: '19:00',
-            section: '나 구역',
-            row: '15',
-            number: '23'
-          }));
+        
+        // OCR API 호출
+        try {
+          console.log('🚀 [handleFileSelect] OCR API 호출 시작...');
+          setIsOcrLoading(true);
+          
+          const ocrResponse = await extractTicketByOcr(file);
+          console.log('✅ [handleFileSelect] OCR API 응답 받음:', ocrResponse);
+          
+          const normalizedData = normalizeTicketOcr(ocrResponse);
+          console.log('🔄 [handleFileSelect] 정제된 데이터:', normalizedData);
+          
+          setTicketData(prev => {
+            const newData = {
+              ...prev,
+              performanceName: normalizedData.performanceName || prev.performanceName,
+              performanceDate: normalizedData.performanceDate || prev.performanceDate,
+              performanceTime: normalizedData.performanceTime || prev.performanceTime,
+              section: normalizedData.section || prev.section,
+              row: normalizedData.row || prev.row,
+              number: normalizedData.number || prev.number,
+              placeName: normalizedData.placeName || prev.placeName,
+            };
+            console.log('📝 [handleFileSelect] ticketData 업데이트:', newData);
+            return newData;
+          });
+          
           setTicketStep('manual');
-        }, 1000);
+          console.log('✅ [handleFileSelect] OCR 처리 완료, manual 단계로 이동');
+        } catch (err) {
+          console.error('❌ [handleFileSelect] OCR 처리 실패:', err);
+          console.error('❌ [handleFileSelect] 에러 상세:', {
+            message: err.message,
+            response: err.response?.data,
+            status: err.response?.status
+          });
+          alert('티켓 이미지 인식에 실패했습니다.');
+          // OCR 실패해도 수동 입력 단계로 이동
+          setTicketStep('manual');
+        } finally {
+          setIsOcrLoading(false);
+          console.log('🏁 [handleFileSelect] OCR 처리 종료');
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -426,8 +513,14 @@ const TicketRegisterPage = () => {
     navigate('/my/tickets');
   };
 
-  // 컴포넌트 언마운트 시 카메라 정리
+  // 카메라 스트림이 변경될 때 video 요소 업데이트
   useEffect(() => {
+    if (cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.play().catch(err => {
+        console.error('비디오 재생 실패:', err);
+      });
+    }
     return () => {
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
@@ -467,13 +560,23 @@ const TicketRegisterPage = () => {
         {ticketStep === 'scan' ? (
           <>
             <div className={styles.ticketTitle}>티켓 스캔</div>
-            {cameraStream ? (
+            {isOcrLoading ? (
+              <OcrLoadingSpinner />
+            ) : cameraStream ? (
               <div className={styles.cameraArea}>
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
+                  muted
                   className={styles.videoPreview}
+                  onLoadedMetadata={() => {
+                    if (videoRef.current) {
+                      videoRef.current.play().catch(err => {
+                        console.error('비디오 재생 실패:', err);
+                      });
+                    }
+                  }}
                 />
                 <div className={styles.cameraControls}>
                   <button

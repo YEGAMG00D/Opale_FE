@@ -796,8 +796,14 @@ const DetailPerformancePage = () => {
     return posterImages[imageName] || wickedPoster;
   };
   
-  // 컴포넌트 언마운트 시 카메라 정리
+  // 카메라 스트림이 변경될 때 video 요소 업데이트
   useEffect(() => {
+    if (cameraStream && ticketVideoRef.current) {
+      ticketVideoRef.current.srcObject = cameraStream;
+      ticketVideoRef.current.play().catch(err => {
+        console.error('비디오 재생 실패:', err);
+      });
+    }
     return () => {
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
@@ -1110,14 +1116,26 @@ const DetailPerformancePage = () => {
   const startTicketCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' }
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       });
       setCameraStream(stream);
-      if (ticketVideoRef.current) {
-        ticketVideoRef.current.srcObject = stream;
-      }
+      // video 요소가 준비될 때까지 약간의 지연
+      setTimeout(() => {
+        if (ticketVideoRef.current) {
+          ticketVideoRef.current.srcObject = stream;
+          // video 재생 강제
+          ticketVideoRef.current.play().catch(err => {
+            console.error('비디오 재생 실패:', err);
+          });
+        }
+      }, 100);
     } catch (err) {
       console.error('카메라 접근 실패:', err);
+      setIsScanning(false);
       alert('카메라 접근에 실패했습니다. 파일에서 선택해주세요.');
     }
   };
@@ -1846,7 +1864,15 @@ const DetailPerformancePage = () => {
                         ref={ticketVideoRef}
                         autoPlay
                         playsInline
+                        muted
                         className={styles.videoPreview}
+                        onLoadedMetadata={() => {
+                          if (ticketVideoRef.current) {
+                            ticketVideoRef.current.play().catch(err => {
+                              console.error('비디오 재생 실패:', err);
+                            });
+                          }
+                        }}
                       />
                       <div className={styles.cameraControls}>
                         <button
