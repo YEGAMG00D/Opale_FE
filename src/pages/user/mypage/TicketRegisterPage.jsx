@@ -95,14 +95,26 @@ const TicketRegisterPage = () => {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } // 후면 카메라 우선
+        video: { 
+          facingMode: 'environment', // 후면 카메라 우선
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
       });
       setCameraStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      // video 요소가 준비될 때까지 약간의 지연
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          // video 재생 강제
+          videoRef.current.play().catch(err => {
+            console.error('비디오 재생 실패:', err);
+          });
+        }
+      }, 100);
     } catch (err) {
       console.error('카메라 접근 실패:', err);
+      setIsScanning(false);
       alert('카메라 접근에 실패했습니다. 파일에서 선택해주세요.');
     }
   };
@@ -426,8 +438,14 @@ const TicketRegisterPage = () => {
     navigate('/my/tickets');
   };
 
-  // 컴포넌트 언마운트 시 카메라 정리
+  // 카메라 스트림이 변경될 때 video 요소 업데이트
   useEffect(() => {
+    if (cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.play().catch(err => {
+        console.error('비디오 재생 실패:', err);
+      });
+    }
     return () => {
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
@@ -473,7 +491,15 @@ const TicketRegisterPage = () => {
                   ref={videoRef}
                   autoPlay
                   playsInline
+                  muted
                   className={styles.videoPreview}
+                  onLoadedMetadata={() => {
+                    if (videoRef.current) {
+                      videoRef.current.play().catch(err => {
+                        console.error('비디오 재생 실패:', err);
+                      });
+                    }
+                  }}
                 />
                 <div className={styles.cameraControls}>
                   <button
