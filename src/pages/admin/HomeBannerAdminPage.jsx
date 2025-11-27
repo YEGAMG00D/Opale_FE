@@ -274,23 +274,24 @@ const HomeBannerAdminPage = () => {
               </div>
 
               <div className={styles.formRow}>
-                <label>메인 문구 *</label>
+                <label>부제</label>
                 <input
                   type="text"
                   value={formData.titleText}
                   onChange={(e) => setFormData({ ...formData, titleText: e.target.value })}
                   placeholder="예: 12년을 기다린 오리지널 내한공연"
-                  required
+                  
                 />
               </div>
 
               <div className={styles.formRow}>
-                <label>부제</label>
+                <label>메인 문구 *</label>
                 <input
                   type="text"
                   value={formData.subtitleText}
                   onChange={(e) => setFormData({ ...formData, subtitleText: e.target.value })}
                   placeholder="예: 뮤지컬 위키드"
+                  required
                 />
               </div>
 
