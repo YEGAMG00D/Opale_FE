@@ -297,13 +297,13 @@ const MainHomePage = () => {
       </section>
 
 
-      {/* 임시: 공연 정보 관리 페이지 버튼 */}
+      {/* 임시: 운영자 페이지 버튼 */}
       <section className={styles.adminSection}>
         <div 
           className={styles.adminButton} 
-          onClick={() => navigate('/admin/performance')}
+          onClick={() => navigate('/admin')}
         >
-          <div className={styles.adminButtonText}>공연 정보 관리 (임시)</div>
+          <div className={styles.adminButtonText}>운영자 페이지 (임시)</div>
         </div>
       </section>
       

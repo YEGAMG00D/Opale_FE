@@ -50,6 +50,7 @@ import MyTicketPage from '../pages/recommand/MyTicketPage';
 import KeywordPerformancePage from '../pages/recommand/KeywordPerformancePage';
 
 // 관리자
+import MainAdminPage from '../pages/admin/MainAdminPage';
 import PerformanceAdminPage from '../pages/admin/PerformanceAdminPage';
 
 // 예외 페이지 (레이아웃 없음)
@@ -111,6 +112,7 @@ const AppRouter = () => {
           <Route path="recommend/keyword" element={<KeywordPerformancePage />} />
 
           {/* 관리자 */}
+          <Route path="admin" element={<MainAdminPage />} />
           <Route path="admin/performance" element={<PerformanceAdminPage />} />
         </Route>
 
