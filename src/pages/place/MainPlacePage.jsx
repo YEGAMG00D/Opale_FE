@@ -7,6 +7,7 @@ import PlaceApiCard from '../../components/cards/PlaceApiCard';
 import PlaceMapView from '../../components/place/PlaceMapView';
 import { usePlaceList } from '../../hooks/usePlaceList';
 import { useNearbyPlaces } from '../../hooks/useNearbyPlaces';
+import opaleSearchIcon from '../../assets/opaleSearchIcon.svg';
 import { 
   setActiveTab, 
   setGpsLocation, 
@@ -351,7 +352,7 @@ const MainPlacePage = () => {
                 placeholder="극장명을 입력해주세요"
               />
               <button type="submit" className={styles.searchIcon}>
-                🔍
+                <img src={opaleSearchIcon} alt="검색" className={styles.searchIconImg} />
               </button>
             </form>
           </div>

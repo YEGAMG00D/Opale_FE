@@ -86,6 +86,12 @@ h1 {
   font-size: 20px;
 }
 
+.searchIconImg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
 /* 탭 네비게이션 */
 .tabContainer {
   display: flex;
