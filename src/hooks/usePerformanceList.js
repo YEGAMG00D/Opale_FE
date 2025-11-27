@@ -43,9 +43,18 @@ export const usePerformanceList = (initialParams = {}) => {
       const list = res.performances.map(normalizePerformance);
 
       if (isReset || targetPage === 1) {
-        setPerformances(list);
+        // 중복 제거: id를 기준으로 중복 제거
+        const uniqueList = list.filter((item, index, self) => 
+          index === self.findIndex((t) => t.id === item.id)
+        );
+        setPerformances(uniqueList);
       } else {
-        setPerformances((prev) => [...prev, ...list]);
+        // 기존 목록에 추가할 때도 중복 제거
+        setPerformances((prev) => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newItems = list.filter(item => !existingIds.has(item.id));
+          return [...prev, ...newItems];
+        });
       }
 
       hasNextRef.current = res.hasNext;
