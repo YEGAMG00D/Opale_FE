@@ -12,6 +12,8 @@ const DiscountPromotionSection = () => {
   const [isLoadingTimeticket, setIsLoadingTimeticket] = useState(true);
   const [errorInterpark, setErrorInterpark] = useState(null);
   const [errorTimeticket, setErrorTimeticket] = useState(null);
+  const [showAllInterpark, setShowAllInterpark] = useState(false);
+  const [showAllTimeticket, setShowAllTimeticket] = useState(false);
 
   // 인터파크 할인 공연 조회
   useEffect(() => {
@@ -79,7 +81,7 @@ const DiscountPromotionSection = () => {
         <div className={styles.promotionBlock}>
           <h2 className={styles.promotionTitle}>Nol ticket : 할인 프로모션</h2>
           <div className={styles.promotionList}>
-            {interparkData.map((item, index) => (
+            {(showAllInterpark ? interparkData : interparkData.slice(0, 3)).map((item, index) => (
               <DiscountCard
                 key={index}
                 title={item.title}
@@ -94,6 +96,14 @@ const DiscountPromotionSection = () => {
               />
             ))}
           </div>
+          {interparkData.length > 3 && !showAllInterpark && (
+            <button 
+              className={styles.moreButton}
+              onClick={() => setShowAllInterpark(true)}
+            >
+              <span>더보기 ({interparkData.length - 3}개)</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -102,7 +112,7 @@ const DiscountPromotionSection = () => {
         <div className={styles.promotionBlock}>
           <h2 className={styles.promotionTitle}>타임티켓 : 할인 프로모션</h2>
           <div className={styles.promotionList}>
-            {timeticketData.map((item, index) => (
+            {(showAllTimeticket ? timeticketData : timeticketData.slice(0, 3)).map((item, index) => (
               <DiscountCard
                 key={index}
                 title={item.title}
@@ -117,6 +127,14 @@ const DiscountPromotionSection = () => {
               />
             ))}
           </div>
+          {timeticketData.length > 3 && !showAllTimeticket && (
+            <button 
+              className={styles.moreButton}
+              onClick={() => setShowAllTimeticket(true)}
+            >
+              <span>더보기 ({timeticketData.length - 3}개)</span>
+            </button>
+          )}
         </div>
       )}
     </section>
