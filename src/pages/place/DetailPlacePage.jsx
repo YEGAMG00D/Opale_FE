@@ -8,9 +8,8 @@ import PlaceMap from '../../components/place/PlaceMap';
 import { usePlaceDetail } from '../../hooks/usePlaceDetail';
 import { usePlaceFacilities } from '../../hooks/usePlaceFacilities';
 import { usePlaceStages } from '../../hooks/usePlaceStages';
-import { fetchPlaceReviewsByPlace, createPlaceReview } from '../../api/reviewApi';
+import { fetchPlaceReviewsByPlace } from '../../api/reviewApi';
 import { normalizePlaceReviews } from '../../services/normalizePlaceReview';
-import { normalizePlaceReviewRequest } from '../../services/normalizePlaceReviewRequest';
 import logApi from '../../api/logApi';
 
 const DetailPlacePage = () => {
@@ -21,8 +20,6 @@ const DetailPlacePage = () => {
   const { place, loading, error } = usePlaceDetail(id);
   const { convenienceFacilities, parkingFacilities } = usePlaceFacilities(id);
   const { stages } = usePlaceStages(id);
-  const [showWriteModal, setShowWriteModal] = useState(false);
-  const [writeForm, setWriteForm] = useState({ title: '', content: '', rating: 5 });
   const [isStageTableOpen, setIsStageTableOpen] = useState(false);
   
   // 리뷰 데이터 상태
@@ -235,7 +232,13 @@ const DetailPlacePage = () => {
         <div className={styles.writeButtonContainer}>
           <button 
             className={styles.writeButton}
-            onClick={() => setShowWriteModal(true)}
+            onClick={() => {
+              navigate('/recommend/review', {
+                state: {
+                  placeId: id
+                }
+              });
+            }}
           >
             후기 작성하기
           </button>
@@ -271,109 +274,6 @@ const DetailPlacePage = () => {
           )}
         </div>
       </div>
-
-      {/* 글쓰기 모달 */}
-      {showWriteModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h3>후기 작성</h3>
-              <button className={styles.closeButton} onClick={() => {
-                setShowWriteModal(false);
-                setWriteForm({ title: '', content: '', rating: 5 });
-              }}>×</button>
-            </div>
-            
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              
-              if (!id) {
-                alert('공연장 정보가 없습니다.');
-                return;
-              }
-
-              try {
-                // 요청 DTO 생성
-                const requestDto = normalizePlaceReviewRequest(writeForm, id);
-
-                // API 호출
-                await createPlaceReview(requestDto);
-
-                // 공연장 리뷰 작성 완료 시 REVIEW_WRITE 로그 기록
-                try {
-                  await logApi.createLog({
-                    eventType: "REVIEW_WRITE",
-                    targetType: "PLACE",
-                    targetId: String(id)
-                  });
-                } catch (logErr) {
-                  console.error('로그 기록 실패:', logErr);
-                }
-
-                // 성공 시 모달 닫고 폼 초기화
-                setShowWriteModal(false);
-                setWriteForm({ title: '', content: '', rating: 5 });
-
-                // 리뷰 목록 다시 조회
-                await loadReviews();
-              } catch (err) {
-                console.error('공연장 리뷰 작성 실패:', err);
-                alert(err.response?.data?.message || err.message || '공연장 리뷰 작성에 실패했습니다.');
-              }
-            }} className={styles.writeForm}>
-              <div className={styles.formGroup}>
-                <label>제목</label>
-                <input 
-                  type="text" 
-                  value={writeForm.title}
-                  onChange={(e) => setWriteForm({...writeForm, title: e.target.value})}
-                  placeholder="제목을 입력하세요"
-                  required
-                />
-              </div>
-              
-              <div className={styles.formGroup}>
-                <label>평점</label>
-                <div className={styles.ratingInput}>
-                  {[1,2,3,4,5].map(star => (
-                    <button 
-                      key={star} 
-                      type="button"
-                      className={`${styles.ratingStar} ${star <= writeForm.rating ? styles.filled : ''}`}
-                      onClick={() => setWriteForm({...writeForm, rating: star})}
-                    >
-                      ★
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className={styles.formGroup}>
-                <label>내용</label>
-                <textarea 
-                  value={writeForm.content}
-                  onChange={(e) => setWriteForm({...writeForm, content: e.target.value})}
-                  placeholder="내용을 입력하세요"
-                  rows={6}
-                  required
-                />
-              </div>
-              
-              <div className={styles.formActions}>
-                <button type="button" className={styles.cancelButton} onClick={() => {
-                  setShowWriteModal(false);
-                  setWriteForm({ title: '', content: '', rating: 5 });
-                }}>
-                  취소
-                </button>
-                <button type="submit" className={styles.submitButton}>
-                  작성하기
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

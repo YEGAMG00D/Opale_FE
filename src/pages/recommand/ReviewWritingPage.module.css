@@ -406,46 +406,56 @@
 .formActions {
   display: flex;
   gap: 12px;
-  margin-top: 8px;
-  padding-bottom: 8px;
+  margin-top: 24px;
 }
 
 .cancelButton {
-  flex: 0 0 auto;
-  min-width: 80px;
-  padding: 14px 20px;
-  background-color: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  flex: 1;
+  padding: 12px 16px;
   border-radius: 8px;
   font-size: 14px;
+  box-sizing: border-box;
   font-weight: 500;
-  color: #111827;
   cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
+  transition: all 0.2s ease;
+  outline: none;
+  background-color: #F8F9FA;
+  border: 1px solid #E5E5E5;
+  color: #666666;
+}
+
+.cancelButton:focus {
+  outline: none;
+  border-color: #fbccdc;
 }
 
 .cancelButton:hover {
-  background-color: #e5e7eb;
+  background-color: #E9ECEF;
 }
 
 .submitButton {
   flex: 1;
-  padding: 14px;
-  background-color: #ffb6c1;
-  border: none;
+  padding: 12px 16px;
   border-radius: 8px;
   font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
+  box-sizing: border-box;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  outline: none;
+  background-color: #007BFF;
+  border: 1px solid #007BFF;
+  color: #FFFFFF;
+}
+
+.submitButton:focus {
+  outline: none;
+  border-color: #fbccdc;
 }
 
 .submitButton:hover {
-  background-color: #ffa5b8;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+  background-color: #0056B3;
+  border-color: #0056B3;
 }
 
 .skipButton {
