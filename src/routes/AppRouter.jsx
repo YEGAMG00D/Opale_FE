@@ -52,6 +52,7 @@ import KeywordPerformancePage from '../pages/recommand/KeywordPerformancePage';
 // 관리자
 import MainAdminPage from '../pages/admin/MainAdminPage';
 import PerformanceAdminPage from '../pages/admin/PerformanceAdminPage';
+import HomeBannerAdminPage from '../pages/admin/HomeBannerAdminPage';
 
 // 예외 페이지 (레이아웃 없음)
 import LaunchingPage from '../pages/exception/LaunchingPage';
@@ -114,6 +115,7 @@ const AppRouter = () => {
           {/* 관리자 */}
           <Route path="admin" element={<MainAdminPage />} />
           <Route path="admin/performance" element={<PerformanceAdminPage />} />
+          <Route path="admin/banner/home" element={<HomeBannerAdminPage />} />
         </Route>
 
         {/* 콘텐츠 레이아웃이 적용되는 라우트들 (푸터 없음) */}

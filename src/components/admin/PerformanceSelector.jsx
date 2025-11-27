@@ -48,9 +48,9 @@ const PerformanceSelector = ({ searchQuery, onSearchChange, selectedPerformance,
         {!loadingPerformances && performances.length === 0 && (
           <div className={styles.emptyMessage}>검색 결과가 없습니다.</div>
         )}
-        {performances.map((performance) => (
+        {performances.map((performance, index) => (
           <div
-            key={performance.id}
+            key={`${performance.id}-${index}`}
             className={`${styles.performanceItem} ${
               selectedPerformance?.id === performance.id ? styles.selected : ""
             }`}

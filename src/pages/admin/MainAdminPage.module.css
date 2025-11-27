@@ -96,5 +96,54 @@
   justify-content: center;
   color: #999;
   flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.menuArrow.rotated {
+  transform: rotate(180deg);
+}
+
+/* 드롭다운 메뉴 */
+.menuItemWithDropdown {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.menuItemWithDropdown:last-child {
+  border-bottom: none;
+}
+
+.subMenuList {
+  background-color: #fafafa;
+  padding: 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.subMenuItem {
+  display: flex;
+  align-items: center;
+  padding: 12px 0 12px 60px;
+  text-decoration: none;
+  color: #666;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.subMenuItem:last-child {
+  border-bottom: none;
+}
+
+.subMenuItem:hover {
+  background-color: #fff5f7;
+  color: #333;
+}
+
+.subMenuText {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 400;
+  color: inherit;
 }
 
