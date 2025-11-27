@@ -33,15 +33,22 @@ export const createBanner = async (dto, file) => {
   try {
     const formData = new FormData();
 
-    // DTO 필드들
-    formData.append("performanceId", dto.performanceId ?? "");
-    formData.append("titleText", dto.titleText ?? "");
-    formData.append("subtitleText", dto.subtitleText ?? "");
-    formData.append("descriptionText", dto.descriptionText ?? "");
-    formData.append("dateText", dto.dateText ?? "");
-    formData.append("placeText", dto.placeText ?? "");
-    formData.append("displayOrder", dto.displayOrder);
-    formData.append("isActive", dto.isActive);
+    // 백엔드가 @RequestPart("data")로 기대하므로 JSON Blob으로 전송
+    const dataBlob = new Blob(
+      [JSON.stringify({
+        performanceId: dto.performanceId ?? "",
+        titleText: dto.titleText ?? "",
+        subtitleText: dto.subtitleText ?? "",
+        descriptionText: dto.descriptionText ?? "",
+        dateText: dto.dateText ?? "",
+        placeText: dto.placeText ?? "",
+        displayOrder: dto.displayOrder,
+        isActive: dto.isActive,
+        linkUrl: dto.linkUrl ?? "",
+      })],
+      { type: "application/json" }
+    );
+    formData.append("data", dataBlob);
 
     // 이미지 파일
     if (file) {
@@ -70,14 +77,22 @@ export const updateBanner = async (bannerId, dto, file) => {
   try {
     const formData = new FormData();
 
-    formData.append("performanceId", dto.performanceId ?? "");
-    formData.append("titleText", dto.titleText ?? "");
-    formData.append("subtitleText", dto.subtitleText ?? "");
-    formData.append("descriptionText", dto.descriptionText ?? "");
-    formData.append("dateText", dto.dateText ?? "");
-    formData.append("placeText", dto.placeText ?? "");
-    formData.append("displayOrder", dto.displayOrder);
-    formData.append("isActive", dto.isActive);
+    // 백엔드가 @RequestPart("data")로 기대하므로 JSON Blob으로 전송
+    const dataBlob = new Blob(
+      [JSON.stringify({
+        performanceId: dto.performanceId ?? "",
+        titleText: dto.titleText ?? "",
+        subtitleText: dto.subtitleText ?? "",
+        descriptionText: dto.descriptionText ?? "",
+        dateText: dto.dateText ?? "",
+        placeText: dto.placeText ?? "",
+        displayOrder: dto.displayOrder,
+        isActive: dto.isActive,
+        linkUrl: dto.linkUrl ?? "",
+      })],
+      { type: "application/json" }
+    );
+    formData.append("data", dataBlob);
 
     if (file) {
       formData.append("file", file);
