@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { loginSuccess } from "../../../store/userSlice";
 import styles from "./LoginPage.module.css";
+import opaleLogo from "../../../assets/opale_logo_crop.png";
 
 import { login as loginApi } from "../../../api/authApi";
 import { initializeUserTickets, clearPreviousUserTickets, hasUserTickets } from "../../../utils/ticketUtils";
@@ -64,7 +65,13 @@ const LoginPage = () => {
       }
     } catch (err) {
       console.error("로그인 실패:", err);
-      if (err.response?.status === 401) {
+      
+      // 백엔드에서 보낸 메시지가 있으면 우선 사용
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.status === 400) {
+        setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+      } else if (err.response?.status === 401) {
         setError("이메일 또는 비밀번호가 올바르지 않습니다.");
       } else {
         setError("서버 오류가 발생했습니다.");
@@ -138,6 +145,14 @@ const LoginPage = () => {
         <Link to="/signup" className={styles.signupLink}>
           회원가입
         </Link>
+        
+        <div 
+          className={styles.footerLogo}
+          onClick={() => navigate('/admin')}
+          style={{ cursor: 'pointer' }}
+        >
+          <img src={opaleLogo} alt="Opale" />
+        </div>
       </div>
     </div>
   );

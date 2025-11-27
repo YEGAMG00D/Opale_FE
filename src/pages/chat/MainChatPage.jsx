@@ -51,24 +51,26 @@ const MainChatPage = () => {
 
   // 2️⃣ WebSocket: 방 목록 업데이트 구독
   useEffect(() => {
-    const client = connectSocket(() => {
-      // 구독 저장
-      subscriptionRef.current = client.subscribe("/topic/rooms", (msg) => {
-        const update = JSON.parse(msg.body);
+    const client = connectSocket((connectedClient) => {
+      // 구독 저장 - 콜백에서 클라이언트를 인자로 받아 사용
+      if (connectedClient && connectedClient.connected) {
+        subscriptionRef.current = connectedClient.subscribe("/topic/rooms", (msg) => {
+          const update = JSON.parse(msg.body);
 
-        setChatRooms((prev) =>
-          prev.map((room) =>
-            room.roomId === update.roomId
-              ? {
-                  ...room,
-                  lastMessage: update.lastMessage,
-                  lastMessageTime: update.lastMessageTime,
-                  isActive: update.isActive ?? room.isActive,
-                }
-              : room
-          )
-        );
-      });
+          setChatRooms((prev) =>
+            prev.map((room) =>
+              room.roomId === update.roomId
+                ? {
+                    ...room,
+                    lastMessage: update.lastMessage,
+                    lastMessageTime: update.lastMessageTime,
+                    isActive: update.isActive ?? room.isActive,
+                  }
+                : room
+            )
+          );
+        });
+      }
     });
 
     return () => {

@@ -10,7 +10,12 @@ const Header = ({ showBackButton = false, title = null }) => {
   const isLoggedIn = useSelector((state) => state.user.isLoggedIn);
 
   const handleBackClick = () => {
-    navigate(-1);
+    // 채팅방 페이지에서 뒤로 가기 시 항상 채팅방 목록으로 이동
+    if (location.pathname.match(/^\/chat\/([^/]+)$/)) {
+      navigate('/chat');
+    } else {
+      navigate(-1);
+    }
   };
 
   // 뒤로가기 버튼이 없을 때는 항상 로고 표시

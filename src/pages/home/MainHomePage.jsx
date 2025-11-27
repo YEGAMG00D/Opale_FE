@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PerformanceCard from '../../components/culture/PerformanceCard';
 import DiscountPromotionSection from '../../components/common/DiscountPromotionSection';
+import { fetchMainBanners } from '../../api/bannerApi';
+import { normalizeMainBannerList } from '../../services/normalizeBanner';
 import styles from './MainHomePage.module.css';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
@@ -16,7 +18,42 @@ const MainHomePage = () => {
   const [isDraggingIndicator, setIsDraggingIndicator] = useState(false);
   const [indicatorStartX, setIndicatorStartX] = useState(0);
   const [indicatorContainerRef, setIndicatorContainerRef] = useState(null);
+  const [banners, setBanners] = useState([]);
+  const [loadingBanners, setLoadingBanners] = useState(true);
 
+  // 배너 데이터 로드
+  useEffect(() => {
+    const loadBanners = async () => {
+      try {
+        setLoadingBanners(true);
+        const data = await fetchMainBanners();
+        const normalized = normalizeMainBannerList(data);
+        setBanners(normalized);
+      } catch (err) {
+        console.error("메인 배너 조회 실패:", err);
+        // 에러 시 빈 배열로 설정
+        setBanners([]);
+      } finally {
+        setLoadingBanners(false);
+      }
+    };
+
+    loadBanners();
+  }, []);
+
+  // 배너 클릭 핸들러
+  const handleBannerClick = (banner) => {
+    if (banner.linkUrl) {
+      // 외부 링크가 있으면 새 창에서 열기
+      window.open(banner.linkUrl, '_blank');
+    } else if (banner.performanceId) {
+      // 공연 ID가 있으면 공연 상세 페이지로 이동
+      navigate(`/culture/${banner.performanceId}`);
+    }
+    // 둘 다 없으면 클릭 비활성
+  };
+
+  // 기존 하드코딩된 performances (배너가 없을 때 fallback)
   const performances = [
     {
       id: 0,
@@ -94,16 +131,21 @@ const MainHomePage = () => {
     }
   ];
 
+  // 배너 또는 performances 중 사용할 데이터
+  const slideData = banners.length > 0 ? banners : performances;
+
   // 자동 슬라이드 기능
   useEffect(() => {
+    if (slideData.length === 0) return;
+    
     const interval = setInterval(() => {
       setCurrentSlide((prevSlide) => 
-        prevSlide === performances.length - 1 ? 0 : prevSlide + 1
+        prevSlide === slideData.length - 1 ? 0 : prevSlide + 1
       );
     }, 5000); // 5초마다 자동 슬라이드
 
     return () => clearInterval(interval);
-  }, [performances.length]);
+  }, [slideData.length]);
 
   const goToSlide = (slideIndex) => {
     setCurrentSlide(slideIndex);
@@ -126,8 +168,8 @@ const MainHomePage = () => {
     const x = clientX - containerRect.left;
     const containerWidth = containerRect.width;
     const slideRatio = x / containerWidth;
-    const slideIndex = Math.round(slideRatio * performances.length);
-    return Math.max(0, Math.min(performances.length - 1, slideIndex));
+    const slideIndex = Math.round(slideRatio * slideData.length);
+    return Math.max(0, Math.min(slideData.length - 1, slideIndex));
   };
 
   useEffect(() => {
@@ -154,7 +196,7 @@ const MainHomePage = () => {
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('mouseleave', handleMouseUp);
     };
-  }, [isDraggingIndicator, indicatorContainerRef, performances.length]);
+  }, [isDraggingIndicator, indicatorContainerRef, slideData.length]);
 
   const featuredPerformances = [
     {
@@ -192,70 +234,129 @@ const MainHomePage = () => {
   return (
     <div className={styles.container}>
       {/* Main Carousel Section */}
-      <section className={styles.carouselSection}>
-        <div className={styles.carouselContainer}>
-          <div 
-            className={styles.carouselTrack} 
-            style={{ 
-              transform: `translateX(-${currentSlide * (100 / performances.length)}%)`,
-              width: `${performances.length * 100}%`
-            }}
-          >
-            {performances.map((performance) => (
-              <div 
-                key={performance.id} 
-                className={styles.carouselSlide}
-                style={{ width: `${100 / performances.length}%` }}
-                onClick={() => navigate(`/culture/${performance.id + 1}`)}
-              >
-                <div className={styles.slideLink}>
-                  <div className={styles.poster}>
-                    <img
-                      className={styles.posterImg}
-                      src={posterImages[performance.image] || wickedPoster}
-                      alt={`${performance.title} 포스터`}
-                    />
-                    <div className={styles.posterOverlay}></div>
-                    <div className={styles.posterContent}>
-                      <div className={styles.posterTagline}>{performance.tagline}</div>
-                      <div className={styles.posterTitle}>{performance.title}</div>
-                      <div className={styles.posterSubtitle}>{performance.subtitle}</div>
-                      <div className={styles.posterDescription}>{performance.description}</div>
-                      <div className={styles.posterDate}>{performance.date}</div>
-                      <div className={styles.posterVenue}>{performance.venue}</div>
+      {loadingBanners ? (
+        <section className={styles.carouselSection}>
+          <div className={styles.loading}>배너를 불러오는 중...</div>
+        </section>
+      ) : slideData.length > 0 ? (
+        <section className={styles.carouselSection}>
+          <div className={styles.carouselContainer}>
+            <div 
+              className={styles.carouselTrack} 
+              style={{ 
+                transform: `translateX(-${currentSlide * (100 / slideData.length)}%)`,
+                width: `${slideData.length * 100}%`
+              }}
+            >
+              {slideData.map((item, index) => {
+                // 배너 데이터인지 기존 performance 데이터인지 확인
+                const isBanner = banners.length > 0;
+                
+                if (isBanner) {
+                  // 배너 데이터 사용
+                  const banner = item;
+                  const hasClickAction = banner.linkUrl || banner.performanceId;
+                  
+                  return (
+                    <div 
+                      key={banner.bannerId || index} 
+                      className={styles.carouselSlide}
+                      style={{ 
+                        width: `${100 / slideData.length}%`,
+                        cursor: hasClickAction ? 'pointer' : 'default'
+                      }}
+                      onClick={() => hasClickAction && handleBannerClick(banner)}
+                    >
+                      <div className={styles.slideLink}>
+                        <div className={styles.poster}>
+                          <img
+                            className={styles.posterImg}
+                            src={banner.imageUrl || wickedPoster}
+                            alt={banner.titleText || '배너'}
+                          />
+                          <div className={styles.posterOverlay}></div>
+                          <div className={styles.posterContent}>
+                            {banner.titleText && (
+                              <div className={styles.posterTagline}>{banner.titleText}</div>
+                            )}
+                            {banner.subtitleText && (
+                              <div className={styles.posterTitle}>{banner.subtitleText}</div>
+                            )}
+                            {banner.descriptionText && (
+                              <div className={styles.posterDescription}>{banner.descriptionText}</div>
+                            )}
+                            {banner.dateText && (
+                              <div className={styles.posterDate}>{banner.dateText}</div>
+                            )}
+                            {banner.placeText && (
+                              <div className={styles.posterVenue}>{banner.placeText}</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
+                  );
+                } else {
+                  // 기존 performance 데이터 사용 (fallback)
+                  const performance = item;
+                  return (
+                    <div 
+                      key={performance.id} 
+                      className={styles.carouselSlide}
+                      style={{ width: `${100 / slideData.length}%` }}
+                      onClick={() => navigate(`/culture/${performance.id + 1}`)}
+                    >
+                      <div className={styles.slideLink}>
+                        <div className={styles.poster}>
+                          <img
+                            className={styles.posterImg}
+                            src={posterImages[performance.image] || wickedPoster}
+                            alt={`${performance.title} 포스터`}
+                          />
+                          <div className={styles.posterOverlay}></div>
+                          <div className={styles.posterContent}>
+                            <div className={styles.posterTagline}>{performance.tagline}</div>
+                            <div className={styles.posterTitle}>{performance.title}</div>
+                            <div className={styles.posterSubtitle}>{performance.subtitle}</div>
+                            <div className={styles.posterDescription}>{performance.description}</div>
+                            <div className={styles.posterDate}>{performance.date}</div>
+                            <div className={styles.posterVenue}>{performance.venue}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
+            </div>
+          </div>
+          
+          {/* Carousel Indicators */}
+          <div 
+            ref={setIndicatorContainerRef}
+            className={styles.carouselIndicators}
+            onMouseDown={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const clickedIndex = getSlideIndexFromMouseX(e.clientX, rect);
+              handleIndicatorMouseDown(e, clickedIndex);
+            }}
+            onMouseUp={handleIndicatorMouseUp}
+            onMouseLeave={handleIndicatorMouseUp}
+          >
+            {slideData.map((_, index) => (
+              <div 
+                key={index}
+                className={`${styles.indicator} ${currentSlide === index ? styles.active : ''}`}
+                onClick={() => goToSlide(index)}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  handleIndicatorMouseDown(e, index);
+                }}
+              ></div>
             ))}
           </div>
-        </div>
-        
-        {/* Carousel Indicators */}
-        <div 
-          ref={setIndicatorContainerRef}
-          className={styles.carouselIndicators}
-          onMouseDown={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const clickedIndex = getSlideIndexFromMouseX(e.clientX, rect);
-            handleIndicatorMouseDown(e, clickedIndex);
-          }}
-          onMouseUp={handleIndicatorMouseUp}
-          onMouseLeave={handleIndicatorMouseUp}
-        >
-          {performances.map((_, index) => (
-            <div 
-              key={index}
-              className={`${styles.indicator} ${currentSlide === index ? styles.active : ''}`}
-              onClick={() => goToSlide(index)}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                handleIndicatorMouseDown(e, index);
-              }}
-            ></div>
-          ))}
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {/* CTA Sections */}
       <section className={styles.ctaSection}>
@@ -296,8 +397,11 @@ const MainHomePage = () => {
         </div>
       </section>
 
+
+      
       {/* Discount Promotion Section */}
       <DiscountPromotionSection />
+
     </div>
   );
 };
