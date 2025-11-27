@@ -22,8 +22,7 @@
   min-width: 80px;
   height: 60px;
   border-radius: 8px;
-  border: none;
-  background-color: #F5F5F5;
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,8 +33,20 @@
   overflow: hidden;
 }
 
+/* 이미지가 있는 예매처 (대형 예매처) */
+.bookingSite.withIcon {
+  background-color: #F5F5F5;
+}
+
+/* 텍스트만 있는 예매처 (기타 예매처) */
+.bookingSite.withText {
+  background-color: #FFFBD6;
+}
+
 .bookingSite:hover {
   opacity: 0.8;
+  outline: none;
+  border: none;
 }
 
 .naverLogo {
@@ -59,8 +70,8 @@
 }
 
 .siteName {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 22px;
+  font-weight: 700;
   color: #666666;
 }
 

@@ -75,8 +75,7 @@ const BookingLinks = ({ bookingSites }) => {
           return (
             <button
               key={site.id}
-              className={styles.bookingSite}
-              style={{ backgroundColor: site.color || "#F5F5F5" }}
+              className={`${styles.bookingSite} ${iconImage ? styles.withIcon : styles.withText}`}
               onClick={() => handleSiteClick(site.url)}
               title={site.name}
             >
