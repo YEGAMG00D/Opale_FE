@@ -38,7 +38,7 @@ const DetailPerformancePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useSelector((state) => state.user);
   const currentUserId = user?.userId || user?.id || null;
-  const [activeTab, setActiveTab] = useState('reservation');
+  const [activeTab, setActiveTab] = useState('detail');
   const [isFavorite, setIsFavorite] = useState(false);
   const [expandedExpectations, setExpandedExpectations] = useState({});
   const [showWriteModal, setShowWriteModal] = useState(false);
@@ -999,8 +999,8 @@ const DetailPerformancePage = () => {
   }, [performanceId, activeReviewTab]);
 
   const tabs = [
-    { id: 'reservation', label: '예매정보' },
     { id: 'detail', label: '상세정보' },
+    { id: 'reservation', label: '예매정보' },
     { id: 'review', label: '후기/기대평' },
     { id: 'venue', label: '공연장 정보' }
   ];
@@ -1520,82 +1520,82 @@ const DetailPerformancePage = () => {
               </div>
               
               {/* 할인정보 섹션 */}
-              <div className={styles.discountSection}>
-                <h3 className={styles.contentTitle}>할인정보</h3>
-                <div className={styles.infoPlaceholder}>
-                  {bookingLoading ? (
-                    <p className={styles.placeholderText}>정보를 불러오는 중...</p>
-                  ) : bookingInfo?.discountImages && bookingInfo.discountImages.length > 0 ? (
-                    <div className={styles.imageContainer}>
-                      {bookingInfo.discountImages.map((image, index) => (
-                        <img
-                          key={image.performanceImageId || index}
-                          src={image.imageUrl}
-                          alt={`할인 정보 이미지 ${index + 1}`}
-                          className={styles.infoImage}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={styles.placeholderText}>할인 정보가 여기에 표시됩니다</p>
-                  )}
+              {(bookingLoading || (bookingInfo?.discountImages && bookingInfo.discountImages.length > 0)) && (
+                <div className={styles.discountSection}>
+                  <h3 className={styles.contentTitle}>할인정보</h3>
+                  <div className={styles.infoPlaceholder}>
+                    {bookingLoading ? (
+                      <p className={styles.placeholderText}>정보를 불러오는 중...</p>
+                    ) : (
+                      <div className={styles.imageContainer}>
+                        {bookingInfo.discountImages.map((image, index) => (
+                          <img
+                            key={image.performanceImageId || index}
+                            src={image.imageUrl}
+                            alt={`할인 정보 이미지 ${index + 1}`}
+                            className={styles.infoImage}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 캐스팅 섹션 */}
-              <div className={styles.castingSection}>
-                <h3 className={styles.contentTitle}>캐스팅</h3>
-                <div className={styles.infoPlaceholder}>
-                  {bookingLoading ? (
-                    <p className={styles.placeholderText}>정보를 불러오는 중...</p>
-                  ) : bookingInfo?.castingImages && bookingInfo.castingImages.length > 0 ? (
-                    <div className={styles.imageContainer}>
-                      {bookingInfo.castingImages.map((image, index) => (
-                        <img
-                          key={image.performanceImageId || index}
-                          src={image.imageUrl}
-                          alt={`캐스팅 정보 이미지 ${index + 1}`}
-                          className={styles.infoImage}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={styles.placeholderText}>캐스팅 정보가 여기에 표시됩니다</p>
-                  )}
+              {(bookingLoading || (bookingInfo?.castingImages && bookingInfo.castingImages.length > 0)) && (
+                <div className={styles.castingSection}>
+                  <h3 className={styles.contentTitle}>캐스팅</h3>
+                  <div className={styles.infoPlaceholder}>
+                    {bookingLoading ? (
+                      <p className={styles.placeholderText}>정보를 불러오는 중...</p>
+                    ) : (
+                      <div className={styles.imageContainer}>
+                        {bookingInfo.castingImages.map((image, index) => (
+                          <img
+                            key={image.performanceImageId || index}
+                            src={image.imageUrl}
+                            alt={`캐스팅 정보 이미지 ${index + 1}`}
+                            className={styles.infoImage}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 좌석배치도 섹션 */}
-              <div className={styles.seatingChartSection}>
-                <h3 className={styles.contentTitle}>좌석배치도</h3>
-                <div className={styles.infoPlaceholder}>
-                  {bookingLoading ? (
-                    <p className={styles.placeholderText}>정보를 불러오는 중...</p>
-                  ) : bookingInfo?.seatImages && bookingInfo.seatImages.length > 0 ? (
-                    <div className={styles.imageContainer}>
-                      {bookingInfo.seatImages.map((image, index) => (
-                        <img
-                          key={image.performanceImageId || index}
-                          src={image.imageUrl}
-                          alt={`좌석배치도 이미지 ${index + 1}`}
-                          className={styles.infoImage}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={styles.placeholderText}>좌석배치도 이미지가 여기에 표시됩니다</p>
-                  )}
+              {(bookingLoading || (bookingInfo?.seatImages && bookingInfo.seatImages.length > 0)) && (
+                <div className={styles.seatingChartSection}>
+                  <h3 className={styles.contentTitle}>좌석배치도</h3>
+                  <div className={styles.infoPlaceholder}>
+                    {bookingLoading ? (
+                      <p className={styles.placeholderText}>정보를 불러오는 중...</p>
+                    ) : (
+                      <div className={styles.imageContainer}>
+                        {bookingInfo.seatImages.map((image, index) => (
+                          <img
+                            key={image.performanceImageId || index}
+                            src={image.imageUrl}
+                            alt={`좌석배치도 이미지 ${index + 1}`}
+                            className={styles.infoImage}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
           
