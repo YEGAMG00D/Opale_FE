@@ -38,7 +38,7 @@ const DetailPerformancePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useSelector((state) => state.user);
   const currentUserId = user?.userId || user?.id || null;
-  const [activeTab, setActiveTab] = useState('reservation');
+  const [activeTab, setActiveTab] = useState('detail');
   const [isFavorite, setIsFavorite] = useState(false);
   const [expandedExpectations, setExpandedExpectations] = useState({});
   const [showWriteModal, setShowWriteModal] = useState(false);
@@ -999,8 +999,8 @@ const DetailPerformancePage = () => {
   }, [performanceId, activeReviewTab]);
 
   const tabs = [
-    { id: 'reservation', label: '예매정보' },
     { id: 'detail', label: '상세정보' },
+    { id: 'reservation', label: '예매정보' },
     { id: 'review', label: '후기/기대평' },
     { id: 'venue', label: '공연장 정보' }
   ];
