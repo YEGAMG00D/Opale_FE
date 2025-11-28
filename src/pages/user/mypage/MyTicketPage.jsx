@@ -7,6 +7,7 @@ import kinkyBootsPoster from '../../../assets/poster/kinky-boots.gif';
 import hanbokManPoster from '../../../assets/poster/hanbok-man.jpg';
 import deathNotePoster from '../../../assets/poster/death-note.gif';
 import rentPoster from '../../../assets/poster/rent.gif';
+import defaultTicketImage from '../../../assets/디폴트 티켓 이미지.jpg';
 import { getTicketList, deleteTicket as deleteTicketApi, getTicketReviews } from '../../../api/reservationApi';
 import { normalizeTicketList, categorizeTickets } from '../../../services/normalizeTicketList';
 import { normalizeTicketReviews } from '../../../services/normalizeTicketReviews';
@@ -104,7 +105,7 @@ const MyTicketPage = () => {
 
   // 공연명에서 fallback 포스터 찾기 (동기 함수)
   const getFallbackPoster = (performanceName) => {
-    if (!performanceName) return wickedPoster;
+    if (!performanceName) return defaultTicketImage;
     
     const nameLower = performanceName.toLowerCase();
     for (const [key, image] of Object.entries(posterImages)) {
@@ -113,7 +114,7 @@ const MyTicketPage = () => {
       }
     }
     
-    return wickedPoster;
+    return defaultTicketImage;
   };
 
   // 공연명으로 포스터 이미지 가져오기 (비동기, API 우선)

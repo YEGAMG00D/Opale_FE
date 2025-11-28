@@ -12,9 +12,10 @@
   padding: 16px 20px;
   border-bottom: 1px solid #f0f0f0;
   position: sticky;
-  top: 0;
+  top: 0; /* 레이아웃 Header 바로 아래 (main-content의 padding-top으로 공간 확보됨) */
   background-color: #ffffff;
-  z-index: 10;
+  z-index: 99; /* 레이아웃 Header(z-index: 100)보다 낮게 */
+  margin-top: 0;
 }
 
 .title {

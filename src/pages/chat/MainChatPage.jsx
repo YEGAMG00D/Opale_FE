@@ -5,6 +5,7 @@ import CompactChatCard from "../../components/chat/CompactChatCard";
 import { connectSocket } from "../../api/socket";
 import { searchChatRooms } from "../../api/chatApi";
 import { normalizeChatRoom } from "../../services/normalizeChatRoom";
+import opaleSearchIcon from "../../assets/opaleSearchIcon.svg";
 
 const MainChatPage = () => {
   const navigate = useNavigate();
@@ -136,7 +137,9 @@ const MainChatPage = () => {
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
-        <button type="submit" className={styles.searchBtn}>🔍</button>
+        <button type="submit" className={styles.searchBtn}>
+          <img src={opaleSearchIcon} alt="검색" className={styles.searchIconImg} />
+        </button>
       </form>
 
       <div className={styles.section}>
