@@ -8,6 +8,41 @@
   box-sizing: border-box;
 }
 
+.breadcrumb {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.breadcrumbLink {
+  color: #333;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.breadcrumbLink:hover {
+  color: #ffb6c1;
+  text-decoration: underline;
+}
+
+.breadcrumbSeparator {
+  margin: 0 8px;
+  color: #999;
+}
+
+.breadcrumbItem {
+  color: #666;
+}
+
+.breadcrumbCurrent {
+  color: #333;
+  font-weight: 500;
+}
+
 .header {
   margin-bottom: 30px;
 }

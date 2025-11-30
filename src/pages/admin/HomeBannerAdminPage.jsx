@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { fetchAllBanners, createBannerWithoutFile, createBannerWithFile, updateBanner, deleteBanner } from "../../api/bannerApi";
 import { normalizeAdminBannerList } from "../../services/normalizeBanner";
 import PerformanceSelector from "../../components/admin/PerformanceSelector";
@@ -303,6 +304,13 @@ const HomeBannerAdminPage = () => {
 
   return (
     <div className={styles.container}>
+      <div className={styles.breadcrumb}>
+        <Link to="/admin" className={styles.breadcrumbLink}>운영자 관리 홈</Link>
+        <span className={styles.breadcrumbSeparator}> / </span>
+        <span className={styles.breadcrumbItem}>배너 관리</span>
+        <span className={styles.breadcrumbSeparator}> / </span>
+        <span className={styles.breadcrumbCurrent}>홈 배너 관리</span>
+      </div>
       <div className={styles.header}>
         <h1 className={styles.title}>홈 배너 관리</h1>
         <p className={styles.subtitle}>홈페이지 배너를 관리할 수 있습니다.</p>
