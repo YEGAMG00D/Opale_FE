@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PerformanceSelector from "../../components/admin/PerformanceSelector";
 import PerformanceImageSection from "../../components/admin/PerformanceImageSection";
 import PerformanceVideoSection from "../../components/admin/PerformanceVideoSection";
@@ -6,7 +6,26 @@ import styles from "./PerformanceAdminPage.module.css";
 
 const PerformanceAdminPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedPerformance, setSelectedPerformance] = useState(null);
+  const debounceTimerRef = useRef(null);
+
+  // 검색어 debounce 처리
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms 지연
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchQuery]);
 
   return (
     <div className={styles.container}>
@@ -18,6 +37,7 @@ const PerformanceAdminPage = () => {
       {/* 공연 검색 및 선택 영역 */}
       <PerformanceSelector
         searchQuery={searchQuery}
+        debouncedSearchQuery={debouncedSearchQuery}
         onSearchChange={setSearchQuery}
         selectedPerformance={selectedPerformance}
         onSelectPerformance={setSelectedPerformance}
