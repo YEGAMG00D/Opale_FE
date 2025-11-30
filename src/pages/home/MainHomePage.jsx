@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PerformanceCard from '../../components/culture/PerformanceCard';
 import DiscountPromotionSection from '../../components/common/DiscountPromotionSection';
-import { fetchMainBanners, fetchMainPerformanceBanners } from '../../api/bannerApi';
-import { normalizeMainBannerList, normalizeMainPerformanceBannerList } from '../../services/normalizeBanner';
+import { fetchMainBanners, fetchMainPerformanceBanners, fetchMainContentBanners } from '../../api/bannerApi';
+import { normalizeMainBannerList, normalizeMainPerformanceBannerList, normalizeMainContentBannerList } from '../../services/normalizeBanner';
 import styles from './MainHomePage.module.css';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
@@ -22,6 +22,8 @@ const MainHomePage = () => {
   const [loadingBanners, setLoadingBanners] = useState(true);
   const [featuredPerformances, setFeaturedPerformances] = useState([]);
   const [loadingFeaturedPerformances, setLoadingFeaturedPerformances] = useState(true);
+  const [contentBanners, setContentBanners] = useState([]);
+  const [loadingContentBanners, setLoadingContentBanners] = useState(true);
   const [selectedContentIndex, setSelectedContentIndex] = useState(0);
   const [hoveredContentIndex, setHoveredContentIndex] = useState(null);
   const [contentBannerHeight, setContentBannerHeight] = useState('auto');
@@ -77,6 +79,36 @@ const MainHomePage = () => {
     };
 
     loadFeaturedPerformances();
+  }, []);
+
+  // 컨텐츠 배너 데이터 로드
+  useEffect(() => {
+    const loadContentBanners = async () => {
+      try {
+        setLoadingContentBanners(true);
+        const data = await fetchMainContentBanners();
+        const normalized = normalizeMainContentBannerList(data);
+        // 기존 형식에 맞게 변환
+        const transformed = normalized.map((banner) => ({
+          id: banner.contentBannerId,
+          title: banner.title,
+          content: banner.content,
+          thumbnail: banner.imageUrl,
+          image: banner.imageUrl,
+          linkUrl: banner.linkUrl,
+          performanceId: banner.performanceId,
+        }));
+        setContentBanners(transformed);
+      } catch (err) {
+        console.error("컨텐츠 배너 조회 실패:", err);
+        // 에러 시 빈 배열로 설정
+        setContentBanners([]);
+      } finally {
+        setLoadingContentBanners(false);
+      }
+    };
+
+    loadContentBanners();
   }, []);
 
   // 배너 클릭 핸들러
@@ -374,8 +406,8 @@ const MainHomePage = () => {
     'rent': rentPoster
   };
 
-  // 컨텐츠 배너 데이터 (더미 데이터)
-  const contentBannerItems = [
+  // 컨텐츠 배너 데이터 (fallback - API 데이터가 없을 때 사용)
+  const fallbackContentBannerItems = [
     {
       id: 1,
       title: "블핑 지수, 우월한 미모 감탄",
@@ -422,12 +454,17 @@ const MainHomePage = () => {
     }
   ];
 
+  // API에서 가져온 데이터가 있으면 사용, 없으면 fallback 사용
+  const displayContentBannerItems = useMemo(() => {
+    return contentBanners.length > 0 ? contentBanners : fallbackContentBannerItems;
+  }, [contentBanners]);
+
   // 컨텐츠 배너 섹션 고정 높이 계산
   useEffect(() => {
     if (!contentBannerSectionRef.current) return;
     
     // 배너 개수
-    const bannerCount = contentBannerItems.length;
+    const bannerCount = displayContentBannerItems.length;
     // 배너 1개 높이 (padding 12px * 2 + border 2px * 2 + 내용 약 36px)
     const bannerItemHeight = 60;
     // 배너 간격 (gap: 10px)
@@ -445,7 +482,7 @@ const MainHomePage = () => {
     const totalHeight = sectionPadding + headerHeight + (bannerCount * bannerItemHeight) + (bannerGap * (bannerCount - 1)) + dropdownHeight + extraSpace;
     
     setContentBannerHeight(`${totalHeight}px`);
-  }, [contentBannerItems.length]);
+  }, [displayContentBannerItems.length]);
 
   // 드롭다운 순차 처리: 이전 것이 닫힌 후 새 것이 열리도록
   useEffect(() => {
@@ -469,13 +506,13 @@ const MainHomePage = () => {
     
     const interval = setInterval(() => {
       setSelectedContentIndex((prev) => 
-        prev === contentBannerItems.length - 1 ? 0 : prev + 1
+        prev === displayContentBannerItems.length - 1 ? 0 : prev + 1
       );
     }, 5000); // 5초마다 자동 슬라이드
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoveredContentIndex]);
+  }, [hoveredContentIndex, displayContentBannerItems.length]);
 
   return (
     <div className={styles.container}>
@@ -626,26 +663,31 @@ const MainHomePage = () => {
 
 
       {/* Content Banner Section */}
-      <section 
-        ref={contentBannerSectionRef}
-        className={styles.contentBannerSection}
-        style={{ height: contentBannerHeight }}
-      >
-        <div className={styles.contentBannerHeader}>
-          <h2 className={styles.contentBannerTitle}>함께 보는 공연 숏텐츠</h2>
-        </div>
-        
-        <div className={styles.contentBannerList}>
-          {contentBannerItems.map((item, index) => {
+      {/* 컨텐츠 배너가 있고 로딩이 완료된 경우에만 표시 */}
+      {!loadingContentBanners && displayContentBannerItems.length > 0 && (
+        <section 
+          ref={contentBannerSectionRef}
+          className={styles.contentBannerSection}
+          style={{ height: contentBannerHeight }}
+        >
+          <div className={styles.contentBannerHeader}>
+            <h2 className={styles.contentBannerTitle}>함께 보는 공연 숏텐츠</h2>
+          </div>
+          
+          <div className={styles.contentBannerList}>
+            {displayContentBannerItems.map((item, index) => {
             const isSelected = hoveredContentIndex === index || (hoveredContentIndex === null && selectedContentIndex === index);
             const isDisplayed = displayedContentIndex === index;
             // hover 시에는 즉시 테두리 표시, 자동 슬라이드 시에는 borderDisplayedIndex 사용
             const showBorder = hoveredContentIndex === index || (hoveredContentIndex === null && borderDisplayedIndex === index);
             
+            const hasClickAction = item.linkUrl || item.performanceId;
+            
             return (
               <div key={item.id}>
                 <div
                   className={`${styles.contentBannerItem} ${showBorder ? styles.selected : ''}`}
+                  style={{ cursor: 'pointer' }}
                   onMouseEnter={() => {
                     setHoveredContentIndex(index);
                     setSelectedContentIndex(index);
@@ -674,7 +716,18 @@ const MainHomePage = () => {
                 </div>
                 
                 {/* 드롭다운 상세 내용 */}
-                <div className={`${styles.contentBannerDetail} ${isDisplayed ? styles.show : ''}`}>
+                <div 
+                  className={`${styles.contentBannerDetail} ${isDisplayed ? styles.show : ''}`}
+                  style={{ cursor: hasClickAction ? 'pointer' : 'default' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (item.linkUrl) {
+                      window.open(item.linkUrl, '_blank');
+                    } else if (item.performanceId) {
+                      navigate(`/culture/${item.performanceId}`);
+                    }
+                  }}
+                >
                   <div className={styles.contentBannerDetailContent}>
                     <div className={styles.contentBannerDetailText}>
                       {item.content}
@@ -691,8 +744,9 @@ const MainHomePage = () => {
               </div>
             );
           })}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
 
       {/* Featured Performances */}
