@@ -114,10 +114,10 @@ const MainHomePage = () => {
   // 배너 클릭 핸들러
   const handleBannerClick = (banner) => {
     if (banner.linkUrl) {
-      // 외부 링크가 있으면 새 창에서 열기
+      // linkUrl이 있으면 linkUrl로 이동 (공연 ID가 없어도)
       window.open(banner.linkUrl, '_blank');
     } else if (banner.performanceId) {
-      // 공연 ID가 있으면 공연 상세 페이지로 이동
+      // linkUrl이 없고 performanceId가 있으면 공연 상세 페이지로 이동
       navigate(`/culture/${banner.performanceId}`);
     }
     // 둘 다 없으면 클릭 비활성

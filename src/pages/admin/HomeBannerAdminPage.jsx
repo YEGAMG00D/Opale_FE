@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { fetchAllBanners, createBanner, updateBanner, deleteBanner } from "../../api/bannerApi";
+import React, { useState, useEffect, useRef } from "react";
+import { fetchAllBanners, createBannerWithoutFile, createBannerWithFile, updateBanner, deleteBanner } from "../../api/bannerApi";
 import { normalizeAdminBannerList } from "../../services/normalizeBanner";
+import PerformanceSelector from "../../components/admin/PerformanceSelector";
 import styles from "./HomeBannerAdminPage.module.css";
 
 const HomeBannerAdminPage = () => {
@@ -10,6 +11,12 @@ const HomeBannerAdminPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  
+  // 공연 검색 관련 상태
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [selectedPerformance, setSelectedPerformance] = useState(null);
+  const debounceTimerRef = useRef(null);
   
   // 폼 상태
   const [formData, setFormData] = useState({
@@ -23,6 +30,9 @@ const HomeBannerAdminPage = () => {
     isActive: true,
     linkUrl: "",
   });
+  // 등록 방식 선택 (이미지 업로드 or 공연 선택)
+  const [registrationMode, setRegistrationMode] = useState("image"); // "image" or "performance"
+  
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
@@ -47,6 +57,39 @@ const HomeBannerAdminPage = () => {
     loadBanners();
   }, []);
 
+  // 검색어 debounce 처리
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms 지연
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // 공연 선택 시 performanceId 자동 입력
+  useEffect(() => {
+    if (selectedPerformance && selectedPerformance.id) {
+      // 공연 ID 설정
+      setFormData(prev => ({
+        ...prev,
+        performanceId: selectedPerformance.id,
+      }));
+
+      // 포스터 이미지 미리보기 (백엔드에서 자동 처리되므로 미리보기만)
+      if (selectedPerformance.image) {
+        setImagePreview(selectedPerformance.image);
+      }
+    }
+  }, [selectedPerformance]);
+
   // 폼 초기화
   const resetForm = () => {
     // 새 배너 등록 시: 현재 배너 개수 + 1로 자동 설정
@@ -65,7 +108,12 @@ const HomeBannerAdminPage = () => {
     setImageFile(null);
     setImagePreview(null);
     setEditingBanner(null);
+    setRegistrationMode("image");
     setIsFormOpen(false);
+    // 검색 관련 상태도 초기화
+    setSearchQuery("");
+    setDebouncedSearchQuery("");
+    setSelectedPerformance(null);
   };
 
   // 수정 모드로 전환
@@ -84,6 +132,12 @@ const HomeBannerAdminPage = () => {
     });
     setImagePreview(banner.imageUrl || null);
     setImageFile(null);
+    // 수정 시에는 기존 데이터에 따라 모드 설정
+    setRegistrationMode(banner.performanceId ? "performance" : "image");
+    // 검색 관련 상태 초기화
+    setSearchQuery("");
+    setDebouncedSearchQuery("");
+    setSelectedPerformance(null);
     setIsFormOpen(true);
   };
 
@@ -92,6 +146,9 @@ const HomeBannerAdminPage = () => {
     const file = e.target.files[0];
     if (file) {
       setImageFile(file);
+      // 직접 파일을 업로드하면 공연 선택을 초기화
+      setSelectedPerformance(null);
+      setFormData(prev => ({ ...prev, performanceId: "" }));
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -109,19 +166,35 @@ const HomeBannerAdminPage = () => {
       return;
     }
 
-    if (!editingBanner && !imageFile) {
-      alert("이미지 파일을 선택해주세요.");
-      return;
+    // 등록 방식에 따른 검증
+    if (registrationMode === "image") {
+      // 이미지 업로드 모드: 새 등록 시 이미지 필수
+      if (!editingBanner && !imageFile) {
+        alert("이미지 파일을 선택해주세요.");
+        return;
+      }
+    } else {
+      // 공연 선택 모드: performanceId 필수
+      if (!formData.performanceId.trim()) {
+        alert("공연을 선택해주세요.");
+        return;
+      }
     }
 
     try {
       if (editingBanner) {
-        // 수정
+        // 수정: 항상 multipart로 전송 (파일이 없어도)
         await updateBanner(editingBanner.bannerId, formData, imageFile);
         alert("배너가 수정되었습니다.");
       } else {
         // 등록
-        await createBanner(formData, imageFile);
+        if (registrationMode === "image") {
+          // 이미지 파일이 있는 경우
+          await createBannerWithFile(formData, imageFile);
+        } else {
+          // 공연 선택 모드: 파일 없이 등록
+          await createBannerWithoutFile(formData);
+        }
         alert("배너가 등록되었습니다.");
       }
       resetForm();
@@ -258,20 +331,75 @@ const HomeBannerAdminPage = () => {
             </div>
             
             <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.formRow}>
-                <label>이미지 *</label>
-                <div className={styles.imageUpload}>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className={styles.fileInput}
-                  />
-                  {imagePreview && (
-                    <img src={imagePreview} alt="미리보기" className={styles.previewImage} />
-                  )}
+              {/* 등록 방식 선택 (새 등록 시에만) */}
+              {!editingBanner && (
+                <div className={styles.formRow}>
+                  <label>등록 방식 *</label>
+                  <div className={styles.radioGroup}>
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        name="registrationMode"
+                        value="image"
+                        checked={registrationMode === "image"}
+                        onChange={(e) => {
+                          setRegistrationMode(e.target.value);
+                          setImageFile(null);
+                          setImagePreview(null);
+                          setFormData(prev => ({ ...prev, performanceId: "" }));
+                          setSelectedPerformance(null);
+                        }}
+                      />
+                      <span>이미지 업로드</span>
+                    </label>
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        name="registrationMode"
+                        value="performance"
+                        checked={registrationMode === "performance"}
+                        onChange={(e) => {
+                          setRegistrationMode(e.target.value);
+                          setImageFile(null);
+                          setImagePreview(null);
+                        }}
+                      />
+                      <span>공연 선택</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* 이미지 업로드 섹션 */}
+              {registrationMode === "image" && (
+                <div className={styles.formRow}>
+                  <label>이미지 {!editingBanner && "*"}</label>
+                  <div className={styles.imageUpload}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className={styles.fileInput}
+                    />
+                    {imagePreview && (
+                      <img src={imagePreview} alt="미리보기" className={styles.previewImage} />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 공연 선택 섹션 */}
+              {registrationMode === "performance" && (
+                <div className={styles.performanceSelectorWrapper}>
+                  <PerformanceSelector
+                    searchQuery={searchQuery}
+                    debouncedSearchQuery={debouncedSearchQuery}
+                    onSearchChange={setSearchQuery}
+                    selectedPerformance={selectedPerformance}
+                    onSelectPerformance={setSelectedPerformance}
+                  />
+                </div>
+              )}
 
               <div className={styles.formRow}>
                 <label>부제</label>
@@ -333,6 +461,9 @@ const HomeBannerAdminPage = () => {
                   onChange={(e) => setFormData({ ...formData, performanceId: e.target.value })}
                   placeholder="예: PF271999"
                 />
+                <small style={{ color: '#999', fontSize: '12px', marginTop: '4px' }}>
+                  위에서 공연을 선택하면 자동으로 입력됩니다. 또는 직접 입력할 수 있습니다.
+                </small>
               </div>
 
               <div className={styles.formRow}>

@@ -39,10 +39,44 @@ export const fetchAllBanners = async () => {
 };
 
 /* ============================================================
-    ✅ [기존] 2) 관리자용 메인 배너 등록 (multipart)
-    POST /api/admin/banners
+    ✅ ✅ ✅ 2-1) 관리자용 메인 배너 등록 (파일 없음)
+    POST /api/admin/banners (JSON)
 ============================================================ */
-export const createBanner = async (dto, file) => {
+export const createBannerWithoutFile = async (dto) => {
+  try {
+    const res = await axiosInstance.post(
+      `${adminBannerBase}`,
+      {
+        performanceId: dto.performanceId ?? "",
+        titleText: dto.titleText ?? "",
+        subtitleText: dto.subtitleText ?? "",
+        descriptionText: dto.descriptionText ?? "",
+        dateText: dto.dateText ?? "",
+        placeText: dto.placeText ?? "",
+        displayOrder: dto.displayOrder,
+        isActive: dto.isActive,
+        linkUrl: dto.linkUrl ?? "",
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (res.data.success) return res.data.data;
+    throw new Error("배너 등록 실패 (파일 없음)");
+  } catch (err) {
+    console.error("❌ createBannerWithoutFile 오류:", err);
+    throw err;
+  }
+};
+
+/* ============================================================
+    ✅ ✅ ✅ 2-2) 관리자용 메인 배너 등록 (파일 포함)
+    POST /api/admin/banners (multipart)
+============================================================ */
+export const createBannerWithFile = async (dto, file) => {
   try {
     const formData = new FormData();
 
@@ -66,10 +100,23 @@ export const createBanner = async (dto, file) => {
 
     const res = await axiosInstance.post(`${adminBannerBase}`, formData);
     if (res.data.success) return res.data.data;
-    throw new Error("배너 등록 실패");
+    throw new Error("배너 등록 실패 (파일 포함)");
   } catch (err) {
-    console.error("❌ createBanner 오류:", err);
+    console.error("❌ createBannerWithFile 오류:", err);
     throw err;
+  }
+};
+
+/* ============================================================
+    ✅ [기존] 2) 관리자용 메인 배너 등록 (multipart) - 하위 호환성 유지
+    POST /api/admin/banners
+============================================================ */
+export const createBanner = async (dto, file) => {
+  // 파일이 있으면 multipart, 없으면 JSON
+  if (file) {
+    return createBannerWithFile(dto, file);
+  } else {
+    return createBannerWithoutFile(dto);
   }
 };
 
@@ -394,6 +441,8 @@ export default {
   // 기존 메인 배너
   fetchAllBanners,
   createBanner,
+  createBannerWithoutFile,
+  createBannerWithFile,
   updateBanner,
   deleteBanner,
   fetchMainBanners,
