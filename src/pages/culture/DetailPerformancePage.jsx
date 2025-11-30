@@ -1522,7 +1522,7 @@ const DetailPerformancePage = () => {
               {/* 할인정보 섹션 */}
               {(bookingLoading || (bookingInfo?.discountImages && bookingInfo.discountImages.length > 0)) && (
                 <div className={styles.discountSection}>
-                  <h3 className={styles.contentTitle}>할인정보</h3>
+                  {/* <h3 className={styles.contentTitle}>할인정보</h3> */}
                   <div className={styles.infoPlaceholder}>
                     {bookingLoading ? (
                       <p className={styles.placeholderText}>정보를 불러오는 중...</p>
@@ -1548,7 +1548,7 @@ const DetailPerformancePage = () => {
               {/* 캐스팅 섹션 */}
               {(bookingLoading || (bookingInfo?.castingImages && bookingInfo.castingImages.length > 0)) && (
                 <div className={styles.castingSection}>
-                  <h3 className={styles.contentTitle}>캐스팅</h3>
+                  {/* <h3 className={styles.contentTitle}>캐스팅</h3> */}
                   <div className={styles.infoPlaceholder}>
                     {bookingLoading ? (
                       <p className={styles.placeholderText}>정보를 불러오는 중...</p>
@@ -1574,7 +1574,7 @@ const DetailPerformancePage = () => {
               {/* 좌석배치도 섹션 */}
               {(bookingLoading || (bookingInfo?.seatImages && bookingInfo.seatImages.length > 0)) && (
                 <div className={styles.seatingChartSection}>
-                  <h3 className={styles.contentTitle}>좌석배치도</h3>
+                  {/* <h3 className={styles.contentTitle}>좌석배치도</h3> */}
                   <div className={styles.infoPlaceholder}>
                     {bookingLoading ? (
                       <p className={styles.placeholderText}>정보를 불러오는 중...</p>
