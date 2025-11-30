@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PerformanceCard from '../../components/culture/PerformanceCard';
 import DiscountPromotionSection from '../../components/common/DiscountPromotionSection';
@@ -20,6 +20,12 @@ const MainHomePage = () => {
   const [indicatorContainerRef, setIndicatorContainerRef] = useState(null);
   const [banners, setBanners] = useState([]);
   const [loadingBanners, setLoadingBanners] = useState(true);
+  const [selectedContentIndex, setSelectedContentIndex] = useState(0);
+  const [hoveredContentIndex, setHoveredContentIndex] = useState(null);
+  const [contentBannerHeight, setContentBannerHeight] = useState('auto');
+  const [displayedContentIndex, setDisplayedContentIndex] = useState(0);
+  const [borderDisplayedIndex, setBorderDisplayedIndex] = useState(0);
+  const contentBannerSectionRef = useRef(null);
 
   // 배너 데이터 로드
   useEffect(() => {
@@ -231,6 +237,109 @@ const MainHomePage = () => {
     'rent': rentPoster
   };
 
+  // 컨텐츠 배너 데이터 (더미 데이터)
+  const contentBannerItems = [
+    {
+      id: 1,
+      title: "블핑 지수, 우월한 미모 감탄",
+      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=Jisoo",
+      content: "블랙핑크 지수의 우월한 미모에 감탄하는 팬들의 반응이 이어지고 있습니다.",
+      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image1"
+    },
+    {
+      id: 2,
+      title: "이미주 갸루 화장 변신 화제",
+      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=MiJoo",
+      content: "이미주, 난리났다...\"예쁘다고 느낀 갸루 처음\".\"평소보다 예뻐\" 韓★... 11시간 전",
+      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image2",
+      isNew: true
+    },
+    {
+      id: 3,
+      title: "손준호 김소현 사랑의 대화 우승",
+      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=Talk",
+      content: "손준호와 김소현이 사랑의 대화에서 우승을 차지했습니다.",
+      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image3",
+      isNew: true
+    },
+    {
+      id: 4,
+      title: "차은우·김재환, 군복 깜찍 투샷",
+      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=TwoShot",
+      content: "차은우와 김재환이 군복을 입고 찍은 깜찍한 투샷이 공개되었습니다.",
+      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image4"
+    },
+    {
+      id: 5,
+      title: "스트레이 키즈, 마마 첫 대상 감격",
+      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=SKZ",
+      content: "스트레이 키즈가 MAMA에서 첫 대상을 수상하며 감격의 순간을 맞이했습니다.",
+      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image5"
+    },
+    {
+      id: 6,
+      title: "뉴진스, 신곡 발표 예고",
+      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=NJ",
+      content: "뉴진스가 곧 신곡을 발표할 예정이라고 발표했습니다.",
+      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image6"
+    }
+  ];
+
+  // 컨텐츠 배너 섹션 고정 높이 계산
+  useEffect(() => {
+    if (!contentBannerSectionRef.current) return;
+    
+    // 배너 개수
+    const bannerCount = contentBannerItems.length;
+    // 배너 1개 높이 (padding 12px * 2 + border 2px * 2 + 내용 약 36px)
+    const bannerItemHeight = 60;
+    // 배너 간격 (gap: 10px)
+    const bannerGap = 10;
+    // 드롭다운 최대 높이 (padding + 내용 + 이미지)
+    const dropdownHeight = 120;
+    // 헤더 높이 (제목 + margin)
+    const headerHeight = 50;
+    // 섹션 padding (상하 20px * 2)
+    const sectionPadding = 40;
+    // 여유 공간
+    const extraSpace = 10;
+    
+    // 총 높이 계산: padding + header + (배너 높이 * 개수) + (간격 * (개수-1)) + 드롭다운 + 여유
+    const totalHeight = sectionPadding + headerHeight + (bannerCount * bannerItemHeight) + (bannerGap * (bannerCount - 1)) + dropdownHeight + extraSpace;
+    
+    setContentBannerHeight(`${totalHeight}px`);
+  }, [contentBannerItems.length]);
+
+  // 드롭다운 순차 처리: 이전 것이 닫힌 후 새 것이 열리도록
+  useEffect(() => {
+    if (selectedContentIndex === displayedContentIndex) return;
+    
+    // 닫는 애니메이션 시간 (0.35s) 후에 새 인덱스로 변경
+    const timer = setTimeout(() => {
+      setDisplayedContentIndex(selectedContentIndex);
+      // 드롭다운이 열린 후 테두리 표시 (약간의 delay)
+      setTimeout(() => {
+        setBorderDisplayedIndex(selectedContentIndex);
+      }, 50); // 드롭다운이 조금 열린 후 테두리 표시
+    }, 350); // transition 시간과 동일
+    
+    return () => clearTimeout(timer);
+  }, [selectedContentIndex, displayedContentIndex]);
+
+  // 컨텐츠 배너 자동 슬라이드
+  useEffect(() => {
+    if (hoveredContentIndex !== null) return; // hover 중이면 자동 슬라이드 중지
+    
+    const interval = setInterval(() => {
+      setSelectedContentIndex((prev) => 
+        prev === contentBannerItems.length - 1 ? 0 : prev + 1
+      );
+    }, 5000); // 5초마다 자동 슬라이드
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoveredContentIndex]);
+
   return (
     <div className={styles.container}>
       {/* Main Carousel Section */}
@@ -377,6 +486,77 @@ const MainHomePage = () => {
           <div className={styles.ctaSubtitle}>나랑 찰떡콩떡 공연 찾으러 가기</div>
         </div>
       </section>
+
+
+      {/* Content Banner Section */}
+      <section 
+        ref={contentBannerSectionRef}
+        className={styles.contentBannerSection}
+        style={{ minHeight: contentBannerHeight }}
+      >
+        <div className={styles.contentBannerHeader}>
+          <h2 className={styles.contentBannerTitle}>함께 보는 공연 숏텐츠</h2>
+        </div>
+        
+        <div className={styles.contentBannerList}>
+          {contentBannerItems.map((item, index) => {
+            const isSelected = hoveredContentIndex === index || (hoveredContentIndex === null && selectedContentIndex === index);
+            const isDisplayed = displayedContentIndex === index;
+            // hover 시에는 즉시 테두리 표시, 자동 슬라이드 시에는 borderDisplayedIndex 사용
+            const showBorder = hoveredContentIndex === index || (hoveredContentIndex === null && borderDisplayedIndex === index);
+            
+            return (
+              <div key={item.id}>
+                <div
+                  className={`${styles.contentBannerItem} ${showBorder ? styles.selected : ''}`}
+                  onMouseEnter={() => {
+                    setHoveredContentIndex(index);
+                    setSelectedContentIndex(index);
+                    setDisplayedContentIndex(index); // hover 시 즉시 표시
+                    setBorderDisplayedIndex(index); // hover 시 즉시 테두리 표시
+                  }}
+                  onMouseLeave={() => setHoveredContentIndex(null)}
+                >
+                  <div className={styles.contentBannerItemLeft}>
+                    <div className={styles.contentBannerItemContent}>
+                      <div className={styles.contentBannerItemTitle}>
+                        {item.title}
+                      </div>
+                    </div>
+                  </div>
+                  {/* 선택 안된 항목만 title 옆에 썸네일 표시 */}
+                  {!isDisplayed && (
+                    <div className={styles.contentBannerItemRight}>
+                      <img 
+                        src={item.thumbnail} 
+                        alt={item.title}
+                        className={styles.contentBannerThumbnail}
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                {/* 드롭다운 상세 내용 */}
+                <div className={`${styles.contentBannerDetail} ${isDisplayed ? styles.show : ''}`}>
+                  <div className={styles.contentBannerDetailContent}>
+                    <div className={styles.contentBannerDetailText}>
+                      {item.content}
+                    </div>
+                    <div className={styles.contentBannerDetailImage}>
+                      <img 
+                        src={item.image} 
+                        alt={item.title}
+                        className={styles.contentBannerDetailImg}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
 
       {/* Featured Performances */}
       <section className={styles.featuredSection}>

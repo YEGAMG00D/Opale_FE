@@ -364,6 +364,205 @@
   }
 }
 
+/* Content Banner Section */
+.contentBannerSection {
+  padding: 20px 24px;
+  box-sizing: border-box;
+  width: 100%;
+  background-color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+}
+
+.contentBannerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.contentBannerTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0;
+}
+
+.infoIcon {
+  width: 16px;
+  height: 16px;
+  color: #666666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contentBannerList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contentBannerItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #f8f8f8;
+}
+
+.contentBannerItem:hover {
+  background-color: #F8F8F8;
+}
+
+.contentBannerItem.selected {
+  border-color: #8B5CF6;
+  background-color: #F8F5FF;
+}
+
+.contentBannerItem.selected .searchIcon {
+  color: #8B5CF6;
+}
+
+.contentBannerItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.searchIcon {
+  width: 20px;
+  height: 20px;
+  color: #666666;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contentBannerItemContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.contentBannerItemTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.newBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #FF0000;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.contentBannerDetail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+              padding 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 16px;
+  opacity: 0;
+}
+
+.contentBannerDetail.show {
+  max-height: 300px;
+  padding: 12px 16px;
+  opacity: 1;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+              padding 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.contentBannerDetailContent {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.contentBannerDetailText {
+  flex: 1;
+  font-size: 12px;
+  color: #666666;
+  line-height: 1.5;
+}
+
+.contentBannerDetailImage {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  background-color: #c5c5c5;
+  border-radius: 6px;
+}
+
+.contentBannerDetailImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.contentBannerItemRight {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.contentBannerThumbnail {
+  display: block;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  max-width: 30px;
+  max-height: 30px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 4px;
+  background-color: #ffb3b3;
+}
+
+.contentBannerMore {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.contentBannerMoreLink {
+  font-size: 14px;
+  color: #666666;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s ease;
+}
+
+.contentBannerMoreLink:hover {
+  color: #000000;
+}
+
 /* Admin Section (임시) */
 .adminSection {
   padding: 20px 24px;
