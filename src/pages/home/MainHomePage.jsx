@@ -604,7 +604,7 @@ const MainHomePage = () => {
       <section 
         ref={contentBannerSectionRef}
         className={styles.contentBannerSection}
-        style={{ minHeight: contentBannerHeight }}
+        style={{ height: contentBannerHeight }}
       >
         <div className={styles.contentBannerHeader}>
           <h2 className={styles.contentBannerTitle}>함께 보는 공연 숏텐츠</h2>
