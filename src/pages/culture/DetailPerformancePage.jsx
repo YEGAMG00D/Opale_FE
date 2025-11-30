@@ -1037,21 +1037,26 @@ const DetailPerformancePage = () => {
 
   const handleWriteClick = (type) => {
     setWriteType(type);
-    // 후기 작성의 경우 항상 티켓 등록 단계부터 시작
+    // 후기 작성의 경우 티켓 등록 → 공연 후기 작성 → 공연장 리뷰 작성 순으로 이동
     if (type === 'review') {
       const performanceTitle = performance?.title || '';
-      // 공연 정보를 초기값으로 설정하고 티켓 등록 단계부터 시작
-      navigate('/recommend/review', {
+      const finalPerformanceId = performanceId || id;
+      // 티켓 등록 페이지로 이동 (리뷰 작성을 위한 플로우)
+      navigate('/my/tickets/register', {
         state: {
+          forReview: true,
+          nextReviewPage: '/my/performanceReviews/register',
           ticketData: {
             performanceName: performanceTitle,
             performanceDate: '',
             performanceTime: '',
             section: '',
             row: '',
-            number: ''
+            number: '',
+            performanceId: finalPerformanceId
           },
-          performanceId: performanceId || id
+          performanceId: finalPerformanceId,
+          nextPage: '/my/placeReviews/register' // 공연 후기 작성 후 공연장 리뷰 작성 페이지로 이동
         }
       });
     } else {

@@ -235,7 +235,25 @@ const DetailPlacePage = () => {
         <div className={styles.writeButtonContainer}>
           <button 
             className={styles.writeButton}
-            onClick={() => setShowWriteModal(true)}
+            onClick={() => {
+              // 티켓 등록 → 공연장 리뷰 작성 순으로 이동
+              navigate('/my/tickets/register', {
+                state: {
+                  forReview: true,
+                  nextReviewPage: '/my/placeReviews/register',
+                  ticketData: {
+                    performanceName: '',
+                    performanceDate: '',
+                    performanceTime: '',
+                    section: '',
+                    row: '',
+                    number: '',
+                    placeId: id
+                  },
+                  placeId: id
+                }
+              });
+            }}
           >
             후기 작성하기
           </button>

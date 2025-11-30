@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getTicketList, getTicketReviews } from '../../api/reservationApi';
-import { normalizeTicketList } from '../../services/normalizeTicketList';
+import { normalizeTicketList, categorizeTickets } from '../../services/normalizeTicketList';
 import { normalizeTicketReviews } from '../../services/normalizeTicketReviews';
 import styles from './TicketSelectModal.module.css';
 
@@ -23,10 +23,13 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
         const response = await getTicketList(1, 100); // 충분히 많은 티켓 가져오기
         const normalized = normalizeTicketList(response);
         
+        // 관람한 공연만 필터링
+        const { watched } = categorizeTickets(normalized.tickets);
+        
         // 각 티켓에 대해 리뷰 여부 확인
         const ticketsWithoutReview = [];
         
-        for (const ticket of normalized.tickets) {
+        for (const ticket of watched) {
           try {
             const ticketId = ticket.ticketId || ticket.id;
             if (!ticketId) continue;
@@ -35,22 +38,25 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
             const reviewsResponse = await getTicketReviews(ticketId);
             const normalizedReviews = normalizeTicketReviews(reviewsResponse);
             
-            // 공연 리뷰가 없으면 추가
-            if (!normalizedReviews.hasPerformanceReview) {
-              // normalizeTicketList에서 이미 변환된 데이터를 사용
+            // 공연 후기와 공연장 리뷰 둘 다 작성된 티켓은 제외
+            // 둘 다 작성되지 않은 티켓만 추가 (하나라도 없으면 추가)
+            if (!normalizedReviews.hasPerformanceReview || !normalizedReviews.hasPlaceReview) {
               ticketsWithoutReview.push({
                 ...ticket,
-                ticketId: ticketId
+                ticketId: ticketId,
+                performanceId: ticket.performanceId || null,
+                placeId: ticket.placeId || null
               });
             }
           } catch (err) {
-            // 리뷰 조회 실패 시 (404 등) 리뷰가 없는 것으로 간주
+            // 리뷰 조회 실패 시 (404 등) 리뷰가 없는 것으로 간주하고 추가
             console.log(`티켓 ${ticket.ticketId || ticket.id} 리뷰 확인 실패 (리뷰 없음으로 간주):`, err);
             
-            // normalizeTicketList에서 이미 변환된 데이터를 사용
             ticketsWithoutReview.push({
               ...ticket,
-              ticketId: ticket.ticketId || ticket.id
+              ticketId: ticket.ticketId || ticket.id,
+              performanceId: ticket.performanceId || null,
+              placeId: ticket.placeId || null
             });
           }
         }
@@ -81,7 +87,9 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
       row: ticket.row || '',
       number: ticket.number || '',
       placeName: ticket.placeName || '',
-      ticketImageUrl: ticket.ticketImageUrl || null
+      ticketImageUrl: ticket.ticketImageUrl || null,
+      performanceId: ticket.performanceId || null,
+      placeId: ticket.placeId || null
     };
     
     onSelectTicket(ticketData);

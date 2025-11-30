@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import ContentsLayout from '../layouts/ContentsLayout';
 
@@ -24,6 +24,8 @@ import BookingPerformancePage from '../pages/user/mypage/BookingPerformancePage'
 import BookingPerformanceRegistrationPage from '../pages/user/mypage/BookingPerformanceRegistrationPage';
 import MyPageTicketPage from '../pages/user/mypage/MyTicketPage';
 import TicketRegisterPage from '../pages/user/mypage/TicketRegisterPage';
+import PerformanceReviewRegisterPage from '../pages/user/mypage/PerformanceReviewRegisterPage';
+import PlaceReviewRegisterPage from '../pages/user/mypage/PlaceReviewRegisterPage';
 
 // 공연 관련
 import MainCulturePage from '../pages/culture/MainCulturePage';
@@ -44,9 +46,7 @@ import RoomPage from '../pages/chat/RoomPage';
 // 추천
 import MainRecommandPage from '../pages/recommand/MainRecommandPage';
 import PerformanceSignalPage from '../pages/recommand/PerformanceSignalPage';
-import TicketRegistrationPage from '../pages/recommand/TicketRegistrationPage';
 import ReviewWritingPage from '../pages/recommand/ReviewWritingPage';
-import MyTicketPage from '../pages/recommand/MyTicketPage';
 import KeywordPerformancePage from '../pages/recommand/KeywordPerformancePage';
 
 // 관리자
@@ -89,6 +89,8 @@ const AppRouter = () => {
           <Route path="my/tickets" element={<MyPageTicketPage />} />
           <Route path="my/tickets/register" element={<TicketRegisterPage />} />
           <Route path="my/tickets/edit" element={<TicketRegisterPage />} />
+          <Route path="my/performanceReviews/register" element={<PerformanceReviewRegisterPage />} />
+          <Route path="my/placeReviews/register" element={<PlaceReviewRegisterPage />} />
 
           {/* 공연 관련 */}
           <Route path="culture" element={<MainCulturePage />} />
@@ -109,9 +111,9 @@ const AppRouter = () => {
           {/* 추천 */}
           <Route path="recommend" element={<MainRecommandPage />} />
           <Route path="recommend/signal" element={<PerformanceSignalPage />} />
-          <Route path="recommend/ticket" element={<TicketRegistrationPage />} />
+          <Route path="recommend/ticket" element={<Navigate to="/my/tickets/register" replace />} />
           <Route path="recommend/review" element={<ReviewWritingPage />} />
-          <Route path="recommend/my-ticket" element={<MyTicketPage />} />
+          <Route path="recommend/my-ticket" element={<Navigate to="/my/tickets" replace />} />
           <Route path="recommend/keyword" element={<KeywordPerformancePage />} />
 
           {/* 관리자 */}
