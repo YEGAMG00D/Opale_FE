@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PerformanceCard from '../../components/culture/PerformanceCard';
 import DiscountPromotionSection from '../../components/common/DiscountPromotionSection';
-import { fetchMainBanners } from '../../api/bannerApi';
-import { normalizeMainBannerList } from '../../services/normalizeBanner';
+import { fetchMainBanners, fetchMainPerformanceBanners } from '../../api/bannerApi';
+import { normalizeMainBannerList, normalizeMainPerformanceBannerList } from '../../services/normalizeBanner';
 import styles from './MainHomePage.module.css';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
@@ -20,6 +20,8 @@ const MainHomePage = () => {
   const [indicatorContainerRef, setIndicatorContainerRef] = useState(null);
   const [banners, setBanners] = useState([]);
   const [loadingBanners, setLoadingBanners] = useState(true);
+  const [featuredPerformances, setFeaturedPerformances] = useState([]);
+  const [loadingFeaturedPerformances, setLoadingFeaturedPerformances] = useState(true);
   const [selectedContentIndex, setSelectedContentIndex] = useState(0);
   const [hoveredContentIndex, setHoveredContentIndex] = useState(null);
   const [contentBannerHeight, setContentBannerHeight] = useState('auto');
@@ -45,6 +47,36 @@ const MainHomePage = () => {
     };
 
     loadBanners();
+  }, []);
+
+  // 공연 배너 데이터 로드
+  useEffect(() => {
+    const loadFeaturedPerformances = async () => {
+      try {
+        setLoadingFeaturedPerformances(true);
+        const data = await fetchMainPerformanceBanners();
+        const normalized = normalizeMainPerformanceBannerList(data);
+        // PerformanceCard에 맞는 형식으로 변환
+        const transformed = normalized.map((banner) => ({
+          id: banner.performanceId,
+          title: banner.title,
+          image: banner.posterUrl,
+          rating: banner.rating,
+          reviewCount: 0, // API에서 제공되지 않으면 0
+          description: `${banner.startDate} ~ ${banner.endDate} | ${banner.placeName}`,
+          genre: banner.genrenm,
+        }));
+        setFeaturedPerformances(transformed);
+      } catch (err) {
+        console.error("공연 배너 조회 실패:", err);
+        // 에러 시 빈 배열로 설정
+        setFeaturedPerformances([]);
+      } finally {
+        setLoadingFeaturedPerformances(false);
+      }
+    };
+
+    loadFeaturedPerformances();
   }, []);
 
   // 배너 클릭 핸들러
@@ -204,7 +236,8 @@ const MainHomePage = () => {
     };
   }, [isDraggingIndicator, indicatorContainerRef, slideData.length]);
 
-  const featuredPerformances = [
+  // 하드코딩된 fallback 데이터 (API 데이터가 없을 때 사용)
+  const fallbackFeaturedPerformances = [
     {
       id: 1,
       title: "데스노트",
@@ -277,23 +310,15 @@ const MainHomePage = () => {
     }
   ];
 
+  // API에서 가져온 데이터가 있으면 사용, 없으면 fallback 사용
+  // 단, API 데이터가 없으면 섹션을 숨기므로 fallback은 사용하지 않음
+  const displayFeaturedPerformances = useMemo(() => {
+    return featuredPerformances;
+  }, [featuredPerformances]);
+
   // Featured Performances 캐러셀 상태
   const [featuredCurrentIndex, setFeaturedCurrentIndex] = useState(0);
-  const [prevSlotIndices, setPrevSlotIndices] = useState(() => {
-    // 초기 슬롯 인덱스 설정
-    if (featuredPerformances.length === 0) return [0, 1, 2, 3, 4];
-    const getCircularIndex = (index) => {
-      const length = featuredPerformances.length;
-      return ((index % length) + length) % length;
-    };
-    return [
-      getCircularIndex(0 - 2),
-      getCircularIndex(0 - 1),
-      0,
-      getCircularIndex(0 + 1),
-      getCircularIndex(0 + 2)
-    ];
-  }); // 이전 슬롯 인덱스 추적
+  const [prevSlotIndices, setPrevSlotIndices] = useState([0, 1, 2, 3, 4]); // 이전 슬롯 인덱스 추적
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartX, setDragStartX] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
@@ -303,7 +328,7 @@ const MainHomePage = () => {
 
   // 무한 루프를 위한 인덱스 계산 함수
   const getCircularIndex = (index) => {
-    const length = featuredPerformances.length;
+    const length = displayFeaturedPerformances.length;
     if (length === 0) return 0;
     return ((index % length) + length) % length;
   };
@@ -321,14 +346,14 @@ const MainHomePage = () => {
 
   // Featured Performances 슬라이드 이동 함수
   const goToFeaturedSlide = (index) => {
-    if (featuredPerformances.length === 0) return;
+    if (displayFeaturedPerformances.length === 0) return;
     
     // 현재 슬롯 인덱스 저장 (이전 값으로)
     const currentSlots = getSlotIndices();
     setPrevSlotIndices(currentSlots);
     
     // 경계 처리 (무한 루프)
-    const length = featuredPerformances.length;
+    const length = displayFeaturedPerformances.length;
     const targetIndex = ((index % length) + length) % length;
     
     setFeaturedCurrentIndex(targetIndex);
@@ -671,8 +696,10 @@ const MainHomePage = () => {
 
 
       {/* Featured Performances */}
-      <section className={styles.featuredSection}>
-        <h2 className={styles.featuredTitle}>추천 공연</h2>
+      {/* 공연 배너가 있고 로딩이 완료된 경우에만 표시 */}
+      {!loadingFeaturedPerformances && displayFeaturedPerformances.length > 0 && (
+        <section className={styles.featuredSection}>
+          <h2 className={styles.featuredTitle}>추천 공연</h2>
         <div 
           className={styles.featuredCarouselContainer}
           ref={featuredCarouselRef}
@@ -751,7 +778,7 @@ const MainHomePage = () => {
             }}
           >
             {getSlotIndices().map((performanceIndex, slotIndex) => {
-              const performance = featuredPerformances[performanceIndex];
+              const performance = displayFeaturedPerformances[performanceIndex];
               if (!performance) return null;
               
               const isCenter = slotIndex === 2; // 중앙 슬롯
@@ -759,7 +786,7 @@ const MainHomePage = () => {
               
               return (
                 <div
-                  key={performance.id}
+                  key={`${performance.id}-${slotIndex}`}
                   className={`${styles.featuredCarouselItem} ${isCenter ? styles.center : ''}`}
                   style={{
                     transform: isCenter ? 'scale(1.1)' : 'scale(0.85)',
@@ -832,7 +859,7 @@ const MainHomePage = () => {
         
         {/* 인디케이터 */}
         <div className={styles.featuredIndicators}>
-          {featuredPerformances.map((_, index) => (
+          {displayFeaturedPerformances.map((_, index) => (
             <button
               key={index}
               className={`${styles.featuredIndicator} ${index === featuredCurrentIndex ? styles.active : ''}`}
@@ -841,7 +868,8 @@ const MainHomePage = () => {
             />
           ))}
         </div>
-      </section>
+        </section>
+      )}
 
 
       
