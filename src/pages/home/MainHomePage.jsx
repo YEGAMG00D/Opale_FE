@@ -224,8 +224,120 @@ const MainHomePage = () => {
       rating: 4.9,
       reviewCount: 234,
       image: "rent"
+    },
+    {
+      id: 3,
+      title: "WICKED",
+      subtitle: "뮤지컬 위키드",
+      genre: "뮤지컬",
+      description: "The untold true story of the Witches of Oz",
+      rating: 4.6,
+      reviewCount: 210,
+      image: "wicked"
+    },
+    {
+      id: 4,
+      title: "물랑루즈!",
+      subtitle: "MOULIN ROUGE!",
+      genre: "뮤지컬",
+      description: "TRUTH BEAUTY FREEDOM LOVE",
+      rating: 4.7,
+      reviewCount: 189,
+      image: "moulin-rouge"
+    },
+    {
+      id: 5,
+      title: "킹키부츠",
+      subtitle: "KINKY BOOTS",
+      genre: "뮤지컬",
+      description: "HARVEY FIERSTEIN, CYNDI LAUPER, JERRY MITCHELL",
+      rating: 4.8,
+      reviewCount: 156,
+      image: "kinky-boots"
+    },
+    {
+      id: 6,
+      title: "한복입은남자",
+      subtitle: "The Man in Hanbok",
+      genre: "창작뮤지컬",
+      description: "장영실, 다빈치를 만나다",
+      rating: 4.5,
+      reviewCount: 98,
+      image: "hanbok-man"
+    },
+    {
+      id: 7,
+      title: "햄릿",
+      subtitle: "HAMLET",
+      genre: "연극",
+      description: "셰익스피어의 불멸의 명작",
+      rating: 4.3,
+      reviewCount: 145,
+      image: "wicked" // 임시로 wicked 이미지 사용
     }
   ];
+
+  // Featured Performances 캐러셀 상태
+  const [featuredCurrentIndex, setFeaturedCurrentIndex] = useState(0);
+  const [prevSlotIndices, setPrevSlotIndices] = useState(() => {
+    // 초기 슬롯 인덱스 설정
+    if (featuredPerformances.length === 0) return [0, 1, 2, 3, 4];
+    const getCircularIndex = (index) => {
+      const length = featuredPerformances.length;
+      return ((index % length) + length) % length;
+    };
+    return [
+      getCircularIndex(0 - 2),
+      getCircularIndex(0 - 1),
+      0,
+      getCircularIndex(0 + 1),
+      getCircularIndex(0 + 2)
+    ];
+  }); // 이전 슬롯 인덱스 추적
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const featuredCarouselRef = useRef(null);
+
+
+  // 무한 루프를 위한 인덱스 계산 함수
+  const getCircularIndex = (index) => {
+    const length = featuredPerformances.length;
+    if (length === 0) return 0;
+    return ((index % length) + length) % length;
+  };
+
+  // 5개 슬롯에 표시할 배너 인덱스 계산
+  const getSlotIndices = () => {
+    return [
+      getCircularIndex(featuredCurrentIndex - 2), // 전전 (왼쪽에서 두 번째)
+      getCircularIndex(featuredCurrentIndex - 1), // 전 (왼쪽 첫 번째)
+      featuredCurrentIndex,                        // 중앙
+      getCircularIndex(featuredCurrentIndex + 1), // 후 (오른쪽 첫 번째)
+      getCircularIndex(featuredCurrentIndex + 2)  // 후후 (오른쪽 두 번째)
+    ];
+  };
+
+  // Featured Performances 슬라이드 이동 함수
+  const goToFeaturedSlide = (index) => {
+    if (featuredPerformances.length === 0) return;
+    
+    // 현재 슬롯 인덱스 저장 (이전 값으로)
+    const currentSlots = getSlotIndices();
+    setPrevSlotIndices(currentSlots);
+    
+    // 경계 처리 (무한 루프)
+    const length = featuredPerformances.length;
+    const targetIndex = ((index % length) + length) % length;
+    
+    setFeaturedCurrentIndex(targetIndex);
+  };
+
+  // 배너의 이전 슬롯 위치 찾기
+  const getPrevSlotIndex = (performanceIndex) => {
+    return prevSlotIndices.findIndex(idx => idx === performanceIndex);
+  };
 
   // 포스터 이미지 매핑
   const posterImages = {
@@ -242,46 +354,46 @@ const MainHomePage = () => {
     {
       id: 1,
       title: "블핑 지수, 우월한 미모 감탄",
-      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=Jisoo",
+      thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23333'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='12'%3EJisoo%3C/text%3E%3C/svg%3E",
       content: "블랙핑크 지수의 우월한 미모에 감탄하는 팬들의 반응이 이어지고 있습니다.",
-      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image1"
+      image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect width='200' height='150' fill='%23666'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white'%3EImage1%3C/text%3E%3C/svg%3E"
     },
     {
       id: 2,
       title: "이미주 갸루 화장 변신 화제",
-      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=MiJoo",
+      thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23333'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='12'%3EMiJoo%3C/text%3E%3C/svg%3E",
       content: "이미주, 난리났다...\"예쁘다고 느낀 갸루 처음\".\"평소보다 예뻐\" 韓★... 11시간 전",
-      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image2",
+      image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect width='200' height='150' fill='%23666'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white'%3EImage2%3C/text%3E%3C/svg%3E",
       isNew: true
     },
     {
       id: 3,
       title: "손준호 김소현 사랑의 대화 우승",
-      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=Talk",
+      thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23333'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='12'%3ETalk%3C/text%3E%3C/svg%3E",
       content: "손준호와 김소현이 사랑의 대화에서 우승을 차지했습니다.",
-      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image3",
+      image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect width='200' height='150' fill='%23666'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white'%3EImage3%3C/text%3E%3C/svg%3E",
       isNew: true
     },
     {
       id: 4,
       title: "차은우·김재환, 군복 깜찍 투샷",
-      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=TwoShot",
+      thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23333'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='12'%3ETwoShot%3C/text%3E%3C/svg%3E",
       content: "차은우와 김재환이 군복을 입고 찍은 깜찍한 투샷이 공개되었습니다.",
-      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image4"
+      image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect width='200' height='150' fill='%23666'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white'%3EImage4%3C/text%3E%3C/svg%3E"
     },
     {
       id: 5,
       title: "스트레이 키즈, 마마 첫 대상 감격",
-      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=SKZ",
+      thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23333'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='12'%3ESKZ%3C/text%3E%3C/svg%3E",
       content: "스트레이 키즈가 MAMA에서 첫 대상을 수상하며 감격의 순간을 맞이했습니다.",
-      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image5"
+      image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect width='200' height='150' fill='%23666'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white'%3EImage5%3C/text%3E%3C/svg%3E"
     },
     {
       id: 6,
       title: "뉴진스, 신곡 발표 예고",
-      thumbnail: "https://via.placeholder.com/80x80/333333/FFFFFF?text=NJ",
+      thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23333'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='12'%3ENJ%3C/text%3E%3C/svg%3E",
       content: "뉴진스가 곧 신곡을 발표할 예정이라고 발표했습니다.",
-      image: "https://via.placeholder.com/200x150/666666/FFFFFF?text=Image6"
+      image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect width='200' height='150' fill='%23666'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white'%3EImage6%3C/text%3E%3C/svg%3E"
     }
   ];
 
@@ -302,7 +414,7 @@ const MainHomePage = () => {
     // 섹션 padding (상하 20px * 2)
     const sectionPadding = 40;
     // 여유 공간
-    const extraSpace = 10;
+    const extraSpace = 20;
     
     // 총 높이 계산: padding + header + (배너 높이 * 개수) + (간격 * (개수-1)) + 드롭다운 + 여유
     const totalHeight = sectionPadding + headerHeight + (bannerCount * bannerItemHeight) + (bannerGap * (bannerCount - 1)) + dropdownHeight + extraSpace;
@@ -560,18 +672,172 @@ const MainHomePage = () => {
 
       {/* Featured Performances */}
       <section className={styles.featuredSection}>
-        <div className={styles.featuredGrid}>
-          {featuredPerformances.map((performance) => (
-            <PerformanceCard
-              key={performance.id}
-              id={performance.id}
-              title={performance.title}
-              image={performance.image}
-              rating={performance.rating}
-              reviewCount={performance.reviewCount}
-              description={performance.description}
-              genre={performance.genre}
-              variant="featured"
+        <h2 className={styles.featuredTitle}>추천 공연</h2>
+        <div 
+          className={styles.featuredCarouselContainer}
+          ref={featuredCarouselRef}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={(e) => {
+            // 화살표 버튼으로 이동하는 경우 호버 상태 유지
+            const relatedTarget = e.relatedTarget;
+            if (relatedTarget && (
+              relatedTarget.closest(`.${styles.featuredPrevButton}`) ||
+              relatedTarget.closest(`.${styles.featuredNextButton}`)
+            )) {
+              return;
+            }
+            setIsHovered(false);
+            if (isDragging) {
+              setIsDragging(false);
+              setDragOffset(0);
+            }
+          }}
+          onMouseDown={(e) => {
+            setIsDragging(true);
+            setDragStartX(e.clientX);
+            setDragOffset(0);
+          }}
+          onMouseMove={(e) => {
+            if (isDragging) {
+              const diff = e.clientX - dragStartX;
+              setDragOffset(diff);
+            }
+          }}
+          onMouseUp={() => {
+            if (isDragging) {
+              const threshold = 50; // 슬라이드 임계값
+              if (Math.abs(dragOffset) > threshold) {
+                if (dragOffset > 0) {
+                  goToFeaturedSlide(featuredCurrentIndex - 1);
+                } else {
+                  goToFeaturedSlide(featuredCurrentIndex + 1);
+                }
+              }
+              setIsDragging(false);
+              setDragOffset(0);
+            }
+          }}
+          onTouchStart={(e) => {
+            setIsDragging(true);
+            setDragStartX(e.touches[0].clientX);
+            setDragOffset(0);
+          }}
+          onTouchMove={(e) => {
+            if (isDragging) {
+              const diff = e.touches[0].clientX - dragStartX;
+              setDragOffset(diff);
+            }
+          }}
+          onTouchEnd={() => {
+            if (isDragging) {
+              const threshold = 50;
+              if (Math.abs(dragOffset) > threshold) {
+                if (dragOffset > 0) {
+                  goToFeaturedSlide(featuredCurrentIndex - 1);
+                } else {
+                  goToFeaturedSlide(featuredCurrentIndex + 1);
+                }
+              }
+              setIsDragging(false);
+              setDragOffset(0);
+            }
+          }}
+        >
+          <div 
+            className={styles.featuredCarouselTrack}
+            style={{
+              transform: `translateX(calc(50% - ${2 * (100 / 2.5)}% - ${100 / 2.5 / 2}% - ${2 * 16}px + ${isDragging && featuredCarouselRef.current ? dragOffset : 0}px))`,
+              transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+          >
+            {getSlotIndices().map((performanceIndex, slotIndex) => {
+              const performance = featuredPerformances[performanceIndex];
+              if (!performance) return null;
+              
+              const isCenter = slotIndex === 2; // 중앙 슬롯
+              const distance = Math.abs(slotIndex - 2);
+              
+              return (
+                <div
+                  key={performance.id}
+                  className={`${styles.featuredCarouselItem} ${isCenter ? styles.center : ''}`}
+                  style={{
+                    transform: isCenter ? 'scale(1.1)' : 'scale(0.85)',
+                    opacity: distance > 1 ? 0.5 : (isCenter ? 1 : 0.8),
+                    zIndex: isCenter ? 10 : 5 - distance,
+                    transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                >
+                  <PerformanceCard
+                    id={performance.id}
+                    title={performance.title}
+                    image={performance.image}
+                    rating={performance.rating}
+                    reviewCount={performance.reviewCount}
+                    description={performance.description}
+                    genre={performance.genre}
+                    variant="featured"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 좌우 화살표 버튼 */}
+        {isHovered && (
+          <>
+            <button
+              className={styles.featuredPrevButton}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={(e) => {
+                // 배너 영역으로 다시 이동하는 경우 호버 상태 유지
+                const relatedTarget = e.relatedTarget;
+                if (relatedTarget && relatedTarget.closest(`.${styles.featuredCarouselContainer}`)) {
+                  return;
+                }
+                setIsHovered(false);
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                goToFeaturedSlide(featuredCurrentIndex - 1);
+              }}
+              aria-label="이전 슬라이드"
+            >
+              ‹
+            </button>
+            <button
+              className={styles.featuredNextButton}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={(e) => {
+                // 배너 영역으로 다시 이동하는 경우 호버 상태 유지
+                const relatedTarget = e.relatedTarget;
+                if (relatedTarget && relatedTarget.closest(`.${styles.featuredCarouselContainer}`)) {
+                  return;
+                }
+                setIsHovered(false);
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                goToFeaturedSlide(featuredCurrentIndex + 1);
+              }}
+              aria-label="다음 슬라이드"
+            >
+              ›
+            </button>
+          </>
+        )}
+        
+        {/* 인디케이터 */}
+        <div className={styles.featuredIndicators}>
+          {featuredPerformances.map((_, index) => (
+            <button
+              key={index}
+              className={`${styles.featuredIndicator} ${index === featuredCurrentIndex ? styles.active : ''}`}
+              onClick={() => goToFeaturedSlide(index)}
+              aria-label={`슬라이드 ${index + 1}`}
             />
           ))}
         </div>

@@ -235,9 +235,63 @@
 
 /* Featured Section */
 .featuredSection {
-  padding: 0 24px 20px;
+  padding: 20px 0 40px;
   box-sizing: border-box;
   width: 100%;
+  position: relative;
+}
+
+.featuredTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 20px 24px;
+  padding: 0;
+}
+
+.featuredCarouselContainer {
+  position: relative;
+  overflow: hidden;
+  margin: 0 -24px;
+  padding: 20px 24px;
+  cursor: grab;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+  width: calc(100% + 48px);
+}
+
+.featuredCarouselContainer:active {
+  cursor: grabbing;
+}
+
+.featuredCarouselTrack {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  will-change: transform;
+  position: relative;
+  left: 10%;
+  transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.featuredCarouselItem {
+  flex: 0 0 calc(100% / 2.5 - 13px);
+  min-width: 0;
+  max-width: calc(100% / 2.5 - 13px);
+  box-sizing: border-box;
+  transform-origin: center;
+  position: relative;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              flex-basis 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.featuredCarouselItem.center {
+  z-index: 10;
 }
 
 .featuredGrid {
@@ -316,6 +370,82 @@
 .ratingText {
   font-size: 12px;
   color: #000000;
+}
+
+/* Featured Carousel Indicators */
+.featuredIndicators {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 0 24px;
+}
+
+.featuredIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #D9D9D9;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.featuredIndicator:hover {
+  background-color: #A6A6A6;
+  transform: scale(1.1);
+}
+
+.featuredIndicator.active {
+  background-color: #000000;
+  transform: scale(1.2);
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* Featured Carousel 화살표 버튼 */
+.featuredPrevButton,
+.featuredNextButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid #E5E5E5;
+  font-size: 24px;
+  color: #000000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 20;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.featuredPrevButton {
+  left: 8px;
+}
+
+.featuredNextButton {
+  right: 8px;
+}
+
+.featuredPrevButton:hover,
+.featuredNextButton:hover {
+  background-color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.featuredPrevButton:active,
+.featuredNextButton:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 
