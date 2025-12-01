@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import ContentsLayout from '../layouts/ContentsLayout';
+import ScrollToTop from '../components/common/ScrollToTop';
 
 // 홈 페이지
 import MainHomePage from '../pages/home/MainHomePage';
@@ -62,6 +63,7 @@ import ErrorPage from '../pages/exception/ErrorPage';
 const AppRouter = () => {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* 레이아웃이 없는 독립 페이지들 */}
         <Route path="/launching" element={<LaunchingPage />} />
