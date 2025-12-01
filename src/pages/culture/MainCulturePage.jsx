@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedCategory, setShowOngoingOnly } from "../../store/performanceSlice";
@@ -8,6 +8,8 @@ import { usePerformanceList } from "../../hooks/usePerformanceList";
 import PerformanceApiCard from "../../components/cards/PerformanceApiCard";
 import { fetchFavoritePerformanceIds, togglePerformanceFavorite } from "../../api/favoriteApi";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { fetchEsPerformanceAutoComplete } from "../../api/searchEsApi";
+import { normalizePerformanceAutoComplete } from "../../services/normalizePerformanceAutoComplete";
 
 const MainCulturePage = () => {
   const navigate = useNavigate();
@@ -21,8 +23,10 @@ const MainCulturePage = () => {
   /** 로컬 상태 */
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
+  const [autoCompleteList, setAutoCompleteList] = useState([]);
+  const [isLoadingAutoComplete, setIsLoadingAutoComplete] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
+  const prevAutoCompleteListRef = useRef([]);
 
   /** ⭐ 영어 → 한국어 장르명 매핑 */
   const categoryMapForRequest = {
@@ -75,20 +79,70 @@ const MainCulturePage = () => {
     }
   };
 
-  /** 검색 기능 */
+  /** 자동완성 API 호출 (debouncing 적용) */
   useEffect(() => {
+    // 빈 문자열이면 자동완성 숨기기
     if (!searchQuery.trim()) {
       setShowSuggestions(false);
+      setAutoCompleteList([]);
+      prevAutoCompleteListRef.current = [];
+      setIsLoadingAutoComplete(false);
       return;
     }
 
-    const filtered = performances.filter((p) =>
-      p.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // debouncing: 300ms 후 API 호출
+    const timer = setTimeout(async () => {
+      try {
+        setIsLoadingAutoComplete(true);
+        const response = await fetchEsPerformanceAutoComplete(searchQuery.trim());
+        const normalized = normalizePerformanceAutoComplete(response);
+        
+        // 깜빡임 방지: 결과가 있으면 바로 업데이트
+        if (normalized.length > 0) {
+          setAutoCompleteList(normalized);
+          prevAutoCompleteListRef.current = normalized;
+          setShowSuggestions(true);
+        } else {
+          // 결과가 없을 때는 이전 결과도 없으면 숨기기
+          if (prevAutoCompleteListRef.current.length === 0) {
+            setShowSuggestions(false);
+          }
+          setAutoCompleteList([]);
+        }
+      } catch (err) {
+        console.error("자동완성 조회 실패:", err);
+        // 에러 시에도 이전 결과가 있으면 유지 (깜빡임 방지)
+        if (prevAutoCompleteListRef.current.length === 0) {
+          setShowSuggestions(false);
+        }
+        setAutoCompleteList([]);
+      } finally {
+        setIsLoadingAutoComplete(false);
+      }
+    }, 300);
 
-    setFilteredSuggestions(filtered.slice(0, 5));
-    setShowSuggestions(true);
-  }, [searchQuery, performances]);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  /** 자동완성 항목 클릭 핸들러 */
+  const handleAutoCompleteClick = useCallback((performanceId) => {
+    if (!performanceId) return;
+    setSearchQuery("");
+    setShowSuggestions(false);
+    navigate(`/culture/${performanceId}`);
+  }, [navigate]);
+
+  /** 검색창 외부 클릭 시 자동완성 숨기기 */
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   /** 검색 제출 */
   const handleSearchSubmit = (e) => {
@@ -133,8 +187,35 @@ const MainCulturePage = () => {
             className={styles.searchInput}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="공연명을 입력하세요"
+            onFocus={() => {
+              if (autoCompleteList.length > 0) {
+                setShowSuggestions(true);
+              }
+            }}
           />
         </form>
+
+        {/* 자동완성 리스트 */}
+        {showSuggestions && (autoCompleteList.length > 0 || prevAutoCompleteListRef.current.length > 0) && (
+          <div className={styles.suggestionsContainer}>
+            <ul className={styles.suggestionsList}>
+              {(autoCompleteList.length > 0 ? autoCompleteList : prevAutoCompleteListRef.current).map((item, index) => (
+                <li
+                  key={`${item.performanceId}-${index}`}
+                  className={styles.suggestionItem}
+                  onClick={() => handleAutoCompleteClick(item.performanceId)}
+                  style={{ 
+                    opacity: isLoadingAutoComplete ? 0.7 : 1,
+                    transition: 'opacity 0.2s ease'
+                  }}
+                >
+                  <span className={styles.suggestionText}>{item.title}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* 카테고리 + 진행중 체크 */}
