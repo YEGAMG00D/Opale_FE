@@ -12,6 +12,7 @@ import { fetchPlaceReviewsByPlace, createPlaceReview } from '../../api/reviewApi
 import { normalizePlaceReviews } from '../../services/normalizePlaceReview';
 import { normalizePlaceReviewRequest } from '../../services/normalizePlaceReviewRequest';
 import logApi from '../../api/logApi';
+import PlaceDetailSkeleton from '../../components/common/PlaceDetailSkeleton';
 
 const DetailPlacePage = () => {
   const { id } = useParams();
@@ -72,13 +73,7 @@ const DetailPlacePage = () => {
   }, [id, currentUserId]);
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>
-          <p>공연장 정보를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <PlaceDetailSkeleton />;
   }
 
   if (error || !place) {

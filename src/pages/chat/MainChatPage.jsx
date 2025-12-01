@@ -6,6 +6,7 @@ import { connectSocket } from "../../api/socket";
 import { searchChatRooms } from "../../api/chatApi";
 import { normalizeChatRoom } from "../../services/normalizeChatRoom";
 import opaleSearchIcon from "../../assets/opaleSearchIcon.svg";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 const MainChatPage = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const MainChatPage = () => {
   const [searchKeyword, setSearchKeyword] = useState(""); // 실제 검색에 사용할 키워드
   const [chatRooms, setChatRooms] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   const subscriptionRef = useRef(null); // ✅ 구독 저장용
@@ -27,6 +29,7 @@ const MainChatPage = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
+        setLoading(true);
         setError("");
         const dto = {
           roomType: null,
@@ -54,6 +57,8 @@ const MainChatPage = () => {
         } else {
           setError("서버 오류가 발생했습니다.");
         }
+      } finally {
+        setLoading(false);
       }
     };
     fetchRooms();
@@ -181,7 +186,9 @@ const MainChatPage = () => {
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>모든 채팅방</h2>
 
-        {error ? (
+        {loading ? (
+          <LoadingSpinner />
+        ) : error ? (
           <p className={styles.error}>{error}</p>
         ) : filteredRooms.length === 0 ? (
           <p className={styles.empty}>검색 결과가 없습니다.</p>
