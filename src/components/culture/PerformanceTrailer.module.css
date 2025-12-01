@@ -123,9 +123,10 @@
   flex-shrink: 0;
   aspect-ratio: 16 / 9;
   background-color: #000;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
   scroll-snap-align: start;
+  border-radius: 1px;
 }
 
 .videoIframe {

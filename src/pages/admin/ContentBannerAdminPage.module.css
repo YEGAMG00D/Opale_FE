@@ -155,11 +155,18 @@
 }
 
 .formRow input[type="text"],
-.formRow input[type="number"] {
+.formRow input[type="number"],
+.formRow textarea {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
+  font-family: inherit;
+}
+
+.formRow textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 
 .formRow input[type="checkbox"] {
@@ -181,19 +188,6 @@
 
 .radioLabel input[type="radio"] {
   margin: 0;
-}
-
-.performanceSelectorWrapper {
-  margin-bottom: 20px;
-  padding: 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fafafa;
-}
-
-.performanceSelectorWrapper > * {
-  box-shadow: none !important;
-  margin-bottom: 0 !important;
 }
 
 .imageUpload {
@@ -347,7 +341,6 @@
 .bannerInfo {
   padding: 16px;
   flex: 1;
-  min-width: 0; /* flexbox에서 텍스트 오버플로우를 위해 필요 */
 }
 
 .bannerHeader {
@@ -363,9 +356,6 @@
   font-weight: 600;
   color: #333;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .bannerBadges {
@@ -399,9 +389,6 @@
   margin: 4px 0;
   font-size: 14px;
   color: #666;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .bannerDetails strong {

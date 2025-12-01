@@ -36,7 +36,16 @@ const MainChatPage = () => {
         
         const rooms = await searchChatRooms(dto);
         const normalizedRooms = rooms.map(normalizeChatRoom);
-        setChatRooms(normalizedRooms);
+        // 정렬된 채팅방 목록 설정
+        const sortedRooms = normalizedRooms.sort((a, b) => {
+          if (!a.lastMessageTime && !b.lastMessageTime) return 0;
+          if (!a.lastMessageTime) return 1;
+          if (!b.lastMessageTime) return -1;
+          const timeA = new Date(a.lastMessageTime).getTime();
+          const timeB = new Date(b.lastMessageTime).getTime();
+          return timeB - timeA;
+        });
+        setChatRooms(sortedRooms);
       } catch (err) {
         console.error("채팅방 목록 요청 실패:", err);
         if (err.response?.status === 401) {
@@ -58,8 +67,9 @@ const MainChatPage = () => {
         subscriptionRef.current = connectedClient.subscribe("/topic/rooms", (msg) => {
           const update = JSON.parse(msg.body);
 
-          setChatRooms((prev) =>
-            prev.map((room) =>
+          setChatRooms((prev) => {
+            // 업데이트된 채팅방 정보 갱신
+            const updatedRooms = prev.map((room) =>
               room.roomId === update.roomId
                 ? {
                     ...room,
@@ -68,8 +78,18 @@ const MainChatPage = () => {
                     isActive: update.isActive ?? room.isActive,
                   }
                 : room
-            )
-          );
+            );
+            
+            // lastMessageTime 기준으로 최신 순 정렬 (업데이트된 채팅방이 자동으로 맨 위로)
+            return updatedRooms.sort((a, b) => {
+              if (!a.lastMessageTime && !b.lastMessageTime) return 0;
+              if (!a.lastMessageTime) return 1;
+              if (!b.lastMessageTime) return -1;
+              const timeA = new Date(a.lastMessageTime).getTime();
+              const timeB = new Date(b.lastMessageTime).getTime();
+              return timeB - timeA; // 최신이 위로
+            });
+          });
         });
       }
     });
@@ -88,8 +108,24 @@ const MainChatPage = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // 채팅방 정렬 함수: lastMessageTime 기준 최신 순
+  const sortChatRooms = (rooms) => {
+    return [...rooms].sort((a, b) => {
+      // lastMessageTime이 없는 경우 맨 아래로
+      if (!a.lastMessageTime && !b.lastMessageTime) return 0;
+      if (!a.lastMessageTime) return 1;
+      if (!b.lastMessageTime) return -1;
+      
+      // 최신 메시지가 있는 경우 시간 기준 내림차순 정렬
+      const timeA = new Date(a.lastMessageTime).getTime();
+      const timeB = new Date(b.lastMessageTime).getTime();
+      return timeB - timeA; // 최신이 위로
+    });
+  };
+
   // 검색은 서버에서 처리하므로 클라이언트 필터링 불필요
-  const filteredRooms = chatRooms;
+  // lastMessageTime 기준으로 최신 순 정렬
+  const filteredRooms = sortChatRooms(chatRooms);
 
   const enterRoom = (id) => {
     const token = localStorage.getItem("accessToken");

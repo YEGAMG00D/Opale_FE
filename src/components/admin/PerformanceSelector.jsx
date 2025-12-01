@@ -2,13 +2,14 @@ import React, { useMemo, useCallback } from "react";
 import { usePerformanceList } from "../../hooks/usePerformanceList";
 import styles from "./PerformanceSelector.module.css";
 
-const PerformanceSelector = ({ searchQuery, onSearchChange, selectedPerformance, onSelectPerformance }) => {
+const PerformanceSelector = ({ searchQuery, debouncedSearchQuery, onSearchChange, selectedPerformance, onSelectPerformance }) => {
+  // debounce된 검색어를 사용하여 실제 검색 수행
   // 검색어를 메모이제이션하여 불필요한 재렌더링 방지
   // trim() 결과가 같으면 같은 참조를 유지하도록 처리
   const trimmedKeyword = useMemo(() => {
-    const trimmed = searchQuery.trim();
+    const trimmed = (debouncedSearchQuery || searchQuery).trim();
     return trimmed || null;
-  }, [searchQuery]);
+  }, [debouncedSearchQuery, searchQuery]);
 
   // params 객체를 메모이제이션하여 usePerformanceList의 의존성 체크가 정확히 작동하도록 함
   // keyword가 변경될 때만 새로운 객체 생성
@@ -23,8 +24,10 @@ const PerformanceSelector = ({ searchQuery, onSearchChange, selectedPerformance,
   const handlePerformanceClick = useCallback((performance, e) => {
     e?.preventDefault?.();
     e?.stopPropagation?.();
+    // 공연 선택 시 검색어를 공연 제목으로 설정하여 검색 결과 유지
+    onSearchChange(performance.title);
     onSelectPerformance(performance);
-  }, [onSelectPerformance]);
+  }, [onSelectPerformance, onSearchChange]);
 
   return (
     <div className={styles.searchSection}>

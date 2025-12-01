@@ -329,8 +329,14 @@
   color: #ef4444;
 }
 
-.reviewButton {
+.reviewButtons {
+  display: flex;
+  gap: 8px;
   width: 100%;
+}
+
+.reviewButton {
+  flex: 1;
   padding: 10px;
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -340,6 +346,7 @@
   color: #111827;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .reviewButton:hover {

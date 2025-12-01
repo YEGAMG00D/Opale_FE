@@ -75,6 +75,22 @@ const MainAdminPage = () => {
                   </svg>
                 </div>
               </Link>
+              <Link to="/admin/banner/performance" className={styles.subMenuItem}>
+                <span className={styles.subMenuText}>홈 공연 배너 관리</span>
+                <div className={styles.menuArrow}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </div>
+              </Link>
+              <Link to="/admin/banner/content" className={styles.subMenuItem}>
+                <span className={styles.subMenuText}>홈 컨텐츠 배너 관리</span>
+                <div className={styles.menuArrow}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </div>
+              </Link>
             </div>
           )}
         </div>

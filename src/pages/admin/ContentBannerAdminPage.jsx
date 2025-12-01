@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { fetchAllBanners, createBannerWithoutFile, createBannerWithFile, updateBanner, deleteBanner } from "../../api/bannerApi";
-import { normalizeAdminBannerList } from "../../services/normalizeBanner";
+import { 
+  fetchAllMainContentBanners, 
+  createMainContentBannerWithFile,
+  createMainContentBannerWithoutFile,
+  updateMainContentBanner, 
+  deleteMainContentBanner 
+} from "../../api/bannerApi";
+import { normalizeAdminMainContentBannerList } from "../../services/normalizeBanner";
 import PerformanceSelector from "../../components/admin/PerformanceSelector";
-import styles from "./HomeBannerAdminPage.module.css";
+import styles from "./ContentBannerAdminPage.module.css";
 
-const HomeBannerAdminPage = () => {
+const ContentBannerAdminPage = () => {
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingBanner, setEditingBanner] = useState(null);
@@ -19,21 +25,18 @@ const HomeBannerAdminPage = () => {
   const [selectedPerformance, setSelectedPerformance] = useState(null);
   const debounceTimerRef = useRef(null);
   
-  // 폼 상태
-  const [formData, setFormData] = useState({
-    performanceId: "",
-    titleText: "",
-    subtitleText: "",
-    descriptionText: "",
-    dateText: "",
-    placeText: "",
-    displayOrder: 0,
-    isActive: true,
-    linkUrl: "",
-  });
   // 등록 방식 선택 (이미지 업로드 or 공연 선택)
   const [registrationMode, setRegistrationMode] = useState("image"); // "image" or "performance"
   
+  // 폼 상태
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "",
+    linkUrl: "",
+    performanceId: "",
+    displayOrder: 0,
+    isActive: true,
+  });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
@@ -41,14 +44,14 @@ const HomeBannerAdminPage = () => {
   const loadBanners = async () => {
     setLoading(true);
     try {
-      const data = await fetchAllBanners();
-      const normalized = normalizeAdminBannerList(data);
+      const data = await fetchAllMainContentBanners();
+      const normalized = normalizeAdminMainContentBannerList(data);
       // displayOrder로 정렬
       normalized.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
       setBanners(normalized);
     } catch (err) {
-      console.error("배너 목록 조회 실패:", err);
-      alert("배너 목록을 불러오는데 실패했습니다.");
+      console.error("컨텐츠 배너 목록 조회 실패:", err);
+      alert("컨텐츠 배너 목록을 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -78,16 +81,10 @@ const HomeBannerAdminPage = () => {
   // 공연 선택 시 performanceId 자동 입력
   useEffect(() => {
     if (selectedPerformance && selectedPerformance.id) {
-      // 공연 ID 설정
       setFormData(prev => ({
         ...prev,
         performanceId: selectedPerformance.id,
       }));
-
-      // 포스터 이미지 미리보기 (백엔드에서 자동 처리되므로 미리보기만)
-      if (selectedPerformance.image) {
-        setImagePreview(selectedPerformance.image);
-      }
     }
   }, [selectedPerformance]);
 
@@ -96,15 +93,12 @@ const HomeBannerAdminPage = () => {
     // 새 배너 등록 시: 현재 배너 개수 + 1로 자동 설정
     const newDisplayOrder = banners.length + 1;
     setFormData({
+      title: "",
+      content: "",
+      linkUrl: "",
       performanceId: "",
-      titleText: "",
-      subtitleText: "",
-      descriptionText: "",
-      dateText: "",
-      placeText: "",
       displayOrder: newDisplayOrder,
       isActive: true,
-      linkUrl: "",
     });
     setImageFile(null);
     setImagePreview(null);
@@ -121,15 +115,12 @@ const HomeBannerAdminPage = () => {
   const handleEdit = (banner) => {
     setEditingBanner(banner);
     setFormData({
+      title: banner.title || "",
+      content: banner.content || "",
+      linkUrl: banner.linkUrl || "",
       performanceId: banner.performanceId || "",
-      titleText: banner.titleText || "",
-      subtitleText: banner.subtitleText || "",
-      descriptionText: banner.descriptionText || "",
-      dateText: banner.dateText || "",
-      placeText: banner.placeText || "",
       displayOrder: banner.displayOrder || 0,
       isActive: banner.isActive ?? true,
-      linkUrl: banner.linkUrl || "",
     });
     setImagePreview(banner.imageUrl || null);
     setImageFile(null);
@@ -147,9 +138,6 @@ const HomeBannerAdminPage = () => {
     const file = e.target.files[0];
     if (file) {
       setImageFile(file);
-      // 직접 파일을 업로드하면 공연 선택을 초기화
-      setSelectedPerformance(null);
-      setFormData(prev => ({ ...prev, performanceId: "" }));
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -162,8 +150,13 @@ const HomeBannerAdminPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.subtitleText.trim()) {
-      alert("메인 문구를 입력해주세요.");
+    if (!formData.title.trim()) {
+      alert("제목을 입력해주세요.");
+      return;
+    }
+
+    if (!formData.content.trim()) {
+      alert("내용을 입력해주세요.");
       return;
     }
 
@@ -185,40 +178,40 @@ const HomeBannerAdminPage = () => {
     try {
       if (editingBanner) {
         // 수정: 항상 multipart로 전송 (파일이 없어도)
-        await updateBanner(editingBanner.bannerId, formData, imageFile);
-        alert("배너가 수정되었습니다.");
+        await updateMainContentBanner(editingBanner.contentBannerId, formData, imageFile);
+        alert("컨텐츠 배너가 수정되었습니다.");
       } else {
         // 등록
         if (registrationMode === "image") {
           // 이미지 파일이 있는 경우
-          await createBannerWithFile(formData, imageFile);
+          await createMainContentBannerWithFile(formData, imageFile);
         } else {
           // 공연 선택 모드: 파일 없이 등록
-          await createBannerWithoutFile(formData);
+          await createMainContentBannerWithoutFile(formData);
         }
-        alert("배너가 등록되었습니다.");
+        alert("컨텐츠 배너가 등록되었습니다.");
       }
       resetForm();
       loadBanners();
     } catch (err) {
-      console.error("배너 저장 실패:", err);
-      alert("배너 저장에 실패했습니다.");
+      console.error("컨텐츠 배너 저장 실패:", err);
+      alert("컨텐츠 배너 저장에 실패했습니다.");
     }
   };
 
   // 배너 삭제
-  const handleDelete = async (bannerId) => {
-    if (!window.confirm("정말 이 배너를 삭제하시겠습니까?")) {
+  const handleDelete = async (contentBannerId) => {
+    if (!window.confirm("정말 이 컨텐츠 배너를 삭제하시겠습니까?")) {
       return;
     }
 
     try {
-      await deleteBanner(bannerId);
-      alert("배너가 삭제되었습니다.");
+      await deleteMainContentBanner(contentBannerId);
+      alert("컨텐츠 배너가 삭제되었습니다.");
       loadBanners();
     } catch (err) {
-      console.error("배너 삭제 실패:", err);
-      alert("배너 삭제에 실패했습니다.");
+      console.error("컨텐츠 배너 삭제 실패:", err);
+      alert("컨텐츠 배너 삭제에 실패했습니다.");
     }
   };
 
@@ -273,24 +266,21 @@ const HomeBannerAdminPage = () => {
     try {
       const updatePromises = updatedBanners.map((banner) => {
         const updateData = {
+          title: banner.title || "",
+          content: banner.content || "",
+          linkUrl: banner.linkUrl || "",
           performanceId: banner.performanceId || "",
-          titleText: banner.titleText || "",
-          subtitleText: banner.subtitleText || "",
-          descriptionText: banner.descriptionText || "",
-          dateText: banner.dateText || "",
-          placeText: banner.placeText || "",
           displayOrder: banner.displayOrder,
           isActive: banner.isActive ?? true,
-          linkUrl: banner.linkUrl || "",
         };
-        return updateBanner(banner.bannerId, updateData, null);
+        return updateMainContentBanner(banner.contentBannerId, updateData, null);
       });
 
       await Promise.all(updatePromises);
-      alert("배너 순서가 변경되었습니다.");
+      alert("컨텐츠 배너 순서가 변경되었습니다.");
     } catch (err) {
-      console.error("배너 순서 변경 실패:", err);
-      alert("배너 순서 변경에 실패했습니다. 페이지를 새로고침합니다.");
+      console.error("컨텐츠 배너 순서 변경 실패:", err);
+      alert("컨텐츠 배너 순서 변경에 실패했습니다. 페이지를 새로고침합니다.");
       loadBanners(); // 실패 시 원래 상태로 복구
     }
   };
@@ -309,11 +299,11 @@ const HomeBannerAdminPage = () => {
         <span className={styles.breadcrumbSeparator}> / </span>
         <span className={styles.breadcrumbItem}>배너 관리</span>
         <span className={styles.breadcrumbSeparator}> / </span>
-        <span className={styles.breadcrumbCurrent}>홈 배너 관리</span>
+        <span className={styles.breadcrumbCurrent}>홈 컨텐츠 배너 관리</span>
       </div>
       <div className={styles.header}>
-        <h1 className={styles.title}>홈 배너 관리</h1>
-        <p className={styles.subtitle}>홈페이지 배너를 관리할 수 있습니다.</p>
+        <h1 className={styles.title}>홈 컨텐츠 배너 관리</h1>
+        <p className={styles.subtitle}>메인 페이지의 함께 보는 공연 숏텐츠 배너를 관리할 수 있습니다.</p>
       </div>
 
       {/* 등록 버튼 */}
@@ -334,7 +324,7 @@ const HomeBannerAdminPage = () => {
         <div className={styles.formModal}>
           <div className={styles.formContent}>
             <div className={styles.formHeader}>
-              <h2>{editingBanner ? "배너 수정" : "배너 등록"}</h2>
+              <h2>{editingBanner ? "컨텐츠 배너 수정" : "컨텐츠 배너 등록"}</h2>
               <button className={styles.closeButton} onClick={resetForm}>✕</button>
             </div>
             
@@ -410,68 +400,25 @@ const HomeBannerAdminPage = () => {
               )}
 
               <div className={styles.formRow}>
-                <label>부제</label>
+                <label>제목 *</label>
                 <input
                   type="text"
-                  value={formData.titleText}
-                  onChange={(e) => setFormData({ ...formData, titleText: e.target.value })}
-                  placeholder="예: 12년을 기다린 오리지널 내한공연"
-                  
-                />
-              </div>
-
-              <div className={styles.formRow}>
-                <label>메인 문구 *</label>
-                <input
-                  type="text"
-                  value={formData.subtitleText}
-                  onChange={(e) => setFormData({ ...formData, subtitleText: e.target.value })}
-                  placeholder="예: 뮤지컬 위키드"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="예: 차은우·김재환, 군복 깜찍 투샷"
                   required
                 />
               </div>
 
               <div className={styles.formRow}>
-                <label>설명 문구</label>
-                <input
-                  type="text"
-                  value={formData.descriptionText}
-                  onChange={(e) => setFormData({ ...formData, descriptionText: e.target.value })}
-                  placeholder="예: The untold true story of the Witches of Oz"
+                <label>내용 *</label>
+                <textarea
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  placeholder="예: 차은우와 김재환이 군복을 입고 찍은 깜찍한 투샷이 공개되었습니다."
+                  rows="3"
+                  required
                 />
-              </div>
-
-              <div className={styles.formRow}>
-                <label>날짜 텍스트</label>
-                <input
-                  type="text"
-                  value={formData.dateText}
-                  onChange={(e) => setFormData({ ...formData, dateText: e.target.value })}
-                  placeholder="예: 2025.7.12 Flying Soon"
-                />
-              </div>
-
-              <div className={styles.formRow}>
-                <label>장소 텍스트</label>
-                <input
-                  type="text"
-                  value={formData.placeText}
-                  onChange={(e) => setFormData({ ...formData, placeText: e.target.value })}
-                  placeholder="예: BLUESQUARE 신한카드홀"
-                />
-              </div>
-
-              <div className={styles.formRow}>
-                <label>공연 ID (선택)</label>
-                <input
-                  type="text"
-                  value={formData.performanceId}
-                  onChange={(e) => setFormData({ ...formData, performanceId: e.target.value })}
-                  placeholder="예: PF271999"
-                />
-                <small style={{ color: '#999', fontSize: '12px', marginTop: '4px' }}>
-                  위에서 공연을 선택하면 자동으로 입력됩니다. 또는 직접 입력할 수 있습니다.
-                </small>
               </div>
 
               <div className={styles.formRow}>
@@ -480,8 +427,11 @@ const HomeBannerAdminPage = () => {
                   type="text"
                   value={formData.linkUrl}
                   onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
-                  placeholder="예: https://youtube.com/..."
+                  placeholder="예: https://news.site/article/123"
                 />
+                <small style={{ color: '#999', fontSize: '12px', marginTop: '4px' }}>
+                  링크 URL과 공연 ID 중 하나는 반드시 입력해야 합니다.
+                </small>
               </div>
 
               {editingBanner && (
@@ -494,7 +444,7 @@ const HomeBannerAdminPage = () => {
                     min="1"
                     required
                   />
-                  <small style={{ color: '#999', fontSize: '12px' }}>
+                  <small style={{ color: '#999', fontSize: '12px', marginTop: '4px' }}>
                     순서는 드래그 앤 드롭으로도 변경할 수 있습니다.
                   </small>
                 </div>
@@ -528,11 +478,11 @@ const HomeBannerAdminPage = () => {
       <div className={styles.bannerList}>
         {loading && <div className={styles.loading}>로딩 중...</div>}
         {!loading && banners.length === 0 && (
-          <div className={styles.emptyMessage}>등록된 배너가 없습니다.</div>
+          <div className={styles.emptyMessage}>등록된 컨텐츠 배너가 없습니다.</div>
         )}
         {!loading && banners.map((banner, index) => (
           <div 
-            key={banner.bannerId} 
+            key={banner.contentBannerId} 
             className={`${styles.bannerItem} ${draggedIndex === index ? styles.dragging : ''} ${dragOverIndex === index ? styles.dragOver : ''}`}
             draggable
             onDragStart={(e) => handleDragStart(e, index)}
@@ -553,26 +503,23 @@ const HomeBannerAdminPage = () => {
             </div>
             <div className={styles.bannerImage}>
               {banner.imageUrl ? (
-                <img src={banner.imageUrl} alt={banner.titleText} />
+                <img src={banner.imageUrl} alt={banner.title} />
               ) : (
                 <div className={styles.noImage}>이미지 없음</div>
               )}
             </div>
             <div className={styles.bannerInfo}>
               <div className={styles.bannerHeader}>
-                <h3>{banner.titleText || "제목 없음"}</h3>
+                <h3>{banner.title || "제목 없음"}</h3>
                 <div className={styles.bannerBadges}>
                   {banner.isActive && <span className={styles.activeBadge}>활성</span>}
                   <span className={styles.orderBadge}>순서: {banner.displayOrder}</span>
                 </div>
               </div>
               <div className={styles.bannerDetails}>
-                <p><strong>부제:</strong> {banner.subtitleText || "-"}</p>
-                <p><strong>설명:</strong> {banner.descriptionText || "-"}</p>
-                <p><strong>날짜:</strong> {banner.dateText || "-"}</p>
-                <p><strong>장소:</strong> {banner.placeText || "-"}</p>
-                {banner.performanceId && <p><strong>공연 ID:</strong> {banner.performanceId}</p>}
+                <p><strong>내용:</strong> {banner.content || "-"}</p>
                 {banner.linkUrl && <p><strong>링크:</strong> {banner.linkUrl}</p>}
+                {banner.performanceId && <p><strong>공연 ID:</strong> {banner.performanceId}</p>}
               </div>
               <div className={styles.bannerActions}>
                 <button
@@ -583,7 +530,7 @@ const HomeBannerAdminPage = () => {
                 </button>
                 <button
                   className={styles.deleteButton}
-                  onClick={() => handleDelete(banner.bannerId)}
+                  onClick={() => handleDelete(banner.contentBannerId)}
                 >
                   삭제
                 </button>
@@ -596,4 +543,5 @@ const HomeBannerAdminPage = () => {
   );
 };
 
-export default HomeBannerAdminPage;
+export default ContentBannerAdminPage;
+
