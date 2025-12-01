@@ -12,10 +12,17 @@ export const normalizePerformanceReviewRequest = (formData, performanceId, revie
   const dto = {
     title: formData.title || '',
     contents: formData.content || '', // API는 contents를 요구
-    rating: formData.rating ? parseFloat(formData.rating) : 5.0,
     reviewType: reviewType,
     performanceId: performanceId,
   };
+  
+  // 기대평(EXPECTATION)이 아닌 경우에만 rating 추가
+  if (reviewType !== 'EXPECTATION') {
+    dto.rating = formData.rating ? parseFloat(formData.rating) : 5.0;
+  } else if (formData.rating !== undefined && formData.rating !== null) {
+    // 기대평인데 rating이 명시적으로 전달된 경우에만 추가 (하위 호환성)
+    dto.rating = parseFloat(formData.rating);
+  }
 
   // ticketId가 있으면 추가 (백엔드 필수 필드)
   if (ticketId) {
