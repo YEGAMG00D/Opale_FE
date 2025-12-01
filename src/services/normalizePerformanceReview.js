@@ -113,6 +113,44 @@ export const normalizePerformanceReviews = (apiData) => {
       return '';
     };
 
+    // reviewType 처리: 백엔드에서 오는 값 그대로 사용 (AFTER, EXPECTATION)
+    // null/undefined인 경우에만 기본값 사용
+    let reviewType = 'AFTER';
+    
+    // 디버깅: 원본 reviewType 값 확인
+    console.log(`🔍 [정규화] 리뷰 ${review.performanceReviewId} 원본 reviewType:`, {
+      reviewType: review.reviewType,
+      type: typeof review.reviewType,
+      isNull: review.reviewType === null,
+      isUndefined: review.reviewType === undefined,
+      stringValue: String(review.reviewType)
+    });
+    
+    if (review.reviewType !== null && review.reviewType !== undefined) {
+      let typeValue = review.reviewType;
+      
+      // enum 객체인 경우 처리 (예: { name: "EXPECTATION", description: "기대평" })
+      if (typeof typeValue === 'object' && typeValue !== null) {
+        // enum 객체에서 name 필드 추출
+        typeValue = typeValue.name || typeValue.toString();
+        console.log(`🔍 [정규화] 리뷰 ${review.performanceReviewId} enum 객체 처리 후:`, typeValue);
+      }
+      
+      // 문자열로 변환하여 대소문자 구분 없이 처리
+      const typeStr = String(typeValue).toUpperCase();
+      console.log(`🔍 [정규화] 리뷰 ${review.performanceReviewId} 최종 typeStr:`, typeStr);
+      
+      if (typeStr === 'AFTER' || typeStr === 'EXPECTATION') {
+        reviewType = typeStr;
+        console.log(`✅ [정규화] 리뷰 ${review.performanceReviewId} reviewType 설정:`, reviewType);
+      } else {
+        // 디버깅: 예상치 못한 값
+        console.warn(`⚠️ [정규화] 리뷰 ${review.performanceReviewId} 예상치 못한 reviewType 값:`, review.reviewType, '->', typeStr);
+      }
+    } else {
+      console.warn(`⚠️ [정규화] 리뷰 ${review.performanceReviewId} reviewType이 null/undefined, 기본값 'AFTER' 사용`);
+    }
+
     return {
       id: review.performanceReviewId,
       performanceReviewId: review.performanceReviewId,
@@ -121,7 +159,7 @@ export const normalizePerformanceReviews = (apiData) => {
       title: review.title || '',
       content: review.contents || '',
       rating: review.rating || 0,
-      reviewType: review.reviewType || 'AFTER',
+      reviewType: reviewType,
       author: review.nickname || '익명',
       date: formatDate(review.createdAt || review.updatedAt),
       createdAt: review.createdAt,
