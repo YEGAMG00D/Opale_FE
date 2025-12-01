@@ -389,6 +389,17 @@
   margin: 4px 0;
   font-size: 14px;
   color: #666;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+.bannerDetails p.linkText {
+  -webkit-line-clamp: 1;
 }
 
 .bannerDetails strong {
