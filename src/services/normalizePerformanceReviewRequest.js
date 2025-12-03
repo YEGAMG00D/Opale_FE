@@ -39,6 +39,16 @@ export const normalizePerformanceReviewRequest = (formData, performanceId, revie
   if (formData.performanceTime) {
     dto.performanceTime = formData.performanceTime;
   }
+  
+  // seatFront, seatNumber를 우선 사용 (새로운 형식)
+  if (formData.seatFront) {
+    dto.seatFront = formData.seatFront;
+  }
+  if (formData.seatNumber) {
+    dto.seatNumber = formData.seatNumber;
+  }
+  
+  // 하위 호환성: section, row, number도 지원
   if (formData.section) {
     dto.section = formData.section;
   }

@@ -28,7 +28,9 @@ export const normalizeTicketDetail = (apiResponse) => {
   const frontendData = transformTicketDataFromApi({
     performanceName: apiResponse.performanceName,
     performanceDate: apiResponse.performanceDate,
-    seatInfo: apiResponse.seatInfo,
+    seatFront: apiResponse.seatFront,
+    seatNumber: apiResponse.seatNumber,
+    seatInfo: apiResponse.seatInfo, // 하위 호환성용
     placeName: apiResponse.placeName,
     ticketImageUrl: apiResponse.ticketImageUrl,
     performanceId: apiResponse.performanceId,
@@ -43,9 +45,8 @@ export const normalizeTicketDetail = (apiResponse) => {
     performanceName: apiResponse.performanceName || '',
     performanceDate: frontendData?.performanceDate || '',
     performanceTime: frontendData?.performanceTime || '',
-    section: frontendData?.section || '',
-    row: frontendData?.row || '',
-    number: frontendData?.number || '',
+    seatFront: frontendData?.seatFront || '',
+    seatNumber: frontendData?.seatNumber || '',
     placeName: apiResponse.placeName || '',
     ticketImageUrl: apiResponse.ticketImageUrl || null,
     isVerified: apiResponse.isVerified || false,
