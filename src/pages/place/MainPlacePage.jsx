@@ -33,6 +33,7 @@ const MainPlacePage = () => {
   const [selected, setSelected] = useState({ region: '전체', district: '전체' });
   const [searchQuery, setSearchQuery] = useState('');
   const mapViewRef = useRef(null); // PlaceMapView의 마커 제거 함수를 저장할 ref
+  const [isCreatingMarkers, setIsCreatingMarkers] = useState(false); // 마커 생성 중 상태
 
   // 페이지 진입 시 지도 상태 초기화 (완전 초기 상태로 리셋)
   // 단, DetailPlacePage에서 돌아온 경우는 초기화하지 않음
@@ -293,10 +294,30 @@ const MainPlacePage = () => {
     enabled: activeTab === 'list', // 지역목록 탭일 때만 활성화
   });
 
+  // 마커 생성 중 상태 추적
+  useEffect(() => {
+    if (activeTab === 'map' && mapViewRef.current) {
+      const checkCreatingMarkers = () => {
+        const creating = mapViewRef.current?.isCreatingMarkers || false;
+        setIsCreatingMarkers(creating);
+      };
+      
+      // 초기 확인
+      checkCreatingMarkers();
+      
+      // 주기적으로 확인 (마커 생성이 완료될 때까지)
+      const interval = setInterval(checkCreatingMarkers, 100);
+      
+      return () => clearInterval(interval);
+    } else {
+      setIsCreatingMarkers(false);
+    }
+  }, [activeTab, nearbyPlacesFromStore.length]); // places가 변경될 때마다 확인
+
   // 현재 탭에 따라 사용할 데이터 결정
   // 지도 탭에서는 전역 상태의 nearbyPlaces 사용 (순서 보장을 위해)
   const places = activeTab === 'map' ? nearbyPlacesFromStore : listPlaces;
-  const loading = activeTab === 'map' ? nearbyLoading : listLoading;
+  const loading = activeTab === 'map' ? (nearbyLoading || isCreatingMarkers) : listLoading;
 
   return (
     <div className={`${styles.container} ${activeTab === 'map' ? styles.mapMode : ''}`}>

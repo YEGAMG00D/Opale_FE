@@ -26,6 +26,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
   const locationWatchIdRef = useRef(null); // 실시간 위치 추적 ID
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
+  const [isCreatingMarkers, setIsCreatingMarkers] = useState(false); // 마커 생성 중 상태
   
   // 선택된 공연장 상태 (마커 클릭 시)
   const [selectedPlace, setSelectedPlace] = useState(null);
@@ -256,10 +257,11 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     console.log('✅ [마커 제거] 기존 공연장 마커 제거 완료');
   }, []); // 의존성 배열은 비워둠 (상태 setter는 안정적이므로)
 
-  // ref를 통해 clearMarkers 함수 노출
+  // ref를 통해 clearMarkers 함수와 isCreatingMarkers 상태 노출
   useImperativeHandle(ref, () => ({
-    clearMarkers
-  }), [clearMarkers]);
+    clearMarkers,
+    isCreatingMarkers
+  }), [clearMarkers, isCreatingMarkers]);
 
   // places가 변경될 때 마커 생성 (4단계: 전역 상태에 저장된 목록으로 마커 생성)
   // mapLoading이 false일 때만 실행 (지도 초기화 완료 후)
@@ -607,6 +609,9 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     const createMarkers = async () => {
       console.log('📍 [4단계] 새로운 공연장 마커 생성 시작:', validPlaces.length, '개');
       
+      // 마커 생성 중 상태 설정
+      setIsCreatingMarkers(true);
+      
       // 기존 마커가 남아있으면 제거 (안전장치)
       if (markersRef.current.length > 0) {
         console.warn('⚠️ [4단계] 기존 마커가 남아있습니다. 제거합니다.');
@@ -622,7 +627,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         markersRef.current = [];
       }
 
-      // 새로운 마커 생성
+      // 새로운 마커 생성 (지도에 표시하지 않고 먼저 생성)
       const newMarkers = [];
       const newInfoWindows = [];
 
@@ -632,10 +637,10 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         // 커스텀 마커 HTML 생성 (포스터 포함)
         const { html: markerHTML, anchor } = await createPlaceMarkerHTML(place);
         
-        // 마커 생성
+        // 마커 생성 (map: null로 설정하여 지도에 표시하지 않음)
       const marker = new window.naver.maps.Marker({
         position: position,
-        map: map,
+        map: null, // 먼저 지도에 표시하지 않음
         title: place.name,
           icon: {
             content: markerHTML,
@@ -682,9 +687,17 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         });
       }
       
+      // 모든 마커 생성이 완료된 후 한 번에 지도에 표시
+      newMarkers.forEach(marker => {
+        marker.setMap(map);
+      });
+      
       // 모든 마커 생성이 완료된 후에만 ref에 추가
       markersRef.current = newMarkers;
       infoWindowsRef.current = newInfoWindows;
+      
+      // 마커 생성 완료 상태 해제
+      setIsCreatingMarkers(false);
       
       console.log('✅ [4단계] 새로운 공연장 마커 생성 완료:', markersRef.current.length, '개');
     };
