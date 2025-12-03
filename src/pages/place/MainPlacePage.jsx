@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import styles from './MainPlacePage.module.css';
 import RegionFilter from '../../components/place/RegionFilter';
@@ -21,6 +21,7 @@ import {
 
 const MainPlacePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const searchRef = useRef(null);
   const activeTab = useSelector((state) => state.place.activeTab);
@@ -34,26 +35,34 @@ const MainPlacePage = () => {
   const mapViewRef = useRef(null); // PlaceMapView의 마커 제거 함수를 저장할 ref
 
   // 페이지 진입 시 지도 상태 초기화 (완전 초기 상태로 리셋)
+  // 단, DetailPlacePage에서 돌아온 경우는 초기화하지 않음
   useEffect(() => {
-    console.log('🔄 MainPlacePage 마운트 - 지도 상태 초기화');
+    const isFromDetailPlace = location.state?.fromDetailPlace;
     
-    // 전역 상태 초기화 (GPS 위치는 유지)
-    dispatch(resetPlaceMapState());
-    
-    // 지도에서 모든 마커 제거 (지도가 준비되면)
-    const clearAllMarkers = async () => {
-      // 약간의 지연을 두어 지도가 준비될 시간을 줌
-      await new Promise(resolve => setTimeout(resolve, 100));
+    // DetailPlacePage에서 돌아온 경우가 아니면 초기화
+    if (!isFromDetailPlace) {
+      console.log('🔄 MainPlacePage 마운트 - 지도 상태 초기화');
       
-      if (mapViewRef.current && mapViewRef.current.clearMarkers) {
-        console.log('🧹 [초기화] 지도에서 모든 마커 제거');
-        await mapViewRef.current.clearMarkers();
-        console.log('✅ [초기화] 지도 마커 제거 완료');
-      }
-    };
-    
-    clearAllMarkers();
-  }, [dispatch]); // 컴포넌트 마운트 시에만 실행
+      // 전역 상태 초기화 (GPS 위치는 유지)
+      dispatch(resetPlaceMapState());
+      
+      // 지도에서 모든 마커 제거 (지도가 준비되면)
+      const clearAllMarkers = async () => {
+        // 약간의 지연을 두어 지도가 준비될 시간을 줌
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (mapViewRef.current && mapViewRef.current.clearMarkers) {
+          console.log('🧹 [초기화] 지도에서 모든 마커 제거');
+          await mapViewRef.current.clearMarkers();
+          console.log('✅ [초기화] 지도 마커 제거 완료');
+        }
+      };
+      
+      clearAllMarkers();
+    } else {
+      console.log('📍 DetailPlacePage에서 돌아옴 - 지도 상태 유지');
+    }
+  }, [location.pathname, location.state, dispatch, navigate]); // 경로나 state가 변경될 때마다 실행
 
 
 

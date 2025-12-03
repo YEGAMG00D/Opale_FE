@@ -81,7 +81,7 @@ const DetailPlacePage = () => {
       <div className={styles.container}>
         <div className={styles.error}>
           <p>{error || '공연장 정보를 찾을 수 없습니다.'}</p>
-          <button onClick={() => navigate('/place')} className={styles.backBtn}>
+          <button onClick={() => navigate('/place', { state: { fromDetailPlace: true } })} className={styles.backBtn}>
             목록으로 돌아가기
           </button>
         </div>

@@ -13,7 +13,12 @@ const Header = ({ showBackButton = false, title = null }) => {
     // 채팅방 페이지에서 뒤로 가기 시 항상 채팅방 목록으로 이동
     if (location.pathname.match(/^\/chat\/([^/]+)$/)) {
       navigate('/chat');
-    } else {
+    } 
+    // 공연장 상세 페이지에서 뒤로 가기 시 MainPlacePage로 이동 (상태 유지)
+    else if (location.pathname.match(/^\/place\/([^/]+)$/)) {
+      navigate('/place', { state: { fromDetailPlace: true } });
+    } 
+    else {
       navigate(-1);
     }
   };
