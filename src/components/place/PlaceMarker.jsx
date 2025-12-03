@@ -13,9 +13,10 @@ export const createPlaceMarkerHTML = async (place) => {
   // 기본 마커 HTML (공연이 없을 때) - 작은 동그라미
   const defaultMarkerHTML = `
     <div style="
-      width: 32px;
-      height: 32px;
-      background-color: #DFE6F6;
+      width: 28px;
+      height: 28px;
+      background-color:rgb(78, 120, 216);
+      border: 2px solid #DFE6F6;
       border-radius: 50%;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     "></div>
