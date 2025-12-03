@@ -7,9 +7,10 @@ import { normalizePlacePerformances } from '../../services/normalizePlacePerform
  * 공연장 마커 HTML 생성 함수
  * 네이버 지도 API의 Marker icon content로 사용
  * @param {Object} place - 공연장 정보
- * @returns {Promise<{html: string, anchor: {x: number, y: number}}>} 마커 HTML 문자열과 anchor 포인트
+ * @param {number} performanceIndex - 표시할 공연 인덱스 (여러 공연이 있을 때 사용)
+ * @returns {Promise<{html: string, anchor: {x: number, y: number}, performances: Array, markerId: string}>} 마커 HTML 문자열, anchor 포인트, 공연 목록, 마커 ID
  */
-export const createPlaceMarkerHTML = async (place) => {
+export const createPlaceMarkerHTML = async (place, performanceIndex = 0) => {
   // 기본 마커 HTML (공연이 없을 때) - 작은 동그라미
   const defaultMarkerHTML = `
     <div style="
@@ -24,7 +25,7 @@ export const createPlaceMarkerHTML = async (place) => {
   const defaultAnchor = { x: 16, y: 16 }; // 32px / 2
 
   if (!place || !place.id) {
-    return { html: defaultMarkerHTML, anchor: defaultAnchor };
+    return { html: defaultMarkerHTML, anchor: defaultAnchor, performances: [], markerId: null };
   }
 
   // 공연 정보 가져오기
@@ -50,14 +51,19 @@ export const createPlaceMarkerHTML = async (place) => {
 
     // 현재 상영중인 공연이 있으면 포스터 표시
     if (currentPerformances.length > 0) {
-      const firstPerformance = currentPerformances[0];
-      const posterUrl = firstPerformance.poster || '/placeholder-poster.png';
+      // 인덱스가 범위를 벗어나면 0으로 순환
+      const index = performanceIndex % currentPerformances.length;
+      const selectedPerformance = currentPerformances[index];
+      const posterUrl = selectedPerformance.poster || '/placeholder-poster.png';
+      
+      // 마커에 고유 ID 부여 (place.id 기반)
+      const markerId = `marker-${place.id}`;
       
       const markerWithPosterHTML = `
-        <div style="
+        <div id="${markerId}" style="
           width: 48px;
           height: 48px;
-          background-color: #ffffff;
+          background-color: transparent;
           border: 3px solid #DFE6F6;
           border-radius: 50%;
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -68,13 +74,34 @@ export const createPlaceMarkerHTML = async (place) => {
           overflow: hidden;
         ">
           <img 
+            id="${markerId}-img"
             src="${posterUrl}" 
-            alt="${firstPerformance.title || '공연 포스터'}"
+            alt="${selectedPerformance.title || '공연 포스터'}"
             style="
               width: 100%;
               height: 100%;
               object-fit: cover;
               border-radius: 50%;
+              transition: opacity 0.8s ease-in-out;
+            "
+            onerror="this.onerror=null; this.src='/placeholder-poster.png';"
+          />
+          <img 
+            id="${markerId}-img-next"
+            src="${posterUrl}"
+            alt=""
+            style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              border-radius: 50%;
+              opacity: 0;
+              transition: opacity 0.8s ease-in-out;
+              pointer-events: none;
+              background-color: transparent;
             "
             onerror="this.onerror=null; this.src='/placeholder-poster.png';"
           />
@@ -82,14 +109,14 @@ export const createPlaceMarkerHTML = async (place) => {
       `;
       const posterAnchor = { x: 24, y: 24 }; // 48px / 2
       
-      return { html: markerWithPosterHTML, anchor: posterAnchor };
+      return { html: markerWithPosterHTML, anchor: posterAnchor, performances: currentPerformances, markerId };
     }
   } catch (error) {
     console.warn('⚠️ 공연장 마커 포스터 로드 실패:', error);
   }
 
   // 공연이 없거나 로드 실패 시 기본 마커
-  return { html: defaultMarkerHTML, anchor: defaultAnchor };
+  return { html: defaultMarkerHTML, anchor: defaultAnchor, performances: [], markerId: null };
 };
 
 // PlaceMarker 컴포넌트는 현재 사용하지 않지만, 

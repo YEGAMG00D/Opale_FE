@@ -19,6 +19,10 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const infoWindowsRef = useRef([]);
+  const markerIntervalsRef = useRef(new Map()); // 마커별 포스터 변경 interval 저장
+  const markerPerformanceIndicesRef = useRef(new Map()); // 마커별 현재 공연 인덱스 저장
+  const markerPerformancesRef = useRef(new Map()); // 마커별 공연 목록 저장
+  const markerShowingFirstRef = useRef(new Map()); // 마커별 현재 보이는 레이어 추적 (true: imgElement, false: imgNextElement)
   const userMarkerRef = useRef(null); // GPS 위치 마커 (파란색)
   const searchCenterMarkerRef = useRef(null); // 검색 기준 좌표 마커 (주황색)
   const searchRadiusCircleRef = useRef(null); // 검색 반경 원
@@ -202,6 +206,15 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     }
 
     console.log('🧹 [마커 제거] 기존 공연장 마커 모두 제거 시작');
+    
+    // 모든 포스터 변경 interval 정리
+    markerIntervalsRef.current.forEach((intervalId, marker) => {
+      clearInterval(intervalId);
+    });
+    markerIntervalsRef.current.clear();
+    markerPerformanceIndicesRef.current.clear();
+    markerPerformancesRef.current.clear();
+    markerShowingFirstRef.current.clear();
     
     // 모든 공연장 마커를 동기적으로 제거
     const markersToRemove = [...markersRef.current];
@@ -635,7 +648,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       const position = new window.naver.maps.LatLng(place.latitude, place.longitude);
       
         // 커스텀 마커 HTML 생성 (포스터 포함)
-        const { html: markerHTML, anchor } = await createPlaceMarkerHTML(place);
+        const { html: markerHTML, anchor, performances, markerId } = await createPlaceMarkerHTML(place, 0);
         
         // 마커 생성 (map: null로 설정하여 지도에 표시하지 않음)
       const marker = new window.naver.maps.Marker({
@@ -649,6 +662,125 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
           zIndex: 100,
       });
         newMarkers.push(marker);
+        
+        // 여러 공연이 있는 경우 포스터 변경 interval 설정
+        if (performances && performances.length > 1 && markerId) {
+          markerPerformancesRef.current.set(marker, performances);
+          markerPerformanceIndicesRef.current.set(marker, 0);
+          markerShowingFirstRef.current.set(marker, true); // 초기값: imgElement가 보임
+          
+          // 5초마다 포스터 변경 (이미지만 부드럽게 변경, cross-fade 효과)
+          const intervalId = setInterval(() => {
+            const currentIndex = markerPerformanceIndicesRef.current.get(marker) || 0;
+            const nextIndex = (currentIndex + 1) % performances.length;
+            markerPerformanceIndicesRef.current.set(marker, nextIndex);
+            
+            // 마커의 DOM 요소에 접근해서 이미지만 변경
+            const markerElement = marker.getElement();
+            if (markerElement) {
+              const imgElement = markerElement.querySelector(`#${markerId}-img`);
+              const imgNextElement = markerElement.querySelector(`#${markerId}-img-next`);
+              
+              if (imgElement && imgNextElement) {
+                const nextPerformance = performances[nextIndex];
+                const nextPosterUrl = nextPerformance.poster || '/placeholder-poster.png';
+                
+                // 현재 보이는 이미지와 다음에 보일 이미지 결정
+                const isShowingFirst = markerShowingFirstRef.current.get(marker) ?? true;
+                const currentImg = isShowingFirst ? imgElement : imgNextElement;
+                const nextImg = isShowingFirst ? imgNextElement : imgElement;
+                
+                // 다음 이미지를 미리 로드
+                const newImg = new Image();
+                newImg.onload = () => {
+                  // 이미지가 완전히 로드된 후에만 전환 시작
+                  // 다음 이미지를 다음 레이어에 설정 (이미 로드된 이미지 사용)
+                  nextImg.src = newImg.src; // 이미 로드된 이미지 사용
+                  nextImg.alt = nextPerformance.title || '공연 포스터';
+                  
+                  // 다음 이미지가 완전히 준비될 때까지 약간의 지연
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      // cross-fade 효과: 현재 이미지는 fade out, 다음 이미지는 fade in
+                      currentImg.style.opacity = '0';
+                      nextImg.style.opacity = '1';
+                      
+                      // 전환이 완료되면 다음 전환을 위해 반대 레이어에 다음 이미지 준비
+                      setTimeout(() => {
+                        // 다음 다음 이미지 인덱스
+                        const nextNextIndex = (nextIndex + 1) % performances.length;
+                        const nextNextPerformance = performances[nextNextIndex];
+                        const nextNextPosterUrl = nextNextPerformance.poster || '/placeholder-poster.png';
+                        
+                        // 다음 다음 이미지를 미리 로드해서 현재 보이지 않는 레이어에 준비
+                        const nextNextImg = new Image();
+                        nextNextImg.onload = () => {
+                          // 현재 보이지 않는 레이어에 다음 다음 이미지 설정
+                          currentImg.src = nextNextImg.src;
+                          currentImg.alt = nextNextPerformance.title || '공연 포스터';
+                          currentImg.style.opacity = '0';
+                        };
+                        nextNextImg.onerror = () => {
+                          currentImg.src = '/placeholder-poster.png';
+                          currentImg.alt = '공연 포스터';
+                          currentImg.style.opacity = '0';
+                        };
+                        nextNextImg.src = nextNextPosterUrl;
+                        
+                        // 다음 전환을 위해 반대 레이어 사용
+                        markerShowingFirstRef.current.set(marker, !isShowingFirst);
+                      }, 800); // transition 시간과 동일
+                    });
+                  });
+                };
+                newImg.onerror = () => {
+                  // 에러 시 placeholder 이미지 사용
+                  const placeholderImg = new Image();
+                  placeholderImg.onload = () => {
+                    nextImg.src = placeholderImg.src;
+                    nextImg.alt = '공연 포스터';
+                    
+                    requestAnimationFrame(() => {
+                      requestAnimationFrame(() => {
+                        currentImg.style.opacity = '0';
+                        nextImg.style.opacity = '1';
+                        
+                        // 다음 전환을 위해 반대 레이어에 다음 이미지 준비
+                        setTimeout(() => {
+                          const nextNextIndex = (nextIndex + 1) % performances.length;
+                          const nextNextPerformance = performances[nextNextIndex];
+                          const nextNextPosterUrl = nextNextPerformance.poster || '/placeholder-poster.png';
+                          
+                          const nextNextImg = new Image();
+                          nextNextImg.onload = () => {
+                            currentImg.src = nextNextImg.src;
+                            currentImg.alt = nextNextPerformance.title || '공연 포스터';
+                            currentImg.style.opacity = '0';
+                          };
+                          nextNextImg.onerror = () => {
+                            currentImg.src = '/placeholder-poster.png';
+                            currentImg.alt = '공연 포스터';
+                            currentImg.style.opacity = '0';
+                          };
+                          nextNextImg.src = nextNextPosterUrl;
+                          
+                          markerShowingFirstRef.current.set(marker, !isShowingFirst);
+                        }, 800);
+                      });
+                    });
+                  };
+                  placeholderImg.onerror = () => {
+                    console.warn('⚠️ Placeholder 이미지 로드 실패:', markerId);
+                  };
+                  placeholderImg.src = '/placeholder-poster.png';
+                };
+                newImg.src = nextPosterUrl;
+              }
+            }
+          }, 5000); // 5초마다 변경
+          
+          markerIntervalsRef.current.set(marker, intervalId);
+        }
 
       // 정보창 생성
       const infoWindow = new window.naver.maps.InfoWindow({
@@ -878,6 +1010,15 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         clearLocationWatch(locationWatchIdRef.current);
         locationWatchIdRef.current = null;
       }
+      
+      // 모든 포스터 변경 interval 정리
+      markerIntervalsRef.current.forEach((intervalId) => {
+        clearInterval(intervalId);
+      });
+      markerIntervalsRef.current.clear();
+      markerPerformanceIndicesRef.current.clear();
+      markerPerformancesRef.current.clear();
+      markerShowingFirstRef.current.clear();
       
       // 컴포넌트가 언마운트될 때만 마커 정리
       if (userMarkerRef.current) {
