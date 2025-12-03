@@ -69,6 +69,9 @@
   font-size: 12px; 
   margin: 8px 0 16px; 
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dayDivider::before {
@@ -82,8 +85,7 @@
   z-index: 1;
 }
 
-.dayDivider::after {
-  content: '오늘';
+.dayDivider > span {
   background: #f8fafc;
   padding: 0 12px;
   position: relative;

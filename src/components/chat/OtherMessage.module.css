@@ -12,6 +12,15 @@
   align-items: flex-start;
 }
 
+.nickname {
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+  padding: 0 4px;
+  margin-bottom: 0px;
+  display: block;
+}
+
 .messageText {
   padding: 10px 14px;
   border-radius: 18px;
@@ -23,7 +32,7 @@
 }
 
 .messageTime {
-  font-size: 11px;
+  font-size: 10px;
   color: #9ca3af;
   padding: 0 4px;
 }
