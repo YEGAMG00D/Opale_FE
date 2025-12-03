@@ -219,6 +219,16 @@
   opacity: 0.8;
 }
 
+.signalButton {
+  background: linear-gradient(135deg, #fef7ff 0%, #f0f9ff 100%);
+  border: 1px solid #e8d5f0;
+}
+
+.placeButton {
+  background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e9 100%);
+  border: 1px solid #c8e6c9;
+}
+
 .ctaText {
   font-size: 16px;
   font-weight: 500;

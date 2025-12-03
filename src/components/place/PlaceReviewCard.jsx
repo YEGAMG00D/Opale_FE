@@ -85,13 +85,15 @@ const PlaceReviewCard = ({
       </div>
       
       <div className={styles.reviewFooter}>
-        <button 
-          className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
-          onClick={toggleLike}
-        >
-          {isLiked ? '♥' : '♡'}
-        </button>
-        <span className={styles.reviewAuthor}>{author} | {date}</span>
+        <div className={styles.reviewFooterLeft}>
+          <button 
+            className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
+            onClick={toggleLike}
+          >
+            {isLiked ? '♥' : '♡'}
+          </button>
+          <span className={styles.reviewAuthor}>{author} | {date}</span>
+        </div>
       </div>
     </div>
   );
