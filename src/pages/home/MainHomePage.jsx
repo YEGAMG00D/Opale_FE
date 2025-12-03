@@ -644,16 +644,14 @@ const MainHomePage = () => {
       {/* CTA Sections */}
       <section className={styles.ctaSection}>
         <div 
-          className={styles.ctaButton} 
-          style={{ backgroundColor: '#EAF0F5' }}
+          className={`${styles.ctaButton} ${styles.placeButton}`}
           onClick={() => navigate('/place')}
         >
           <div className={styles.ctaText}>나랑 가까운 공연 바로가기</div>
         </div>
         
         <div 
-          className={styles.ctaButton} 
-          style={{ backgroundColor: '#EAF5E0' }}
+          className={`${styles.ctaButton} ${styles.signalButton}`}
           onClick={() => navigate('/recommend/signal')}
         >
           <div className={styles.ctaTitle}>나와 맞는 공연은?</div>
