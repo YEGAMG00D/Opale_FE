@@ -14,7 +14,7 @@
 /* Search Section */
 .searchSection {
   margin-top: 0;
-  padding: 16px 24px;
+  padding: 16px 24px 0 24px;
   position: relative;
   z-index: 50;
   box-sizing: border-box;
@@ -25,6 +25,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  z-index: 1000;
 }
 
 .searchInput {
@@ -61,13 +62,15 @@
 /* Search Suggestions */
 .suggestionsContainer {
   position: absolute;
-  top: 100%;
+  top: calc(100% - 10px);
   left: 24px;
   right: 24px;
   background-color: #FFFFFF;
   border-radius: 0 0 8px 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  z-index: 900;
+  margin-top: 0;
+  padding-top: 5px;
 }
 
 .suggestionsDivider {

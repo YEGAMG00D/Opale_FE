@@ -518,7 +518,7 @@ const ContentBannerAdminPage = () => {
               </div>
               <div className={styles.bannerDetails}>
                 <p><strong>내용:</strong> {banner.content || "-"}</p>
-                {banner.linkUrl && <p><strong>링크:</strong> {banner.linkUrl}</p>}
+                {banner.linkUrl && <p className={styles.linkText}><strong>링크:</strong> {banner.linkUrl}</p>}
                 {banner.performanceId && <p><strong>공연 ID:</strong> {banner.performanceId}</p>}
               </div>
               <div className={styles.bannerActions}>

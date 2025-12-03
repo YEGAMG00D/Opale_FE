@@ -25,6 +25,7 @@ import { usePlaceBasic } from '../../hooks/usePlaceBasic';
 import { getTicketsByPerformanceName, getWatchedTickets, addTicket } from '../../utils/ticketUtils';
 import logApi from '../../api/logApi';
 import TicketSelectModal from '../../components/common/TicketSelectModal';
+import PerformanceDetailSkeleton from '../../components/common/PerformanceDetailSkeleton';
 import wickedPoster from '../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../assets/poster/moulin-rouge.gif';
 import kinkyBootsPoster from '../../assets/poster/kinky-boots.gif';
@@ -1244,11 +1245,7 @@ const DetailPerformancePage = () => {
 
   // 로딩 중이거나 데이터가 없을 때
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div style={{ padding: '2rem', textAlign: 'center' }}>로딩 중...</div>
-      </div>
-    );
+    return <PerformanceDetailSkeleton />;
   }
 
   if (error && !performance) {
