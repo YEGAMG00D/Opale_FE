@@ -11,6 +11,7 @@ import { usePlaceStages } from '../../hooks/usePlaceStages';
 import { fetchPlaceReviewsByPlace } from '../../api/reviewApi';
 import { normalizePlaceReviews } from '../../services/normalizePlaceReview';
 import logApi from '../../api/logApi';
+import PlaceDetailSkeleton from '../../components/common/PlaceDetailSkeleton';
 
 const DetailPlacePage = () => {
   const { id } = useParams();
@@ -69,13 +70,7 @@ const DetailPlacePage = () => {
   }, [id, currentUserId]);
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>
-          <p>공연장 정보를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <PlaceDetailSkeleton />;
   }
 
   if (error || !place) {
@@ -233,8 +228,20 @@ const DetailPlacePage = () => {
           <button 
             className={styles.writeButton}
             onClick={() => {
-              navigate('/recommend/review', {
+              // 티켓 등록 → 공연장 리뷰 작성 순으로 이동
+              navigate('/my/tickets/register', {
                 state: {
+                  forReview: true,
+                  nextReviewPage: '/my/placeReviews/register',
+                  ticketData: {
+                    performanceName: '',
+                    performanceDate: '',
+                    performanceTime: '',
+                    section: '',
+                    row: '',
+                    number: '',
+                    placeId: id
+                  },
                   placeId: id
                 }
               });

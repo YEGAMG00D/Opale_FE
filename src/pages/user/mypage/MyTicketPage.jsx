@@ -7,9 +7,11 @@ import kinkyBootsPoster from '../../../assets/poster/kinky-boots.gif';
 import hanbokManPoster from '../../../assets/poster/hanbok-man.jpg';
 import deathNotePoster from '../../../assets/poster/death-note.gif';
 import rentPoster from '../../../assets/poster/rent.gif';
-import { getTicketList, deleteTicket as deleteTicketApi, getTicketReviews } from '../../../api/reservationApi';
+import defaultTicketImage from '../../../assets/디폴트 티켓 이미지.jpg';
+import { getTicketList, deleteTicket as deleteTicketApi, getTicketReviews, getTicket } from '../../../api/reservationApi';
 import { normalizeTicketList, categorizeTickets } from '../../../services/normalizeTicketList';
 import { normalizeTicketReviews } from '../../../services/normalizeTicketReviews';
+import { normalizeTicketDetail } from '../../../services/normalizeTicketDetail';
 import { deletePerformanceReview, deletePlaceReview } from '../../../api/reviewApi';
 import { fetchPerformanceList } from '../../../api/performanceApi';
 import { normalizePerformance } from '../../../services/normalizePerformance';
@@ -43,6 +45,7 @@ const MyTicketPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [ticketReviews, setTicketReviews] = useState({}); // 티켓별 리뷰 정보 { ticketId: { hasPerformanceReview, hasPlaceReview, performanceId, placeId } }
 
   // 포스터 이미지 매핑 (fallback용)
   const posterImages = {
@@ -104,7 +107,7 @@ const MyTicketPage = () => {
 
   // 공연명에서 fallback 포스터 찾기 (동기 함수)
   const getFallbackPoster = (performanceName) => {
-    if (!performanceName) return wickedPoster;
+    if (!performanceName) return defaultTicketImage;
     
     const nameLower = performanceName.toLowerCase();
     for (const [key, image] of Object.entries(posterImages)) {
@@ -113,7 +116,7 @@ const MyTicketPage = () => {
       }
     }
     
-    return wickedPoster;
+    return defaultTicketImage;
   };
 
   // 공연명으로 포스터 이미지 가져오기 (비동기, API 우선)
@@ -130,6 +133,38 @@ const MyTicketPage = () => {
     return getFallbackPoster(performanceName);
   };
 
+  // 티켓별 리뷰 정보 조회
+  const loadTicketReviews = async (tickets) => {
+    const reviewsMap = {};
+    
+    for (const ticket of tickets) {
+      const ticketId = ticket.ticketId || ticket.id;
+      if (!ticketId) continue;
+      
+      try {
+        const reviewsResponse = await getTicketReviews(ticketId);
+        const normalizedReviews = normalizeTicketReviews(reviewsResponse);
+        
+        reviewsMap[ticketId] = {
+          hasPerformanceReview: normalizedReviews.hasPerformanceReview,
+          hasPlaceReview: normalizedReviews.hasPlaceReview,
+          performanceId: normalizedReviews.performanceReview?.performanceId || ticket.performanceId || null,
+          placeId: normalizedReviews.placeReview?.placeId || ticket.placeId || null
+        };
+      } catch (err) {
+        // 리뷰가 없거나 조회 실패 시 기본값
+        reviewsMap[ticketId] = {
+          hasPerformanceReview: false,
+          hasPlaceReview: false,
+          performanceId: ticket.performanceId || null,
+          placeId: ticket.placeId || null
+        };
+      }
+    }
+    
+    setTicketReviews(prev => ({ ...prev, ...reviewsMap }));
+  };
+
   // 티켓 목록 불러오기 (API)
   const loadTickets = async (pageNum = 1, append = false) => {
     try {
@@ -138,6 +173,8 @@ const MyTicketPage = () => {
       
       // API 응답을 프론트엔드 형식으로 변환
       const normalized = normalizeTicketList(response);
+      
+      const ticketsToSet = append ? [...allTickets, ...normalized.tickets] : normalized.tickets;
       
       if (append) {
         // 추가 로드 (페이지네이션)
@@ -153,6 +190,11 @@ const MyTicketPage = () => {
       // 포스터 캐시 초기화하여 다시 로드
       setTicketPosters({});
       setPosterCache({});
+      
+      // 티켓별 리뷰 정보 조회 (관람한 공연 탭일 때만)
+      if (activeTab === 'watched') {
+        await loadTicketReviews(normalized.tickets);
+      }
     } catch (err) {
       console.error('티켓 목록 조회 실패:', err);
       alert('티켓 목록을 불러오는데 실패했습니다.');
@@ -255,6 +297,13 @@ const MyTicketPage = () => {
   // 탭별 티켓 필터링 (예매한 공연/관람한 공연 분류)
   const { booked, watched } = categorizeTickets(allTickets);
   const filteredTickets = activeTab === 'booked' ? booked : watched;
+  
+  // 탭 변경 시 리뷰 정보 다시 조회
+  useEffect(() => {
+    if (activeTab === 'watched' && filteredTickets.length > 0) {
+      loadTicketReviews(filteredTickets);
+    }
+  }, [activeTab, filteredTickets.length]);
 
   // 티켓별 포스터 이미지 상태
   const [ticketPosters, setTicketPosters] = useState({});
@@ -418,14 +467,98 @@ const MyTicketPage = () => {
                       </div>
                     </div>
                   </div>
-                  {activeTab === 'watched' && (
-                    <button 
-                      className={styles.reviewButton}
-                      onClick={() => navigate('/recommend/review', { state: { ticketData: ticket } })}
-                    >
-                      리뷰 작성하기
-                    </button>
-                  )}
+                  {activeTab === 'watched' && (() => {
+                    const ticketId = ticket.ticketId || ticket.id;
+                    const reviewInfo = ticketReviews[ticketId] || {
+                      hasPerformanceReview: false,
+                      hasPlaceReview: false,
+                      performanceId: ticket.performanceId || null,
+                      placeId: ticket.placeId || null
+                    };
+                    
+                    return (
+                      <div className={styles.reviewButtons}>
+                        <button 
+                          className={styles.reviewButton}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (reviewInfo.hasPerformanceReview && reviewInfo.performanceId) {
+                              navigate(`/culture/${reviewInfo.performanceId}?tab=review`);
+                            } else {
+                              try {
+                                // 티켓 단일 조회로 placeId, performanceId 가져오기
+                                const ticketDetailResponse = await getTicket(ticketId);
+                                const normalizedTicketDetail = normalizeTicketDetail(ticketDetailResponse);
+                                
+                                // 공연장 리뷰 작성 여부 확인
+                                const reviewsResponse = await getTicketReviews(ticketId);
+                                const normalizedReviews = normalizeTicketReviews(reviewsResponse);
+                                
+                                navigate('/my/performanceReviews/register', {
+                                  state: {
+                                    ticketData: {
+                                      ...ticket,
+                                      ticketId: ticketId,
+                                      id: ticketId,
+                                      performanceId: normalizedTicketDetail?.performanceId || null,
+                                      placeId: normalizedTicketDetail?.placeId || null
+                                    },
+                                    performanceId: normalizedTicketDetail?.performanceId || null,
+                                    placeId: normalizedTicketDetail?.placeId || null,
+                                    // 공연장 리뷰가 없으면 공연장 리뷰 작성 페이지로 이동
+                                    nextPage: normalizedReviews.hasPlaceReview ? null : '/my/placeReviews/register'
+                                  }
+                                });
+                              } catch (err) {
+                                console.error('티켓 정보 조회 실패:', err);
+                                alert('티켓 정보를 불러오는데 실패했습니다.');
+                              }
+                            }
+                          }}
+                        >
+                          {reviewInfo.hasPerformanceReview ? '공연 후기로 이동' : '공연 후기 작성'}
+                        </button>
+                        <button 
+                          className={styles.reviewButton}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (reviewInfo.hasPlaceReview && reviewInfo.placeId) {
+                              navigate(`/place/${reviewInfo.placeId}`);
+                            } else {
+                              try {
+                                // 티켓 단일 조회로 placeId, performanceId 가져오기
+                                const ticketDetailResponse = await getTicket(ticketId);
+                                const normalizedTicketDetail = normalizeTicketDetail(ticketDetailResponse);
+                                
+                                if (!normalizedTicketDetail?.placeId) {
+                                  alert('공연장 정보가 없습니다. 티켓에 공연장 정보가 포함되어 있는지 확인해주세요.');
+                                  return;
+                                }
+                                
+                                navigate('/my/placeReviews/register', {
+                                  state: {
+                                    ticketData: {
+                                      ...ticket,
+                                      ticketId: ticketId,
+                                      id: ticketId,
+                                      performanceId: normalizedTicketDetail?.performanceId || null,
+                                      placeId: normalizedTicketDetail?.placeId || null
+                                    },
+                                    placeId: normalizedTicketDetail?.placeId || null
+                                  }
+                                });
+                              } catch (err) {
+                                console.error('티켓 정보 조회 실패:', err);
+                                alert('티켓 정보를 불러오는데 실패했습니다.');
+                              }
+                            }
+                          }}
+                        >
+                          {reviewInfo.hasPlaceReview ? '공연장 리뷰로 이동' : '공연장 리뷰 작성'}
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

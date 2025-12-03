@@ -18,8 +18,9 @@
   background-color: #FFFFFF;
   border-bottom: 1px solid #e5e7eb;
   position: sticky;
-  top: 0;
-  z-index: 100;
+  top: 0; /* 레이아웃 Header 바로 아래 (main-content의 padding-top으로 공간 확보됨) */
+  z-index: 99; /* 레이아웃 Header(z-index: 100)보다 낮게 */
+  margin-top: 0;
 }
 
 .headerTitle {
@@ -328,8 +329,14 @@
   color: #ef4444;
 }
 
-.reviewButton {
+.reviewButtons {
+  display: flex;
+  gap: 8px;
   width: 100%;
+}
+
+.reviewButton {
+  flex: 1;
   padding: 10px;
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -339,6 +346,7 @@
   color: #111827;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .reviewButton:hover {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import styles from './ContentsLayout.module.css';
@@ -6,6 +6,7 @@ import styles from './ContentsLayout.module.css';
 
 const ContentsLayout = ({ children }) => {
     const location = useLocation();
+    const mainContentRef = useRef(null);
   
     // 경로에 따라 Header props 결정
     const getHeaderProps = () => {
@@ -67,10 +68,17 @@ const ContentsLayout = ({ children }) => {
       ? `${styles['main-content']} ${styles['main-content-no-scroll']}`
       : styles['main-content'];
 
+    // 페이지 이동 시 스크롤을 맨 위로 리셋
+    useEffect(() => {
+      if (mainContentRef.current) {
+        mainContentRef.current.scrollTop = 0;
+      }
+    }, [location.pathname]);
+
     return (
       <div className={styles['main-layout']}>
         <Header {...headerProps} />
-        <main className={mainContentClass}>
+        <main ref={mainContentRef} className={mainContentClass}>
           {children}
         </main>
       </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { loginSuccess } from "../../../store/userSlice";
 import styles from "./LoginPage.module.css";
+import opaleLogo from "../../../assets/opale_logo_crop.png";
 
 import { login as loginApi } from "../../../api/authApi";
 import { initializeUserTickets, clearPreviousUserTickets, hasUserTickets } from "../../../utils/ticketUtils";
@@ -144,6 +145,14 @@ const LoginPage = () => {
         <Link to="/signup" className={styles.signupLink}>
           회원가입
         </Link>
+        
+        <div 
+          className={styles.footerLogo}
+          onClick={() => navigate('/admin')}
+          style={{ cursor: 'pointer' }}
+        >
+          <img src={opaleLogo} alt="Opale" />
+        </div>
       </div>
     </div>
   );

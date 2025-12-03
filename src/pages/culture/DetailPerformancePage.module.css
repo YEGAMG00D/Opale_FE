@@ -575,23 +575,36 @@
   padding: 24px;
 }
 
+/* 이미지가 있을 때는 placeholder 스타일 제거 */
+.infoPlaceholder:has(.imageContainer) {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  min-height: auto;
+}
+
 .infoPlaceholder .imageContainer {
-  width: 100%;
+  width: calc(100% + 20px);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 4px;
   padding: 0;
   min-height: auto;
   background-color: transparent;
   border: none;
+  margin-top: 0;
+  margin-left: -10px;
+  margin-right: -10px;
 }
 
 .infoImage {
   width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: 0;
   object-fit: contain;
   display: block;
+  border: none;
 }
 
 .placeholderText {

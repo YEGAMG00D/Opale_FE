@@ -5,6 +5,8 @@ import CompactChatCard from "../../components/chat/CompactChatCard";
 import { connectSocket } from "../../api/socket";
 import { searchChatRooms } from "../../api/chatApi";
 import { normalizeChatRoom } from "../../services/normalizeChatRoom";
+import opaleSearchIcon from "../../assets/opaleSearchIcon.svg";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 const MainChatPage = () => {
   const navigate = useNavigate();
@@ -12,6 +14,7 @@ const MainChatPage = () => {
   const [searchKeyword, setSearchKeyword] = useState(""); // 실제 검색에 사용할 키워드
   const [chatRooms, setChatRooms] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   const subscriptionRef = useRef(null); // ✅ 구독 저장용
@@ -26,6 +29,7 @@ const MainChatPage = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
+        setLoading(true);
         setError("");
         const dto = {
           roomType: null,
@@ -35,7 +39,16 @@ const MainChatPage = () => {
         
         const rooms = await searchChatRooms(dto);
         const normalizedRooms = rooms.map(normalizeChatRoom);
-        setChatRooms(normalizedRooms);
+        // 정렬된 채팅방 목록 설정
+        const sortedRooms = normalizedRooms.sort((a, b) => {
+          if (!a.lastMessageTime && !b.lastMessageTime) return 0;
+          if (!a.lastMessageTime) return 1;
+          if (!b.lastMessageTime) return -1;
+          const timeA = new Date(a.lastMessageTime).getTime();
+          const timeB = new Date(b.lastMessageTime).getTime();
+          return timeB - timeA;
+        });
+        setChatRooms(sortedRooms);
       } catch (err) {
         console.error("채팅방 목록 요청 실패:", err);
         if (err.response?.status === 401) {
@@ -44,6 +57,8 @@ const MainChatPage = () => {
         } else {
           setError("서버 오류가 발생했습니다.");
         }
+      } finally {
+        setLoading(false);
       }
     };
     fetchRooms();
@@ -51,24 +66,37 @@ const MainChatPage = () => {
 
   // 2️⃣ WebSocket: 방 목록 업데이트 구독
   useEffect(() => {
-    const client = connectSocket(() => {
-      // 구독 저장
-      subscriptionRef.current = client.subscribe("/topic/rooms", (msg) => {
-        const update = JSON.parse(msg.body);
+    const client = connectSocket((connectedClient) => {
+      // 구독 저장 - 콜백에서 클라이언트를 인자로 받아 사용
+      if (connectedClient && connectedClient.connected) {
+        subscriptionRef.current = connectedClient.subscribe("/topic/rooms", (msg) => {
+          const update = JSON.parse(msg.body);
 
-        setChatRooms((prev) =>
-          prev.map((room) =>
-            room.roomId === update.roomId
-              ? {
-                  ...room,
-                  lastMessage: update.lastMessage,
-                  lastMessageTime: update.lastMessageTime,
-                  isActive: update.isActive ?? room.isActive,
-                }
-              : room
-          )
-        );
-      });
+          setChatRooms((prev) => {
+            // 업데이트된 채팅방 정보 갱신
+            const updatedRooms = prev.map((room) =>
+              room.roomId === update.roomId
+                ? {
+                    ...room,
+                    lastMessage: update.lastMessage,
+                    lastMessageTime: update.lastMessageTime,
+                    isActive: update.isActive ?? room.isActive,
+                  }
+                : room
+            );
+            
+            // lastMessageTime 기준으로 최신 순 정렬 (업데이트된 채팅방이 자동으로 맨 위로)
+            return updatedRooms.sort((a, b) => {
+              if (!a.lastMessageTime && !b.lastMessageTime) return 0;
+              if (!a.lastMessageTime) return 1;
+              if (!b.lastMessageTime) return -1;
+              const timeA = new Date(a.lastMessageTime).getTime();
+              const timeB = new Date(b.lastMessageTime).getTime();
+              return timeB - timeA; // 최신이 위로
+            });
+          });
+        });
+      }
     });
 
     return () => {
@@ -85,8 +113,24 @@ const MainChatPage = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // 채팅방 정렬 함수: lastMessageTime 기준 최신 순
+  const sortChatRooms = (rooms) => {
+    return [...rooms].sort((a, b) => {
+      // lastMessageTime이 없는 경우 맨 아래로
+      if (!a.lastMessageTime && !b.lastMessageTime) return 0;
+      if (!a.lastMessageTime) return 1;
+      if (!b.lastMessageTime) return -1;
+      
+      // 최신 메시지가 있는 경우 시간 기준 내림차순 정렬
+      const timeA = new Date(a.lastMessageTime).getTime();
+      const timeB = new Date(b.lastMessageTime).getTime();
+      return timeB - timeA; // 최신이 위로
+    });
+  };
+
   // 검색은 서버에서 처리하므로 클라이언트 필터링 불필요
-  const filteredRooms = chatRooms;
+  // lastMessageTime 기준으로 최신 순 정렬
+  const filteredRooms = sortChatRooms(chatRooms);
 
   const enterRoom = (id) => {
     const token = localStorage.getItem("accessToken");
@@ -134,13 +178,17 @@ const MainChatPage = () => {
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
-        <button type="submit" className={styles.searchBtn}>🔍</button>
+        <button type="submit" className={styles.searchBtn}>
+          <img src={opaleSearchIcon} alt="검색" className={styles.searchIconImg} />
+        </button>
       </form>
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>모든 채팅방</h2>
 
-        {error ? (
+        {loading ? (
+          <LoadingSpinner />
+        ) : error ? (
           <p className={styles.error}>{error}</p>
         ) : filteredRooms.length === 0 ? (
           <p className={styles.empty}>검색 결과가 없습니다.</p>

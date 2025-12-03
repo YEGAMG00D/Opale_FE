@@ -9,7 +9,7 @@ const PerformanceInfoImages = ({ images, loading }) => {
 
   return (
     <div className={styles.productionImagesSection}>
-      <h3 className={styles.contentTitle}>공연 소개</h3>
+      {/* <h3 className={styles.contentTitle}>공연 소개</h3> */}
       <div className={styles.productionImagesContainer}>
         {loading ? (
           <div className={styles.imagePlaceholder}>

@@ -29,30 +29,107 @@ const FavoriteReviewPage = () => {
         let afterReviewsArray = [];
         let expectationReviewsArray = [];
         
+        // API 응답을 정규화하기 위해 { reviews: [...] } 형태로 변환
+        let reviewsToNormalize = null;
+        let rawReviewsArray = []; // 원본 리뷰 배열 저장
+        
         if (Array.isArray(perfReviewsData)) {
-          // 배열인 경우 reviewType으로 분리
-          afterReviewsArray = perfReviewsData.filter(r => r.reviewType === 'AFTER');
-          expectationReviewsArray = perfReviewsData.filter(r => r.reviewType === 'EXPECTATION');
+          // 배열인 경우 { reviews: [...] } 형태로 감싸기
+          rawReviewsArray = perfReviewsData;
+          reviewsToNormalize = { reviews: perfReviewsData };
         } else if (perfReviewsData && perfReviewsData.reviews && Array.isArray(perfReviewsData.reviews)) {
           // { reviews: [...] } 형태
-          const normalized = normalizePerformanceReviews(perfReviewsData);
-          afterReviewsArray = normalized.filter(r => r.reviewType === 'AFTER');
-          expectationReviewsArray = normalized.filter(r => r.reviewType === 'EXPECTATION');
-        } else if (perfReviewsData && perfReviewsData.data && perfReviewsData.data.reviews) {
-          // { data: { reviews: [...] } } 형태
-          const normalized = normalizePerformanceReviews(perfReviewsData.data);
-          afterReviewsArray = normalized.filter(r => r.reviewType === 'AFTER');
-          expectationReviewsArray = normalized.filter(r => r.reviewType === 'EXPECTATION');
+          rawReviewsArray = perfReviewsData.reviews;
+          reviewsToNormalize = perfReviewsData;
+        } else if (perfReviewsData && perfReviewsData.data) {
+          // { data: { reviews: [...] } } 또는 { data: [...] } 형태
+          if (Array.isArray(perfReviewsData.data)) {
+            rawReviewsArray = perfReviewsData.data;
+            reviewsToNormalize = { reviews: perfReviewsData.data };
+          } else if (perfReviewsData.data.reviews && Array.isArray(perfReviewsData.data.reviews)) {
+            rawReviewsArray = perfReviewsData.data.reviews;
+            reviewsToNormalize = perfReviewsData.data;
+          }
+        }
+        
+        // 원본 리뷰의 reviewType 확인 (상세 로그)
+        if (rawReviewsArray.length > 0) {
+          console.log('📝 원본 리뷰 reviewType 확인 (상세):');
+          rawReviewsArray.forEach((r, index) => {
+            console.log(`  [${index}] 리뷰 ID: ${r.performanceReviewId}, 제목: ${r.title}`);
+            console.log(`    - reviewType 원본 값:`, r.reviewType);
+            console.log(`    - reviewType 타입:`, typeof r.reviewType);
+            console.log(`    - reviewType 문자열 변환:`, String(r.reviewType));
+            if (typeof r.reviewType === 'object' && r.reviewType !== null) {
+              console.log(`    - reviewType 객체 키:`, Object.keys(r.reviewType));
+              console.log(`    - reviewType.name:`, r.reviewType.name);
+              console.log(`    - reviewType.toString():`, r.reviewType.toString());
+            }
+          });
+        }
+        
+        // 정규화 후 reviewType으로 분리 (대소문자 구분 없이)
+        if (reviewsToNormalize) {
+          console.log('📝 정규화 전 원본 데이터:', reviewsToNormalize);
+          const normalized = normalizePerformanceReviews(reviewsToNormalize);
+          console.log('📝 정규화 후 데이터 (reviewType 확인):', normalized.map(r => ({
+            id: r.id,
+            title: r.title,
+            reviewType: r.reviewType,
+            reviewTypeType: typeof r.reviewType
+          })));
+          
+          afterReviewsArray = normalized.filter(r => {
+            // reviewType이 객체일 수도 있으므로 처리
+            let typeValue = r.reviewType;
+            if (typeof typeValue === 'object' && typeValue !== null) {
+              // enum 객체인 경우 name 필드 확인
+              typeValue = typeValue.name || typeValue.toString();
+            }
+            const type = String(typeValue || '').toUpperCase();
+            const isAfter = type === 'AFTER';
+            console.log(`📝 리뷰 ${r.id} (${r.title}): reviewType=${r.reviewType}, type=${type}, isAfter=${isAfter}`);
+            return isAfter;
+          });
+          
+          expectationReviewsArray = normalized.filter(r => {
+            // reviewType이 객체일 수도 있으므로 처리
+            let typeValue = r.reviewType;
+            if (typeof typeValue === 'object' && typeValue !== null) {
+              // enum 객체인 경우 name 필드 확인
+              typeValue = typeValue.name || typeValue.toString();
+            }
+            const type = String(typeValue || '').toUpperCase();
+            const isExpectation = type === 'EXPECTATION';
+            console.log(`📝 리뷰 ${r.id} (${r.title}): reviewType=${r.reviewType}, type=${type}, isExpectation=${isExpectation}`);
+            return isExpectation;
+          });
         }
         
         // 공연장 리뷰 처리
         let placeReviewsArray = [];
+        
+        // API 응답을 정규화하기 위해 { reviews: [...] } 형태로 변환
+        let placeReviewsToNormalize = null;
+        
         if (Array.isArray(placeRevData)) {
-          placeReviewsArray = placeRevData;
+          // 배열인 경우 { reviews: [...] } 형태로 감싸기
+          placeReviewsToNormalize = { reviews: placeRevData };
         } else if (placeRevData && placeRevData.reviews && Array.isArray(placeRevData.reviews)) {
-          placeReviewsArray = normalizePlaceReviews(placeRevData);
-        } else if (placeRevData && placeRevData.data && placeRevData.data.reviews) {
-          placeReviewsArray = normalizePlaceReviews(placeRevData.data);
+          // { reviews: [...] } 형태
+          placeReviewsToNormalize = placeRevData;
+        } else if (placeRevData && placeRevData.data) {
+          // { data: { reviews: [...] } } 또는 { data: [...] } 형태
+          if (Array.isArray(placeRevData.data)) {
+            placeReviewsToNormalize = { reviews: placeRevData.data };
+          } else if (placeRevData.data.reviews && Array.isArray(placeRevData.data.reviews)) {
+            placeReviewsToNormalize = placeRevData.data;
+          }
+        }
+        
+        // 정규화
+        if (placeReviewsToNormalize) {
+          placeReviewsArray = normalizePlaceReviews(placeReviewsToNormalize);
         }
         
         console.log('📝 처리된 배열:', { afterReviewsArray, expectationReviewsArray, placeReviewsArray });

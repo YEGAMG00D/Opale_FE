@@ -86,6 +86,12 @@ h1 {
   font-size: 20px;
 }
 
+.searchIconImg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
 /* 탭 네비게이션 */
 .tabContainer {
   display: flex;
@@ -96,7 +102,7 @@ h1 {
   border-radius: 12px;
   border: 1px solid #e9ecef;
   position: relative;
-  z-index: 100;
+  z-index: 99;
 }
 
 /* 지도 모드일 때 탭을 지도 위에 배치 */

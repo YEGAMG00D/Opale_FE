@@ -1,0 +1,210 @@
+.videoCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.videoCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 영상 컨테이너 (위, 빨간 네모) */
+.videoContainer {
+  position: relative;
+  width: 100%;
+  background-color: #000;
+  border-radius: 6px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.videoIframeWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 컨테이너를 벗어나는 부분 숨김 */
+  overflow: hidden;
+}
+
+.videoIframe {
+  /* iframe이 컨테이너 안에 완전히 들어가도록 */
+  width: 100%;
+  height: 100%;
+  border: none;
+  /* 비율 유지하면서 컨테이너에 맞춤 */
+  min-width: 0;
+  min-height: 0;
+  /* 컨테이너보다 크면 축소 */
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.videoThumbnailLink {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  text-decoration: none;
+}
+
+.videoThumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background-color: #000;
+}
+
+.playButton {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 0, 0, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+
+.videoThumbnailLink:hover .playButton {
+  background-color: rgba(255, 0, 0, 1);
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.videoContainer:hover .deleteButton {
+  opacity: 1;
+}
+
+.deleteButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: rgba(255, 0, 0, 0.8);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background-color 0.2s;
+  z-index: 10;
+}
+
+.deleteButton:hover {
+  background-color: rgba(255, 0, 0, 1);
+}
+
+.deleteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 정보 영역 (세로 배치) */
+.videoInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0; /* 텍스트 오버플로우 방지 */
+}
+
+/* 제목 영역 (파랑 네모, 중간) */
+.videoTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.5;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 출처 영역 (노랑 네모, 아래) */
+.sourceUrl {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.label {
+  font-weight: 600;
+  color: #555;
+  flex-shrink: 0;
+  min-width: 50px;
+}
+
+.sourceLink {
+  color: #4a90e2;
+  text-decoration: none;
+  word-break: break-all;
+  flex: 1;
+  transition: color 0.2s;
+  font-size: 13px;
+}
+
+.sourceLink:hover {
+  color: #357abd;
+  text-decoration: underline;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .videoCard {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .videoContainer {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .videoInfo {
+    gap: 8px;
+  }
+
+  .videoTitle {
+    font-size: 15px;
+  }
+
+  .videoId,
+  .sourceUrl,
+  .embedUrl {
+    font-size: 12px;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .label {
+    min-width: unset;
+  }
+}
+

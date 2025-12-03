@@ -31,7 +31,7 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
         required
         name="name"
         type="text"
-        placeholder="Value"
+        placeholder="성명을 입력해주세요"
         value={formData.name}
         onChange={handleInputChange}
         validation={nameValidation}
@@ -92,7 +92,7 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
         required
         name="address"
         type="text"
-        placeholder="Value"
+        placeholder="주소를 입력해주세요"
         value={formData.address}
         onChange={handleInputChange}
         validation={addressValidation}
@@ -103,7 +103,7 @@ const Step3PersonalInfo = ({ formData, handleInputChange, handleCheckNickname, v
         required
         name="detailAddress"
         type="text"
-        placeholder="Value"
+        placeholder="상세주소를 입력해주세요"
         value={formData.detailAddress}
         onChange={handleInputChange}
         validation={detailAddressValidation}

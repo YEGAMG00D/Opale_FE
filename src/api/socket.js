@@ -9,6 +9,9 @@ let stompClient = null;
 export const connectSocket = (onConnected) => {
   if (stompClient && stompClient.connected) {
     console.log("⚡ 이미 STOMP 연결 중");
+    // 이미 연결된 경우에도 콜백을 즉시 호출하여 구독이 실행되도록 함
+    // 콜백에 클라이언트를 인자로 전달하여 안전하게 사용할 수 있도록 함
+    if (onConnected) onConnected(stompClient);
     return stompClient;
   }
 
@@ -25,7 +28,7 @@ export const connectSocket = (onConnected) => {
     },
     onConnect: () => {
       console.log("✅ WebSocket 연결 성공");
-      if (onConnected) onConnected();
+      if (onConnected) onConnected(stompClient);
     },
     onStompError: (frame) => {
       console.error("❌ STOMP 오류:", frame.headers["message"]);

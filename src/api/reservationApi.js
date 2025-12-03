@@ -111,6 +111,54 @@ export const getTicketReviews = async (ticketId) => {
 };
 
 
+/* ============================================================
+    7) 티켓 이미지 OCR
+    POST /api/reservations/ocr
+============================================================ */
+export const extractTicketByOcr = async (file) => {
+  try {
+    console.log('🌐 [extractTicketByOcr] API 호출 시작, 파일:', {
+      name: file.name || 'blob',
+      size: file.size,
+      type: file.type
+    });
+    
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    console.log('📦 [extractTicketByOcr] FormData 생성 완료');
+
+    const res = await axiosInstance.post(
+      `${base}/ocr`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    console.log('✅ [extractTicketByOcr] API 응답 받음:', res.data);
+    
+    if (res.data.success) {
+      console.log('✅ [extractTicketByOcr] 성공, 데이터:', res.data.data);
+      return res.data.data;
+    }
+    
+    throw new Error("티켓 OCR 실패");
+  } catch (err) {
+    console.error("❌ [extractTicketByOcr] 오류:", err);
+    console.error("❌ [extractTicketByOcr] 에러 상세:", {
+      message: err.message,
+      response: err.response?.data,
+      status: err.response?.status,
+      statusText: err.response?.statusText
+    });
+    throw err;
+  }
+};
+
+
 
 
 /* ============================================================
@@ -123,4 +171,5 @@ export default {
   getTicket,
   getTicketList,
   getTicketReviews, 
+  extractTicketByOcr,
 };

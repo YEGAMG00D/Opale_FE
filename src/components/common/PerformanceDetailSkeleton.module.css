@@ -1,0 +1,97 @@
+.container {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: #FFFFFF;
+  min-height: 100vh;
+}
+
+.posterSection {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.infoCardSection {
+  padding: 20px 24px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.categoryTag {
+  margin-bottom: 8px;
+}
+
+.title {
+  margin: 8px 0 16px 0;
+}
+
+.englishTitle {
+  margin-bottom: 16px;
+}
+
+.infoRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.trailerSection {
+  padding: 20px 24px;
+  background-color: #FFFFFF;
+}
+
+.detailsSection {
+  padding: 20px 24px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.hashtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.description {
+  margin-bottom: 8px;
+}
+
+.bookingSection {
+  padding: 20px 24px;
+  background-color: #FFFFFF;
+}
+
+.recommendSection {
+  padding: 20px 24px;
+  background-color: #FFFFFF;
+}
+
+.chatSection {
+  padding: 20px 24px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.tabSection {
+  background-color: #FFFFFF;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.tabContent {
+  padding: 20px 24px;
+}
+
