@@ -33,7 +33,7 @@
 .buttonGroup {
   position: absolute;
   top: 90px; /* 반경 정보와 같은 라인에 맞춤 */
-  left: 20%;
+  left: 30%;
   transform: translateX(-50%);
   z-index: 1000;
   display: flex;

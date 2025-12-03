@@ -1424,7 +1424,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
               onClick={handleSearchAtCenter}
               type="button"
             >
-              공연장
+              현재 위치에서 공연장 찾기
             </button>
           )}
         </div>
