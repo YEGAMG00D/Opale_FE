@@ -195,27 +195,6 @@ const MainCulturePage = () => {
             }}
           />
         </form>
-
-        {/* 자동완성 리스트 */}
-        {showSuggestions && (autoCompleteList.length > 0 || prevAutoCompleteListRef.current.length > 0) && (
-          <div className={styles.suggestionsContainer}>
-            <ul className={styles.suggestionsList}>
-              {(autoCompleteList.length > 0 ? autoCompleteList : prevAutoCompleteListRef.current).map((item, index) => (
-                <li
-                  key={`${item.performanceId}-${index}`}
-                  className={styles.suggestionItem}
-                  onClick={() => handleAutoCompleteClick(item.performanceId)}
-                  style={{ 
-                    opacity: isLoadingAutoComplete ? 0.7 : 1,
-                    transition: 'opacity 0.2s ease'
-                  }}
-                >
-                  <span className={styles.suggestionText}>{item.title}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
 
       {/* 카테고리 + 진행중 체크 */}
