@@ -20,7 +20,7 @@ const MainChatPage = () => {
   const subscriptionRef = useRef(null); // ✅ 구독 저장용
 
   const ICONS = {
-    PUBLIC: "🌐",
+    PUBLIC: "", //🌐
     GROUP: "👥",
     DM: "💬",
   };
@@ -32,15 +32,19 @@ const MainChatPage = () => {
         setLoading(true);
         setError("");
         const dto = {
-          roomType: null,
+          roomType: "PERFORMANCE_PUBLIC",
           performanceId: null,
           keyword: searchKeyword.trim() || null,
         };
         
         const rooms = await searchChatRooms(dto);
         const normalizedRooms = rooms.map(normalizeChatRoom);
+        // PERFORMANCE_PUBLIC 타입만 필터링
+        const publicRooms = normalizedRooms.filter(
+          (room) => room.roomType === "PERFORMANCE_PUBLIC"
+        );
         // 정렬된 채팅방 목록 설정
-        const sortedRooms = normalizedRooms.sort((a, b) => {
+        const sortedRooms = publicRooms.sort((a, b) => {
           if (!a.lastMessageTime && !b.lastMessageTime) return 0;
           if (!a.lastMessageTime) return 1;
           if (!b.lastMessageTime) return -1;
@@ -73,9 +77,15 @@ const MainChatPage = () => {
           const update = JSON.parse(msg.body);
 
           setChatRooms((prev) => {
-            // 업데이트된 채팅방 정보 갱신
-            const updatedRooms = prev.map((room) =>
-              room.roomId === update.roomId
+            // PERFORMANCE_PUBLIC 타입만 유지
+            const publicRooms = prev.filter(
+              (room) => room.roomType === "PERFORMANCE_PUBLIC"
+            );
+            
+            // 업데이트된 채팅방 정보 갱신 (PERFORMANCE_PUBLIC만 처리)
+            const updatedRooms = publicRooms.map((room) =>
+              room.roomId === update.roomId &&
+              update.roomType === "PERFORMANCE_PUBLIC"
                 ? {
                     ...room,
                     lastMessage: update.lastMessage,
@@ -84,6 +94,28 @@ const MainChatPage = () => {
                   }
                 : room
             );
+            
+            // 새로운 채팅방이 PERFORMANCE_PUBLIC인 경우에만 추가
+            const hasRoom = updatedRooms.some(
+              (room) => room.roomId === update.roomId
+            );
+            if (
+              !hasRoom &&
+              update.roomType === "PERFORMANCE_PUBLIC"
+            ) {
+              updatedRooms.push({
+                roomId: update.roomId,
+                roomType: update.roomType,
+                title: update.title || "",
+                performanceTitle: update.performanceTitle || "",
+                thumbnailUrl: update.thumbnailUrl || "",
+                lastMessage: update.lastMessage,
+                lastMessageTime: update.lastMessageTime,
+                isActive: update.isActive ?? false,
+                visitCount: update.visitCount || 0,
+                participantCount: update.participantCount || 0,
+              });
+            }
             
             // lastMessageTime 기준으로 최신 순 정렬 (업데이트된 채팅방이 자동으로 맨 위로)
             return updatedRooms.sort((a, b) => {
@@ -128,9 +160,10 @@ const MainChatPage = () => {
     });
   };
 
-  // 검색은 서버에서 처리하므로 클라이언트 필터링 불필요
-  // lastMessageTime 기준으로 최신 순 정렬
-  const filteredRooms = sortChatRooms(chatRooms);
+  // PERFORMANCE_PUBLIC 타입만 필터링하고 lastMessageTime 기준으로 최신 순 정렬
+  const filteredRooms = sortChatRooms(
+    chatRooms.filter((room) => room.roomType === "PERFORMANCE_PUBLIC")
+  );
 
   const enterRoom = (id) => {
     const token = localStorage.getItem("accessToken");
