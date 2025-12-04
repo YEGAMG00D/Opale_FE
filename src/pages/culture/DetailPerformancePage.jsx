@@ -1026,7 +1026,8 @@ const DetailPerformancePage = () => {
             number: '',
             performanceId: finalPerformanceId
           },
-          performanceId: finalPerformanceId,
+          performanceId: performance?.performanceId || performance?.id || finalPerformanceId, // fetchPerformanceBasic로 받은 performanceId
+          placeId: performance?.placeId || null, // fetchPerformanceBasic로 받은 placeId
           nextPage: '/my/placeReviews/register' // 공연 후기 작성 후 공연장 리뷰 작성 페이지로 이동
         }
       });
@@ -1771,7 +1772,7 @@ const DetailPerformancePage = () => {
         isOpen={showTicketSelectModal}
         onClose={handleCloseTicketSelectModal}
         onSelectTicket={handleSelectTicket}
-        filterPerformanceId={id} // 공연 상세 페이지에서는 해당 공연의 티켓만 표시
+        filterPerformanceId={performance?.performanceId || performance?.id || id} // fetchPerformanceBasic로 받은 performanceId 사용
       />
 
       {/* 수정 모달 */}

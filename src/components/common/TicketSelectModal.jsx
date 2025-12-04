@@ -29,14 +29,42 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket, filterPerformanceI
         // performanceId 또는 placeId 필터링 적용
         let filteredByIds = watched;
         if (filterPerformanceId) {
-          filteredByIds = filteredByIds.filter(ticket => 
-            ticket.performanceId === filterPerformanceId
-          );
+          // performanceId가 정확히 일치하는 티켓만 필터링 (null, undefined 제외)
+          const filterIdStr = String(filterPerformanceId);
+          filteredByIds = filteredByIds.filter(ticket => {
+            const ticketPerformanceId = ticket.performanceId;
+            // null, undefined, 빈 문자열 제외
+            if (!ticketPerformanceId) {
+              return false;
+            }
+            // 문자열로 변환하여 비교 (타입 불일치 방지)
+            const ticketIdStr = String(ticketPerformanceId);
+            const matches = ticketIdStr === filterIdStr;
+            
+            // 디버깅 로그 (필요시 제거)
+            if (!matches) {
+              console.log(`[TicketSelectModal] 티켓 ${ticket.ticketId} 필터링 제외: performanceId 불일치`, {
+                ticketPerformanceId: ticketIdStr,
+                filterPerformanceId: filterIdStr
+              });
+            }
+            
+            return matches;
+          });
         }
         if (filterPlaceId) {
-          filteredByIds = filteredByIds.filter(ticket => 
-            ticket.placeId === filterPlaceId
-          );
+          // placeId가 정확히 일치하는 티켓만 필터링 (null, undefined 제외)
+          const filterIdStr = String(filterPlaceId);
+          filteredByIds = filteredByIds.filter(ticket => {
+            const ticketPlaceId = ticket.placeId;
+            // null, undefined, 빈 문자열 제외
+            if (!ticketPlaceId) {
+              return false;
+            }
+            // 문자열로 변환하여 비교 (타입 불일치 방지)
+            const ticketIdStr = String(ticketPlaceId);
+            return ticketIdStr === filterIdStr;
+          });
         }
         
         // 각 티켓에 대해 리뷰 여부 확인
@@ -74,15 +102,37 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket, filterPerformanceI
               });
             }
           } catch (err) {
-            // 리뷰 조회 실패 시 (404 등) 리뷰가 없는 것으로 간주하고 추가
+            // 리뷰 조회 실패 시 (404 등) 리뷰가 없는 것으로 간주
+            // 하지만 filterPerformanceId나 filterPlaceId가 있으면 해당 필터 조건을 만족하는 경우만 추가
             console.log(`티켓 ${ticket.ticketId || ticket.id} 리뷰 확인 실패 (리뷰 없음으로 간주):`, err);
             
-            ticketsWithoutReview.push({
-              ...ticket,
-              ticketId: ticket.ticketId || ticket.id,
-              performanceId: ticket.performanceId || null,
-              placeId: ticket.placeId || null
-            });
+            // 필터링 조건 확인
+            let shouldIncludeOnError = true;
+            
+            if (filterPerformanceId) {
+              // performanceId가 일치하고 null이 아닌 경우만
+              const ticketPerformanceId = ticket.performanceId;
+              if (!ticketPerformanceId || String(ticketPerformanceId) !== String(filterPerformanceId)) {
+                shouldIncludeOnError = false;
+              }
+            }
+            
+            if (filterPlaceId) {
+              // placeId가 일치하고 null이 아닌 경우만
+              const ticketPlaceId = ticket.placeId;
+              if (!ticketPlaceId || String(ticketPlaceId) !== String(filterPlaceId)) {
+                shouldIncludeOnError = false;
+              }
+            }
+            
+            if (shouldIncludeOnError) {
+              ticketsWithoutReview.push({
+                ...ticket,
+                ticketId: ticket.ticketId || ticket.id,
+                performanceId: ticket.performanceId || null,
+                placeId: ticket.placeId || null
+              });
+            }
           }
         }
         

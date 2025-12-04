@@ -25,6 +25,10 @@ const TicketRegisterPage = () => {
   const isForReview = location.state?.forReview === true;
   const nextReviewPage = location.state?.nextReviewPage || null; // '/my/performanceReviews/register' or '/my/placeReviews/register'
   
+  // 공연 상세 페이지에서 전달받은 performanceId, placeId (티켓 선택 모달 필터링용)
+  const filterPerformanceId = location.state?.performanceId || null;
+  const filterPlaceId = location.state?.placeId || null;
+  
   const [ticketStep, setTicketStep] = useState(isEditMode ? 'manual' : 'scan'); // 'scan' or 'manual'
   const [ticketData, setTicketData] = useState({
     performanceName: '',
@@ -877,6 +881,8 @@ const TicketRegisterPage = () => {
         isOpen={showTicketSelectModal}
         onClose={handleCloseTicketSelectModal}
         onSelectTicket={handleSelectTicket}
+        filterPerformanceId={filterPerformanceId} // 공연 상세 페이지에서 전달받은 performanceId로 필터링
+        filterPlaceId={filterPlaceId} // 공연장 상세 페이지에서 전달받은 placeId로 필터링
       />
     </div>
   );
