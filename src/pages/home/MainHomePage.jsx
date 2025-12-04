@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PerformanceCard from '../../components/culture/PerformanceCard';
 import DiscountPromotionSection from '../../components/common/DiscountPromotionSection';
+import BannerSkeleton from '../../components/common/BannerSkeleton';
 import { fetchMainBanners, fetchMainPerformanceBanners, fetchMainContentBanners } from '../../api/bannerApi';
 import { normalizeMainBannerList, normalizeMainPerformanceBannerList, normalizeMainContentBannerList } from '../../services/normalizeBanner';
 import styles from './MainHomePage.module.css';
@@ -518,9 +519,7 @@ const MainHomePage = () => {
     <div className={styles.container}>
       {/* Main Carousel Section */}
       {loadingBanners ? (
-        <section className={styles.carouselSection}>
-          <div className={styles.loading}>배너를 불러오는 중...</div>
-        </section>
+        <BannerSkeleton />
       ) : slideData.length > 0 ? (
         <section className={styles.carouselSection}>
           <div className={styles.carouselContainer}>
