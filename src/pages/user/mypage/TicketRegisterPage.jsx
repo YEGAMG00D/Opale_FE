@@ -380,7 +380,8 @@ const TicketRegisterPage = () => {
           },
           performanceId: location.state?.performanceId || selectedTicket.performanceId || null,
           placeId: location.state?.placeId || selectedTicket.placeId || null,
-          nextPage: finalNextPage
+          nextPage: finalNextPage,
+          fromPerformanceDetail: location.state?.fromPerformanceDetail || false // 공연 상세 페이지에서 온 경우 전달
         }
       });
       return;
@@ -612,7 +613,8 @@ const TicketRegisterPage = () => {
             },
             performanceId: location.state?.performanceId || responsePerformanceId,
             placeId: location.state?.placeId || responsePlaceId,
-            nextPage: finalNextPage
+            nextPage: finalNextPage,
+            fromPerformanceDetail: location.state?.fromPerformanceDetail || false // 공연 상세 페이지에서 온 경우 전달
           } 
         });
         return;

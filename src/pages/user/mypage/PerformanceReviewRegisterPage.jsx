@@ -17,6 +17,7 @@ const PerformanceReviewRegisterPage = () => {
   const ticketData = location.state?.ticketData || {};
   const performanceId = location.state?.performanceId || ticketData?.performanceId || null;
   const initialNextPage = location.state?.nextPage || null; // 공연장 리뷰 작성 페이지로 이동할 경우 ('/my/placeReviews/register')
+  const fromPerformanceDetail = location.state?.fromPerformanceDetail || false; // 공연 상세 페이지에서 온 경우
   
   // 리뷰 데이터
   const [reviewData, setReviewData] = useState({
@@ -148,13 +149,17 @@ const PerformanceReviewRegisterPage = () => {
               performanceId: finalPerformanceId
             },
             performanceId: finalPerformanceId,
-            placeId: ticketData.placeId || location.state?.placeId || null
+            placeId: ticketData.placeId || location.state?.placeId || null,
+            fromPerformanceDetail: fromPerformanceDetail // 공연 상세 페이지에서 온 경우 전달
           } 
         });
       } else {
-        // 성공 후 이동
-        if (performanceId) {
-          navigate(`/culture/${performanceId}?tab=review`);
+        // 공연장 리뷰가 이미 있거나 nextPage가 없는 경우
+        // 공연 상세 페이지에서 온 경우 공연 상세 페이지로 돌아가기
+        if (fromPerformanceDetail && finalPerformanceId) {
+          navigate(`/culture/${finalPerformanceId}?tab=review`);
+        } else if (finalPerformanceId) {
+          navigate(`/culture/${finalPerformanceId}?tab=review`);
         } else {
           navigate('/my/tickets');
           window.dispatchEvent(new Event('ticketUpdated'));

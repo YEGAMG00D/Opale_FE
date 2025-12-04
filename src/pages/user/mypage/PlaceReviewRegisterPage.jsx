@@ -12,6 +12,8 @@ const PlaceReviewRegisterPage = () => {
   // 티켓 데이터 및 공연장 정보 (location.state에서 전달받음)
   const ticketData = location.state?.ticketData || {};
   const placeId = location.state?.placeId || ticketData?.placeId || null;
+  const performanceId = location.state?.performanceId || ticketData?.performanceId || null;
+  const fromPerformanceDetail = location.state?.fromPerformanceDetail || false; // 공연 상세 페이지에서 온 경우
   
   // 리뷰 데이터
   const [reviewData, setReviewData] = useState({
@@ -53,7 +55,10 @@ const PlaceReviewRegisterPage = () => {
       }
 
       // 성공 후 이동
-      if (placeId) {
+      // 공연 상세 페이지에서 온 경우 공연 상세 페이지로 돌아가기 (공연 후기/기대평 탭)
+      if (fromPerformanceDetail && performanceId) {
+        navigate(`/culture/${performanceId}?tab=review`);
+      } else if (placeId) {
         navigate(`/place/${placeId}`);
       } else {
         navigate('/my/tickets');

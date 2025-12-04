@@ -1028,7 +1028,8 @@ const DetailPerformancePage = () => {
           },
           performanceId: performance?.performanceId || performance?.id || finalPerformanceId, // fetchPerformanceBasic로 받은 performanceId
           placeId: performance?.placeId || null, // fetchPerformanceBasic로 받은 placeId
-          nextPage: '/my/placeReviews/register' // 공연 후기 작성 후 공연장 리뷰 작성 페이지로 이동
+          nextPage: '/my/placeReviews/register', // 공연 후기 작성 후 공연장 리뷰 작성 페이지로 이동
+          fromPerformanceDetail: true // 공연 상세 페이지에서 온 경우 표시
         }
       });
     } else if (type === 'expectation') {
