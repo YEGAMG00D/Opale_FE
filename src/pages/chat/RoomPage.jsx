@@ -5,6 +5,7 @@ import styles from "./RoomPage.module.css";
 import ChatRoomHeader from "../../components/chat/ChatRoomHeader";
 import MyMessage from "../../components/chat/MyMessage";
 import OtherMessage from "../../components/chat/OtherMessage";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { fetchChatRoom, fetchMessages } from "../../api/chatApi";
 import {
   connectSocket,
@@ -42,6 +43,7 @@ const RoomPage = () => {
   const [newMessage, setNewMessage] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   const messagesEndRef = useRef(null);
   const scrollRef = useRef(null);
@@ -59,6 +61,7 @@ const RoomPage = () => {
   // 1️⃣ 채팅방 정보 불러오기
   useEffect(() => {
     const loadRoom = async () => {
+      setIsLoading(true);
       try {
         // 먼저 public endpoint로 시도 (PERFORMANCE_PUBLIC일 가능성)
         let data = null;
@@ -72,6 +75,7 @@ const RoomPage = () => {
             // 둘 다 실패하면 채팅방이 없음
             console.error("❌ 채팅방을 찾을 수 없습니다:", privateErr);
             setRoom(null);
+            setIsLoading(false);
             return;
           }
         }
@@ -110,6 +114,8 @@ const RoomPage = () => {
       } catch (err) {
         console.error("❌ 채팅방 불러오기 실패:", err);
         setRoom(null);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadRoom();
@@ -288,8 +294,17 @@ const RoomPage = () => {
     setNewMessage("");
   };
 
-  if (!room)
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!room) {
     return <div className={styles.container}>존재하지 않는 채팅방입니다.</div>;
+  }
 
   const isPublicNoLogin =
     !token && room.roomType === "PERFORMANCE_PUBLIC";
