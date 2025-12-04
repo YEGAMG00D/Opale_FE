@@ -30,9 +30,8 @@ const TicketRegisterPage = () => {
     performanceName: '',
     performanceDate: '',
     performanceTime: '',
-    section: '',
-    row: '',
-    number: '',
+    seatFront: '',
+    seatNumber: '',
     placeName: '',
     ticketImage: null,
     performanceId: null,
@@ -71,9 +70,8 @@ const TicketRegisterPage = () => {
               performanceName: frontendData.performanceName || '',
               performanceDate: frontendData.performanceDate || '',
               performanceTime: frontendData.performanceTime || '',
-              section: frontendData.section || '',
-              row: frontendData.row || '',
-              number: frontendData.number || '',
+              seatFront: frontendData.seatFront || '',
+              seatNumber: frontendData.seatNumber || '',
               placeName: frontendData.placeName || '',
               ticketImage: null,
               performanceId: frontendData.performanceId || null,
@@ -169,20 +167,33 @@ const TicketRegisterPage = () => {
           const normalizedData = normalizeTicketOcr(ocrResponse);
           console.log('🔄 [capturePhoto] 정제된 데이터:', normalizedData);
           
+          const ocrPerformanceName = normalizedData.performanceName || '';
+          
           setTicketData(prev => {
             const newData = {
               ...prev,
-              performanceName: normalizedData.performanceName || prev.performanceName,
+              performanceName: ocrPerformanceName || prev.performanceName,
               performanceDate: normalizedData.performanceDate || prev.performanceDate,
               performanceTime: normalizedData.performanceTime || prev.performanceTime,
-              section: normalizedData.section || prev.section,
-              row: normalizedData.row || prev.row,
-              number: normalizedData.number || prev.number,
+              seatFront: normalizedData.seatFront || prev.seatFront,
+              seatNumber: normalizedData.seatNumber || prev.seatNumber,
               placeName: normalizedData.placeName || prev.placeName,
             };
             console.log('📝 [capturePhoto] ticketData 업데이트:', newData);
             return newData;
           });
+          
+          // OCR로 공연명이 추출되었으면 자동완성 검색 실행
+          if (ocrPerformanceName && ocrPerformanceName.trim().length > 0) {
+            // 기존 타이머 취소
+            if (searchTimeoutRef.current) {
+              clearTimeout(searchTimeoutRef.current);
+            }
+            // 300ms 후 검색 실행 (자동완성과 동일한 로직)
+            searchTimeoutRef.current = setTimeout(() => {
+              searchPerformances(ocrPerformanceName);
+            }, 300);
+          }
           
           setTicketStep('manual');
           console.log('✅ [capturePhoto] OCR 처리 완료, manual 단계로 이동');
@@ -233,20 +244,33 @@ const TicketRegisterPage = () => {
           const normalizedData = normalizeTicketOcr(ocrResponse);
           console.log('🔄 [handleFileSelect] 정제된 데이터:', normalizedData);
           
+          const ocrPerformanceName = normalizedData.performanceName || '';
+          
           setTicketData(prev => {
             const newData = {
               ...prev,
-              performanceName: normalizedData.performanceName || prev.performanceName,
+              performanceName: ocrPerformanceName || prev.performanceName,
               performanceDate: normalizedData.performanceDate || prev.performanceDate,
               performanceTime: normalizedData.performanceTime || prev.performanceTime,
-              section: normalizedData.section || prev.section,
-              row: normalizedData.row || prev.row,
-              number: normalizedData.number || prev.number,
+              seatFront: normalizedData.seatFront || prev.seatFront,
+              seatNumber: normalizedData.seatNumber || prev.seatNumber,
               placeName: normalizedData.placeName || prev.placeName,
             };
             console.log('📝 [handleFileSelect] ticketData 업데이트:', newData);
             return newData;
           });
+          
+          // OCR로 공연명이 추출되었으면 자동완성 검색 실행
+          if (ocrPerformanceName && ocrPerformanceName.trim().length > 0) {
+            // 기존 타이머 취소
+            if (searchTimeoutRef.current) {
+              clearTimeout(searchTimeoutRef.current);
+            }
+            // 300ms 후 검색 실행 (자동완성과 동일한 로직)
+            searchTimeoutRef.current = setTimeout(() => {
+              searchPerformances(ocrPerformanceName);
+            }, 300);
+          }
           
           setTicketStep('manual');
           console.log('✅ [handleFileSelect] OCR 처리 완료, manual 단계로 이동');
@@ -306,9 +330,8 @@ const TicketRegisterPage = () => {
       performanceName: selectedTicket.performanceName || '',
       performanceDate: selectedTicket.performanceDate || '',
       performanceTime: selectedTicket.performanceTime || '',
-      section: selectedTicket.section || '',
-      row: selectedTicket.row || '',
-      number: selectedTicket.number || '',
+      seatFront: selectedTicket.seatFront || '',
+      seatNumber: selectedTicket.seatNumber || '',
       placeName: selectedTicket.placeName || '',
       ticketImage: null,
       performanceId: selectedTicket.performanceId || null,
@@ -805,23 +828,16 @@ const TicketRegisterPage = () => {
                 <div className={styles.seatInputs}>
                   <input
                     type="text"
-                    value={ticketData.section}
-                    onChange={(e) => handleTicketInputChange('section', e.target.value)}
-                    placeholder="구역"
+                    value={ticketData.seatFront}
+                    onChange={(e) => handleTicketInputChange('seatFront', e.target.value)}
+                    placeholder="앞부분 (예: 다 11열, 1층 A구역 3열)"
                     className={styles.seatInput}
                   />
                   <input
                     type="text"
-                    value={ticketData.row}
-                    onChange={(e) => handleTicketInputChange('row', e.target.value)}
-                    placeholder="열"
-                    className={styles.seatInput}
-                  />
-                  <input
-                    type="text"
-                    value={ticketData.number}
-                    onChange={(e) => handleTicketInputChange('number', e.target.value)}
-                    placeholder="번"
+                    value={ticketData.seatNumber}
+                    onChange={(e) => handleTicketInputChange('seatNumber', e.target.value)}
+                    placeholder="번호 (예: 4)"
                     className={styles.seatInput}
                   />
                 </div>

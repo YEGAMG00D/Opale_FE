@@ -836,7 +836,7 @@ const MainRecommandPage = () => {
       {/* 로그인한 사용자: 개인 맞춤 추천 공연 섹션 (기존 사용자만) */}
       {isLoggedIn && !isNewUser && !isCheckingUser && (
         <section className={styles.seriesSection}>
-          <h2 className={styles.sectionTitle}>추천하는 공연</h2>
+          <h2 className={styles.sectionTitle}>{user?.nickname || '사용자'} 님을 위한 공연</h2>
           {userRecommendationsLoading ? (
             <RecommendationSkeleton />
           ) : userRecommendations.length > 0 ? (

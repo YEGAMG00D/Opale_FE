@@ -67,27 +67,21 @@ export const normalizePerformanceReviews = (apiData) => {
       if (review.seatInfo) {
         const seatStr = String(review.seatInfo).trim();
         if (seatStr) {
-          // "구역 열 번호" 형태를 파싱
-          // 예: "나 구역 15열 23번" -> "나 구역 15열 23번" 또는 "나 구역 15열"
-          const rowMatch = seatStr.match(/(\d+)\s*열/);
-          const numberMatch = seatStr.match(/(\d+)\s*번/);
-          
-          if (rowMatch && numberMatch) {
-            // 열과 번이 모두 있는 경우
-            const rowIndex = seatStr.indexOf(rowMatch[0]);
-            const section = seatStr.substring(0, rowIndex).trim();
-            return `${section} ${rowMatch[1]}열 ${numberMatch[1]}번`;
-          } else if (rowMatch) {
-            // 열만 있는 경우
-            const rowIndex = seatStr.indexOf(rowMatch[0]);
-            const section = seatStr.substring(0, rowIndex).trim();
-            return `${section} ${rowMatch[1]}열`;
-          } else if (numberMatch) {
-            // 번만 있는 경우
-            const numberIndex = seatStr.indexOf(numberMatch[0]);
-            const section = seatStr.substring(0, numberIndex).trim();
-            return `${section} ${numberMatch[1]}번`;
+          // "-" 기준으로 분리 (하이픈이 있는 경우)
+          if (seatStr.includes('-')) {
+            const parts = seatStr.split('-');
+            // 앞부분만 반환 (N번 제외)
+            return parts[0].trim();
           }
+          
+          // "번"이 포함된 경우, "번" 앞부분까지만 반환
+          const numberMatch = seatStr.match(/(\d+)\s*번/);
+          if (numberMatch) {
+            const numberIndex = seatStr.indexOf(numberMatch[0]);
+            // "번" 앞부분만 반환
+            return seatStr.substring(0, numberIndex).trim();
+          }
+          
           // 패턴이 맞지 않으면 전체를 반환
           return seatStr;
         }

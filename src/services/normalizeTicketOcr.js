@@ -7,7 +7,9 @@
  * @param {Object} apiResponse - API 응답 (TicketOcrResponseDto)
  * @param {string} apiResponse.performanceName - 공연명
  * @param {string} apiResponse.performanceDate - LocalDateTime 형식 (yyyy-MM-ddTHH:mm:ss)
- * @param {string} apiResponse.seatInfo - 좌석 정보 문자열 ("나 구역 15열 23번")
+ * @param {string} apiResponse.seatFront - 좌석 앞부분 (예: "다 11열")
+ * @param {string} apiResponse.seatNumber - 좌석 번호 (예: "4")
+ * @param {string} apiResponse.seatInfo - 좌석 정보 문자열 (하위 호환성용)
  * @param {string} apiResponse.placeName - 공연장명
  * @returns {Object} - 프론트엔드 입력 형식 데이터
  */
@@ -20,9 +22,8 @@ export const normalizeTicketOcr = (apiResponse) => {
       performanceName: '',
       performanceDate: '',
       performanceTime: '',
-      section: '',
-      row: '',
-      number: '',
+      seatFront: '',
+      seatNumber: '',
       placeName: ''
     };
   }
@@ -61,97 +62,50 @@ export const normalizeTicketOcr = (apiResponse) => {
     frontendData.performanceTime = '';
   }
 
-  // 2) seatInfo 문자열 → 구역/열/번 분리
-  // `-` 기준으로 나누고 뒤에서부터 최대 3칸으로 채우기
-  // 예: "11열-2번" -> (빈칸) (11) (2)
-  // 예: "2층-A구역-3열-15" -> (2층 A) (3) (15)
-  // 예: "다구역-7열-1번" -> (다) (7) (1)
-  if (apiResponse.seatInfo) {
-    const seatInfo = apiResponse.seatInfo.trim();
-    console.log('💺 [normalizeTicketOcr] 원본 seatInfo:', seatInfo);
-    
-    // `-` 기준으로 분리
-    const parts = seatInfo.split('-').map(part => part.trim()).filter(part => part.length > 0);
-    console.log('💺 [normalizeTicketOcr] 분리된 parts:', parts);
-    
-    // 초기값
-    frontendData.section = '';
-    frontendData.row = '';
-    frontendData.number = '';
-    
-    if (parts.length === 0) {
-      // 빈 문자열인 경우 - 이미 초기값으로 설정됨
-    } else if (parts.length === 1) {
-      // 하나만 있는 경우 -> 구역으로 처리
-      frontendData.section = parts[0];
-    } else {
-      // 2개 이상인 경우 -> 뒤에서부터 최대 3칸으로 채우기
-      // 뒤에서부터: [구역들...] [열] [번]
-      
-      // 마지막 부분에서 숫자 추출 (번)
-      const lastPart = parts[parts.length - 1];
-      const lastNumber = lastPart.match(/\d+/);
-      
-      // 마지막에서 두 번째 부분에서 숫자 추출 (열)
-      const secondLastPart = parts.length >= 2 ? parts[parts.length - 2] : '';
-      const secondLastNumber = secondLastPart.match(/\d+/);
-      
-      if (lastNumber && secondLastNumber) {
-        // 열과 번이 모두 있는 경우
-        // 예: "2층-A구역-3열-15" -> (2층 A) (3) (15)
-        // 예: "다구역-7열-1번" -> (다) (7) (1)
-        frontendData.number = lastNumber[0];
-        frontendData.row = secondLastNumber[0];
-        
-        // 나머지 앞부분을 구역으로 합치기
-        if (parts.length > 2) {
-          const sectionParts = parts.slice(0, parts.length - 2);
-          // 각 부분에서 숫자와 "열", "번" 같은 단어 제거하고 구역명만 추출
-          const cleanSectionParts = sectionParts.map(part => {
-            // "열", "번" 같은 단어 제거
-            return part.replace(/\d+\s*(열|번)/g, '').trim();
-          }).filter(part => part.length > 0);
-          
-          frontendData.section = cleanSectionParts.join(' ');
-        }
-      } else if (lastNumber) {
-        // 번만 있는 경우
-        // 예: "11열-2번" -> (빈칸) (11) (2)
-        // "11열"에서 숫자 추출
-        const firstNumber = parts[0].match(/\d+/);
-        if (firstNumber) {
-          frontendData.row = firstNumber[0];
-          frontendData.number = lastNumber[0];
-          // 구역은 빈칸
-        } else {
-          // 첫 번째가 숫자가 아니면 구역으로 처리
-          frontendData.section = parts.slice(0, parts.length - 1).join(' ');
-          frontendData.number = lastNumber[0];
-        }
-      } else if (secondLastNumber) {
-        // 열만 있는 경우
-        frontendData.row = secondLastNumber[0];
-        const sectionParts = parts.slice(0, parts.length - 1);
-        const cleanSectionParts = sectionParts.map(part => {
-          return part.replace(/\d+\s*(열|번)/g, '').trim();
-        }).filter(part => part.length > 0);
-        frontendData.section = cleanSectionParts.join(' ');
-      } else {
-        // 숫자가 없는 경우 -> 모두 구역으로 처리
-        frontendData.section = parts.join(' ');
-      }
-    }
-    
-    console.log('💺 [normalizeTicketOcr] 변환된 좌석 정보:', {
-      section: frontendData.section,
-      row: frontendData.row,
-      number: frontendData.number
-    });
+  // 2) seatFront, seatNumber를 그대로 사용
+  // 백엔드에서 seatFront, seatNumber를 제공하는 경우
+  if (apiResponse.seatFront !== undefined) {
+    frontendData.seatFront = apiResponse.seatFront || '';
   } else {
-    frontendData.section = '';
-    frontendData.row = '';
-    frontendData.number = '';
+    frontendData.seatFront = '';
   }
+  
+  if (apiResponse.seatNumber !== undefined) {
+    frontendData.seatNumber = apiResponse.seatNumber || '';
+  } else {
+    frontendData.seatNumber = '';
+  }
+
+  // 하위 호환성: seatFront/seatNumber가 없고 seatInfo만 있는 경우
+  // (기존 API 응답을 위한 fallback)
+  if (!apiResponse.seatFront && !apiResponse.seatNumber && apiResponse.seatInfo) {
+    const seatInfo = apiResponse.seatInfo.trim();
+    console.log('💺 [normalizeTicketOcr] seatInfo fallback 처리:', seatInfo);
+    
+    // "-" 기준으로 분리 시도 (예: "다 11열-4번")
+    if (seatInfo.includes('-')) {
+      const parts = seatInfo.split('-').map(p => p.trim());
+      if (parts.length >= 2) {
+        // 마지막 부분을 그대로 사용 (숫자만 추출하지 않고 '번' 포함 그대로)
+        const lastPart = parts[parts.length - 1];
+        frontendData.seatNumber = lastPart; // '번' 포함 그대로
+        // 나머지를 앞부분으로
+        frontendData.seatFront = parts.slice(0, parts.length - 1).join(' ').trim();
+      } else {
+        frontendData.seatFront = seatInfo;
+        frontendData.seatNumber = '';
+      }
+    } else {
+      // "-"가 없으면 전체를 앞부분으로 처리
+      frontendData.seatFront = seatInfo;
+      frontendData.seatNumber = '';
+    }
+  }
+  
+  console.log('💺 [normalizeTicketOcr] 변환된 좌석 정보:', {
+    seatFront: frontendData.seatFront,
+    seatNumber: frontendData.seatNumber
+  });
 
   console.log('✅ [normalizeTicketOcr] 최종 변환 결과:', frontendData);
   return frontendData;

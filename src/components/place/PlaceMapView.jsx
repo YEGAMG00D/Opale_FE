@@ -19,6 +19,10 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const infoWindowsRef = useRef([]);
+  const markerIntervalsRef = useRef(new Map()); // 마커별 포스터 변경 interval 저장
+  const markerPerformanceIndicesRef = useRef(new Map()); // 마커별 현재 공연 인덱스 저장
+  const markerPerformancesRef = useRef(new Map()); // 마커별 공연 목록 저장
+  const markerShowingFirstRef = useRef(new Map()); // 마커별 현재 보이는 레이어 추적 (true: imgElement, false: imgNextElement)
   const userMarkerRef = useRef(null); // GPS 위치 마커 (파란색)
   const searchCenterMarkerRef = useRef(null); // 검색 기준 좌표 마커 (주황색)
   const searchRadiusCircleRef = useRef(null); // 검색 반경 원
@@ -26,6 +30,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
   const locationWatchIdRef = useRef(null); // 실시간 위치 추적 ID
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
+  const [isCreatingMarkers, setIsCreatingMarkers] = useState(false); // 마커 생성 중 상태
   
   // 선택된 공연장 상태 (마커 클릭 시)
   const [selectedPlace, setSelectedPlace] = useState(null);
@@ -202,6 +207,15 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
 
     console.log('🧹 [마커 제거] 기존 공연장 마커 모두 제거 시작');
     
+    // 모든 포스터 변경 interval 정리
+    markerIntervalsRef.current.forEach((intervalId, marker) => {
+      clearInterval(intervalId);
+    });
+    markerIntervalsRef.current.clear();
+    markerPerformanceIndicesRef.current.clear();
+    markerPerformancesRef.current.clear();
+    markerShowingFirstRef.current.clear();
+    
     // 모든 공연장 마커를 동기적으로 제거
     const markersToRemove = [...markersRef.current];
     markersToRemove.forEach(marker => {
@@ -256,10 +270,11 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     console.log('✅ [마커 제거] 기존 공연장 마커 제거 완료');
   }, []); // 의존성 배열은 비워둠 (상태 setter는 안정적이므로)
 
-  // ref를 통해 clearMarkers 함수 노출
+  // ref를 통해 clearMarkers 함수와 isCreatingMarkers 상태 노출
   useImperativeHandle(ref, () => ({
-    clearMarkers
-  }), [clearMarkers]);
+    clearMarkers,
+    isCreatingMarkers
+  }), [clearMarkers, isCreatingMarkers]);
 
   // places가 변경될 때 마커 생성 (4단계: 전역 상태에 저장된 목록으로 마커 생성)
   // mapLoading이 false일 때만 실행 (지도 초기화 완료 후)
@@ -607,6 +622,9 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
     const createMarkers = async () => {
       console.log('📍 [4단계] 새로운 공연장 마커 생성 시작:', validPlaces.length, '개');
       
+      // 마커 생성 중 상태 설정
+      setIsCreatingMarkers(true);
+      
       // 기존 마커가 남아있으면 제거 (안전장치)
       if (markersRef.current.length > 0) {
         console.warn('⚠️ [4단계] 기존 마커가 남아있습니다. 제거합니다.');
@@ -622,7 +640,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         markersRef.current = [];
       }
 
-      // 새로운 마커 생성
+      // 새로운 마커 생성 (지도에 표시하지 않고 먼저 생성)
       const newMarkers = [];
       const newInfoWindows = [];
 
@@ -630,12 +648,12 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
       const position = new window.naver.maps.LatLng(place.latitude, place.longitude);
       
         // 커스텀 마커 HTML 생성 (포스터 포함)
-        const { html: markerHTML, anchor } = await createPlaceMarkerHTML(place);
+        const { html: markerHTML, anchor, performances, markerId } = await createPlaceMarkerHTML(place, 0);
         
-        // 마커 생성
+        // 마커 생성 (map: null로 설정하여 지도에 표시하지 않음)
       const marker = new window.naver.maps.Marker({
         position: position,
-        map: map,
+        map: null, // 먼저 지도에 표시하지 않음
         title: place.name,
           icon: {
             content: markerHTML,
@@ -644,6 +662,125 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
           zIndex: 100,
       });
         newMarkers.push(marker);
+        
+        // 여러 공연이 있는 경우 포스터 변경 interval 설정
+        if (performances && performances.length > 1 && markerId) {
+          markerPerformancesRef.current.set(marker, performances);
+          markerPerformanceIndicesRef.current.set(marker, 0);
+          markerShowingFirstRef.current.set(marker, true); // 초기값: imgElement가 보임
+          
+          // 5초마다 포스터 변경 (이미지만 부드럽게 변경, cross-fade 효과)
+          const intervalId = setInterval(() => {
+            const currentIndex = markerPerformanceIndicesRef.current.get(marker) || 0;
+            const nextIndex = (currentIndex + 1) % performances.length;
+            markerPerformanceIndicesRef.current.set(marker, nextIndex);
+            
+            // 마커의 DOM 요소에 접근해서 이미지만 변경
+            const markerElement = marker.getElement();
+            if (markerElement) {
+              const imgElement = markerElement.querySelector(`#${markerId}-img`);
+              const imgNextElement = markerElement.querySelector(`#${markerId}-img-next`);
+              
+              if (imgElement && imgNextElement) {
+                const nextPerformance = performances[nextIndex];
+                const nextPosterUrl = nextPerformance.poster || '/placeholder-poster.png';
+                
+                // 현재 보이는 이미지와 다음에 보일 이미지 결정
+                const isShowingFirst = markerShowingFirstRef.current.get(marker) ?? true;
+                const currentImg = isShowingFirst ? imgElement : imgNextElement;
+                const nextImg = isShowingFirst ? imgNextElement : imgElement;
+                
+                // 다음 이미지를 미리 로드
+                const newImg = new Image();
+                newImg.onload = () => {
+                  // 이미지가 완전히 로드된 후에만 전환 시작
+                  // 다음 이미지를 다음 레이어에 설정 (이미 로드된 이미지 사용)
+                  nextImg.src = newImg.src; // 이미 로드된 이미지 사용
+                  nextImg.alt = nextPerformance.title || '공연 포스터';
+                  
+                  // 다음 이미지가 완전히 준비될 때까지 약간의 지연
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      // cross-fade 효과: 현재 이미지는 fade out, 다음 이미지는 fade in
+                      currentImg.style.opacity = '0';
+                      nextImg.style.opacity = '1';
+                      
+                      // 전환이 완료되면 다음 전환을 위해 반대 레이어에 다음 이미지 준비
+                      setTimeout(() => {
+                        // 다음 다음 이미지 인덱스
+                        const nextNextIndex = (nextIndex + 1) % performances.length;
+                        const nextNextPerformance = performances[nextNextIndex];
+                        const nextNextPosterUrl = nextNextPerformance.poster || '/placeholder-poster.png';
+                        
+                        // 다음 다음 이미지를 미리 로드해서 현재 보이지 않는 레이어에 준비
+                        const nextNextImg = new Image();
+                        nextNextImg.onload = () => {
+                          // 현재 보이지 않는 레이어에 다음 다음 이미지 설정
+                          currentImg.src = nextNextImg.src;
+                          currentImg.alt = nextNextPerformance.title || '공연 포스터';
+                          currentImg.style.opacity = '0';
+                        };
+                        nextNextImg.onerror = () => {
+                          currentImg.src = '/placeholder-poster.png';
+                          currentImg.alt = '공연 포스터';
+                          currentImg.style.opacity = '0';
+                        };
+                        nextNextImg.src = nextNextPosterUrl;
+                        
+                        // 다음 전환을 위해 반대 레이어 사용
+                        markerShowingFirstRef.current.set(marker, !isShowingFirst);
+                      }, 800); // transition 시간과 동일
+                    });
+                  });
+                };
+                newImg.onerror = () => {
+                  // 에러 시 placeholder 이미지 사용
+                  const placeholderImg = new Image();
+                  placeholderImg.onload = () => {
+                    nextImg.src = placeholderImg.src;
+                    nextImg.alt = '공연 포스터';
+                    
+                    requestAnimationFrame(() => {
+                      requestAnimationFrame(() => {
+                        currentImg.style.opacity = '0';
+                        nextImg.style.opacity = '1';
+                        
+                        // 다음 전환을 위해 반대 레이어에 다음 이미지 준비
+                        setTimeout(() => {
+                          const nextNextIndex = (nextIndex + 1) % performances.length;
+                          const nextNextPerformance = performances[nextNextIndex];
+                          const nextNextPosterUrl = nextNextPerformance.poster || '/placeholder-poster.png';
+                          
+                          const nextNextImg = new Image();
+                          nextNextImg.onload = () => {
+                            currentImg.src = nextNextImg.src;
+                            currentImg.alt = nextNextPerformance.title || '공연 포스터';
+                            currentImg.style.opacity = '0';
+                          };
+                          nextNextImg.onerror = () => {
+                            currentImg.src = '/placeholder-poster.png';
+                            currentImg.alt = '공연 포스터';
+                            currentImg.style.opacity = '0';
+                          };
+                          nextNextImg.src = nextNextPosterUrl;
+                          
+                          markerShowingFirstRef.current.set(marker, !isShowingFirst);
+                        }, 800);
+                      });
+                    });
+                  };
+                  placeholderImg.onerror = () => {
+                    console.warn('⚠️ Placeholder 이미지 로드 실패:', markerId);
+                  };
+                  placeholderImg.src = '/placeholder-poster.png';
+                };
+                newImg.src = nextPosterUrl;
+              }
+            }
+          }, 5000); // 5초마다 변경
+          
+          markerIntervalsRef.current.set(marker, intervalId);
+        }
 
       // 정보창 생성
       const infoWindow = new window.naver.maps.InfoWindow({
@@ -682,9 +819,17 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         });
       }
       
+      // 모든 마커 생성이 완료된 후 한 번에 지도에 표시
+      newMarkers.forEach(marker => {
+        marker.setMap(map);
+      });
+      
       // 모든 마커 생성이 완료된 후에만 ref에 추가
       markersRef.current = newMarkers;
       infoWindowsRef.current = newInfoWindows;
+      
+      // 마커 생성 완료 상태 해제
+      setIsCreatingMarkers(false);
       
       console.log('✅ [4단계] 새로운 공연장 마커 생성 완료:', markersRef.current.length, '개');
     };
@@ -865,6 +1010,15 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
         clearLocationWatch(locationWatchIdRef.current);
         locationWatchIdRef.current = null;
       }
+      
+      // 모든 포스터 변경 interval 정리
+      markerIntervalsRef.current.forEach((intervalId) => {
+        clearInterval(intervalId);
+      });
+      markerIntervalsRef.current.clear();
+      markerPerformanceIndicesRef.current.clear();
+      markerPerformancesRef.current.clear();
+      markerShowingFirstRef.current.clear();
       
       // 컴포넌트가 언마운트될 때만 마커 정리
       if (userMarkerRef.current) {
@@ -1424,7 +1578,7 @@ const PlaceMapView = forwardRef(({ places = [], userLocation = null, searchCente
               onClick={handleSearchAtCenter}
               type="button"
             >
-              공연장
+              현재 위치에서 공연장 찾기
             </button>
           )}
         </div>

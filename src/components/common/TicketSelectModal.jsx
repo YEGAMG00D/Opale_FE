@@ -83,9 +83,8 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
       performanceName: ticket.performanceName || '',
       performanceDate: ticket.performanceDate || '',
       performanceTime: ticket.performanceTime || '',
-      section: ticket.section || '',
-      row: ticket.row || '',
-      number: ticket.number || '',
+      seatFront: ticket.seatFront || '',
+      seatNumber: ticket.seatNumber || '',
       placeName: ticket.placeName || '',
       ticketImageUrl: ticket.ticketImageUrl || null,
       performanceId: ticket.performanceId || null,
@@ -138,11 +137,12 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
                           {ticket.performanceTime && ` ${ticket.performanceTime}`}
                         </span>
                       )}
-                      {(ticket.section || ticket.row || ticket.number) && (
+                      {(ticket.seatFront || ticket.seatNumber) && (
                         <span className={styles.detailItem}>
-                          {[ticket.section, ticket.row && `${ticket.row}열`, ticket.number && `${ticket.number}번`]
-                            .filter(Boolean)
-                            .join(' ')}
+                          {ticket.seatFront && ticket.seatNumber 
+                            ? `${ticket.seatFront}-${ticket.seatNumber}번`
+                            : ticket.seatFront || ticket.seatNumber ? `${ticket.seatFront || ''}${ticket.seatNumber ? `${ticket.seatNumber}번` : ''}`.trim()
+                            : ''}
                         </span>
                       )}
                       {ticket.placeName && (

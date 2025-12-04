@@ -9,9 +9,8 @@
  * @param {string} frontendData.performanceName - 공연명
  * @param {string} frontendData.performanceDate - 날짜 (yyyy-MM-dd)
  * @param {string} frontendData.performanceTime - 시간 (HH:mm)
- * @param {string} frontendData.section - 구역
- * @param {string} frontendData.row - 열
- * @param {string} frontendData.number - 번
+ * @param {string} frontendData.seatFront - 좌석 앞부분 (예: "다 11열", "1층 A구역 3열")
+ * @param {string} frontendData.seatNumber - 좌석 번호 (예: "4")
  * @param {string} frontendData.placeName - 공연장명 (선택)
  * @param {number} frontendData.performanceId - 공연 ID (선택)
  * @param {number} frontendData.placeId - 공연장 ID (선택)
@@ -22,14 +21,18 @@ export const transformTicketDataForApi = (frontendData) => {
     performanceName: frontendData.performanceName || '',
   };
 
-  // performanceId가 있으면 포함
-  if (frontendData.performanceId) {
+  // performanceId가 있으면 포함 (null, undefined가 아닌 경우)
+  if (frontendData.performanceId !== null && frontendData.performanceId !== undefined) {
     dto.performanceId = frontendData.performanceId;
+    console.log('✅ [transformTicketDataForApi] performanceId 포함:', dto.performanceId);
+  } else {
+    console.warn('⚠️ [transformTicketDataForApi] performanceId 없음:', frontendData.performanceId);
   }
 
-  // placeId가 있으면 포함
-  if (frontendData.placeId) {
+  // placeId가 있으면 포함 (null, undefined가 아닌 경우)
+  if (frontendData.placeId !== null && frontendData.placeId !== undefined) {
     dto.placeId = frontendData.placeId;
+    console.log('✅ [transformTicketDataForApi] placeId 포함:', dto.placeId);
   }
 
   // 1) 날짜 + 시간 → LocalDateTime 형식으로 변환
@@ -48,29 +51,37 @@ export const transformTicketDataForApi = (frontendData) => {
     dto.performanceDate = null;
   }
 
-  // 2) 구역/열/번 → seatInfo 문자열로 변환
-  // seatInfo = "구역 열열 번번" 형식
-  const seatSection = frontendData.section || '';
-  const seatRow = frontendData.row || '';
-  const seatNumber = frontendData.number || '';
-
-  if (seatSection || seatRow || seatNumber) {
-    let seatInfoParts = [];
-    
-    if (seatSection) {
-      seatInfoParts.push(seatSection);
-    }
-    
-    if (seatRow) {
-      seatInfoParts.push(`${seatRow}열`);
-    }
-    
-    if (seatNumber) {
-      seatInfoParts.push(`${seatNumber}번`);
-    }
-    
-    dto.seatInfo = seatInfoParts.join(' ');
+  // 2) seatFront, seatNumber를 공백으로 연결하여 seatInfo 문자열로 변환
+  // 예: seatFront: "다 11열", seatNumber: "4" 또는 "4번" → seatInfo: "다 11열 4번"
+  let seatFront = (frontendData.seatFront || '').trim();
+  let seatNumber = (frontendData.seatNumber || '').trim();
+  
+  // seatFront 끝의 '-' 제거 (중복 방지)
+  if (seatFront && seatFront.endsWith('-')) {
+    seatFront = seatFront.slice(0, -1).trim();
+  }
+  
+  // seatNumber 앞의 '-' 제거 (중복 방지)
+  if (seatNumber && seatNumber.startsWith('-')) {
+    seatNumber = seatNumber.slice(1).trim();
+  }
+  
+  // seatNumber에 '번'이 없으면 추가
+  if (seatNumber && !seatNumber.endsWith('번')) {
+    seatNumber = `${seatNumber}번`;
+  }
+  
+  if (seatFront && seatNumber) {
+    // 둘 다 있으면: "앞부분 번호번" 형식 (공백으로 연결, 하이픈 없음)
+    dto.seatInfo = `${seatFront} ${seatNumber}`;
+  } else if (seatFront) {
+    // 앞부분만 있으면: 앞부분만
+    dto.seatInfo = seatFront;
+  } else if (seatNumber) {
+    // 번호만 있으면: 번호번 형식
+    dto.seatInfo = seatNumber;
   } else {
+    // 둘 다 없으면: null
     dto.seatInfo = null;
   }
 
@@ -86,7 +97,9 @@ export const transformTicketDataForApi = (frontendData) => {
  * 백엔드 API 응답 DTO를 프론트엔드 입력 형식으로 변환
  * @param {Object} apiResponse - 백엔드 API 응답 (TicketDetailResponseDto)
  * @param {string} apiResponse.performanceDate - LocalDateTime 형식 (yyyy-MM-ddTHH:mm:ss)
- * @param {string} apiResponse.seatInfo - 좌석 정보 문자열 ("구역 열열 번번")
+ * @param {string} apiResponse.seatFront - 좌석 앞부분 (예: "다 11열")
+ * @param {string} apiResponse.seatNumber - 좌석 번호 (예: "4")
+ * @param {string} apiResponse.seatInfo - 좌석 정보 문자열 (하위 호환성용, seatFront/seatNumber가 없을 때만 사용)
  * @returns {Object} - 프론트엔드 입력 형식 데이터
  */
 export const transformTicketDataFromApi = (apiResponse) => {
@@ -127,47 +140,50 @@ export const transformTicketDataFromApi = (apiResponse) => {
     frontendData.performanceTime = '';
   }
 
-  // 2) seatInfo 문자열 → 구역/열/번 분리
-  // seatInfo: "나 구역 15열 23번" → section: "나 구역", row: "15", number: "23"
-  if (apiResponse.seatInfo) {
+  // 2) seatFront, seatNumber를 그대로 사용
+  // 백엔드에서 seatFront, seatNumber를 제공하는 경우
+  if (apiResponse.seatFront !== undefined) {
+    frontendData.seatFront = apiResponse.seatFront || '';
+  } else {
+    frontendData.seatFront = '';
+  }
+  
+  if (apiResponse.seatNumber !== undefined) {
+    frontendData.seatNumber = apiResponse.seatNumber || '';
+  } else {
+    frontendData.seatNumber = '';
+  }
+
+  // 하위 호환성: seatFront/seatNumber가 없고 seatInfo만 있는 경우
+  // (기존 데이터를 위한 fallback)
+  if (!apiResponse.seatFront && !apiResponse.seatNumber && apiResponse.seatInfo) {
     const seatInfo = apiResponse.seatInfo.trim();
     
-    // 정규식으로 "열", "번" 패턴 찾기
-    // 예: "나 구역 15열 23번" 또는 "R석 15열 23번"
-    const rowMatch = seatInfo.match(/(\d+)\s*열/);
-    const numberMatch = seatInfo.match(/(\d+)\s*번/);
-    
-    if (rowMatch && numberMatch) {
-      // 열과 번이 모두 있는 경우
-      const rowIndex = seatInfo.indexOf(rowMatch[0]);
-      const numberIndex = seatInfo.indexOf(numberMatch[0]);
-      
-      // 구역은 열 앞부분
-      frontendData.section = seatInfo.substring(0, rowIndex).trim();
-      frontendData.row = rowMatch[1]; // 숫자만 추출
-      frontendData.number = numberMatch[1]; // 숫자만 추출
-    } else if (rowMatch) {
-      // 열만 있는 경우
-      const rowIndex = seatInfo.indexOf(rowMatch[0]);
-      frontendData.section = seatInfo.substring(0, rowIndex).trim();
-      frontendData.row = rowMatch[1];
-      frontendData.number = '';
-    } else if (numberMatch) {
-      // 번만 있는 경우
-      const numberIndex = seatInfo.indexOf(numberMatch[0]);
-      frontendData.section = seatInfo.substring(0, numberIndex).trim();
-      frontendData.row = '';
-      frontendData.number = numberMatch[1];
+    // "-" 기준으로 분리 시도 (예: "다 11열-4번")
+    if (seatInfo.includes('-')) {
+      const parts = seatInfo.split('-').map(p => p.trim());
+      if (parts.length >= 2) {
+        // 마지막 부분에서 숫자 추출 (번)
+        const lastPart = parts[parts.length - 1];
+        const numberMatch = lastPart.match(/(\d+)/);
+        
+        if (numberMatch) {
+          frontendData.seatNumber = numberMatch[1];
+          // 나머지를 앞부분으로
+          frontendData.seatFront = parts.slice(0, parts.length - 1).join(' ').trim();
+        } else {
+          frontendData.seatFront = parts.slice(0, parts.length - 1).join(' ').trim();
+          frontendData.seatNumber = '';
+        }
+      } else {
+        frontendData.seatFront = seatInfo;
+        frontendData.seatNumber = '';
+      }
     } else {
-      // 패턴이 맞지 않으면 전체를 구역으로 처리
-      frontendData.section = seatInfo;
-      frontendData.row = '';
-      frontendData.number = '';
+      // "-"가 없으면 전체를 앞부분으로 처리
+      frontendData.seatFront = seatInfo;
+      frontendData.seatNumber = '';
     }
-  } else {
-    frontendData.section = '';
-    frontendData.row = '';
-    frontendData.number = '';
   }
 
   return frontendData;

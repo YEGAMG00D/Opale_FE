@@ -441,11 +441,14 @@ const MyTicketPage = () => {
                             {ticket.performanceDate} {ticket.performanceTime && ticket.performanceTime}
                           </span>
                         </div>
-                        {(ticket.section || ticket.row || ticket.number) && (
+                        {(ticket.seatFront || ticket.seatNumber) && (
                           <div className={styles.ticketInfoRow}>
                             <span className={styles.ticketLabel}>좌석정보</span>
                             <span className={styles.ticketValue}>
-                              {ticket.section || ''} {ticket.row ? `${ticket.row}열` : ''} {ticket.number ? `${ticket.number}번` : ''}
+                              {ticket.seatFront && ticket.seatNumber 
+                                ? `${ticket.seatFront}-${ticket.seatNumber}번`
+                                : ticket.seatFront || ticket.seatNumber ? `${ticket.seatFront || ''}${ticket.seatNumber ? `${ticket.seatNumber}번` : ''}`.trim()
+                                : ''}
                             </span>
                           </div>
                         )}
