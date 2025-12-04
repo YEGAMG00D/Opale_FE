@@ -4,6 +4,8 @@ import { createPerformanceReview } from '../../../api/reviewApi';
 import { normalizePerformanceReviewRequest } from '../../../services/normalizePerformanceReviewRequest';
 import { fetchPerformanceList } from '../../../api/performanceApi';
 import { normalizePerformance } from '../../../services/normalizePerformance';
+import { getTicketReviews } from '../../../api/reservationApi';
+import { normalizeTicketReviews } from '../../../services/normalizeTicketReviews';
 import logApi from '../../../api/logApi';
 import styles from './PerformanceReviewRegisterPage.module.css';
 
@@ -14,7 +16,7 @@ const PerformanceReviewRegisterPage = () => {
   // 티켓 데이터 (location.state에서 전달받음)
   const ticketData = location.state?.ticketData || {};
   const performanceId = location.state?.performanceId || ticketData?.performanceId || null;
-  const nextPage = location.state?.nextPage || null; // 공연장 리뷰 작성 페이지로 이동할 경우 ('/my/placeReviews/register')
+  const initialNextPage = location.state?.nextPage || null; // 공연장 리뷰 작성 페이지로 이동할 경우 ('/my/placeReviews/register')
   
   // 리뷰 데이터
   const [reviewData, setReviewData] = useState({
@@ -22,6 +24,42 @@ const PerformanceReviewRegisterPage = () => {
     rating: 5,
     content: ''
   });
+  
+  // 공연장 리뷰 존재 여부 확인
+  const [hasPlaceReview, setHasPlaceReview] = useState(false);
+  const [nextPage, setNextPage] = useState(initialNextPage);
+  
+  // 티켓의 공연장 리뷰 존재 여부 확인
+  useEffect(() => {
+    const checkPlaceReview = async () => {
+      const ticketId = ticketData?.ticketId || ticketData?.id;
+      if (!ticketId || !initialNextPage) {
+        // ticketId가 없거나 nextPage가 없으면 확인 불필요
+        return;
+      }
+      
+      try {
+        const reviewsResponse = await getTicketReviews(ticketId);
+        const normalizedReviews = normalizeTicketReviews(reviewsResponse);
+        
+        if (normalizedReviews.hasPlaceReview) {
+          // 공연장 리뷰가 이미 있으면 nextPage를 null로 설정
+          setHasPlaceReview(true);
+          setNextPage(null);
+        } else {
+          setHasPlaceReview(false);
+          setNextPage(initialNextPage);
+        }
+      } catch (err) {
+        console.error('티켓 리뷰 확인 실패:', err);
+        // 확인 실패 시 기본값 사용
+        setHasPlaceReview(false);
+        setNextPage(initialNextPage);
+      }
+    };
+    
+    checkPlaceReview();
+  }, [ticketData?.ticketId, ticketData?.id, initialNextPage]);
 
   // 공연명으로 performanceId 찾기
   const findPerformanceIdByName = async (performanceName) => {
@@ -206,7 +244,7 @@ const PerformanceReviewRegisterPage = () => {
               type="submit"
               className={styles.submitButton}
             >
-              {nextPage ? '다음' : '작성하기'}
+              {nextPage && !hasPlaceReview ? '다음' : '작성하기'}
             </button>
           </div>
         </form>

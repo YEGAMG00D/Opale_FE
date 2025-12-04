@@ -159,6 +159,25 @@ export const extractTicketByOcr = async (file) => {
 };
 
 
+/* ============================================================
+    8) 티켓 상세 목록 조회
+    GET /api/reservations/list/detail?page=1&size=10
+============================================================ */
+export const getTicketDetailList = async (page = 1, size = 10) => {
+  try {
+    const res = await axiosInstance.get(`${base}/list/detail`, {
+      params: { page, size },
+    });
+
+    if (res.data.success) return res.data.data; // TicketDetailListResponseDto
+    throw new Error("티켓 인증 상세 목록 조회 실패");
+  } catch (err) {
+    console.error("❌ getTicketDetailList 오류:", err);
+    throw err;
+  }
+};
+
+
 
 
 /* ============================================================
@@ -170,6 +189,7 @@ export default {
   deleteTicket,
   getTicket,
   getTicketList,
+  getTicketDetailList, 
   getTicketReviews, 
   extractTicketByOcr,
 };

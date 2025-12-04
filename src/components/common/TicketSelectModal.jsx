@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getTicketList, getTicketReviews } from '../../api/reservationApi';
-import { normalizeTicketList, categorizeTickets } from '../../services/normalizeTicketList';
+import { getTicketDetailList, getTicketReviews } from '../../api/reservationApi';
+import { normalizeTicketDetailList, categorizeTickets } from '../../services/normalizeTicketDetailList';
 import { normalizeTicketReviews } from '../../services/normalizeTicketReviews';
 import styles from './TicketSelectModal.module.css';
 
-const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
+const TicketSelectModal = ({ isOpen, onClose, onSelectTicket, filterPerformanceId = null, filterPlaceId = null }) => {
   const [tickets, setTickets] = useState([]);
   const [filteredTickets, setFilteredTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,17 +19,30 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
       setError(null);
 
       try {
-        // 티켓 목록 가져오기
-        const response = await getTicketList(1, 100); // 충분히 많은 티켓 가져오기
-        const normalized = normalizeTicketList(response);
+        // 티켓 상세 목록 가져오기 (performanceId, placeId 포함)
+        const response = await getTicketDetailList(1, 100); // 충분히 많은 티켓 가져오기
+        const normalized = normalizeTicketDetailList(response);
         
         // 관람한 공연만 필터링
         const { watched } = categorizeTickets(normalized.tickets);
         
+        // performanceId 또는 placeId 필터링 적용
+        let filteredByIds = watched;
+        if (filterPerformanceId) {
+          filteredByIds = filteredByIds.filter(ticket => 
+            ticket.performanceId === filterPerformanceId
+          );
+        }
+        if (filterPlaceId) {
+          filteredByIds = filteredByIds.filter(ticket => 
+            ticket.placeId === filterPlaceId
+          );
+        }
+        
         // 각 티켓에 대해 리뷰 여부 확인
         const ticketsWithoutReview = [];
         
-        for (const ticket of watched) {
+        for (const ticket of filteredByIds) {
           try {
             const ticketId = ticket.ticketId || ticket.id;
             if (!ticketId) continue;
@@ -38,9 +51,21 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
             const reviewsResponse = await getTicketReviews(ticketId);
             const normalizedReviews = normalizeTicketReviews(reviewsResponse);
             
-            // 공연 후기와 공연장 리뷰 둘 다 작성된 티켓은 제외
-            // 둘 다 작성되지 않은 티켓만 추가 (하나라도 없으면 추가)
-            if (!normalizedReviews.hasPerformanceReview || !normalizedReviews.hasPlaceReview) {
+            // 필터링 조건에 따라 리뷰 존재 여부 확인
+            let shouldInclude = false;
+            
+            if (filterPerformanceId) {
+              // 공연 상세 페이지: 공연 후기가 없는 티켓만
+              shouldInclude = !normalizedReviews.hasPerformanceReview;
+            } else if (filterPlaceId) {
+              // 공연장 상세 페이지: 공연장 리뷰가 없는 티켓만
+              shouldInclude = !normalizedReviews.hasPlaceReview;
+            } else {
+              // 일반 모달: 공연 후기 또는 공연장 리뷰 중 하나라도 없는 티켓
+              shouldInclude = !normalizedReviews.hasPerformanceReview || !normalizedReviews.hasPlaceReview;
+            }
+            
+            if (shouldInclude) {
               ticketsWithoutReview.push({
                 ...ticket,
                 ticketId: ticketId,
@@ -73,7 +98,7 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
     };
 
     loadTicketsWithoutReview();
-  }, [isOpen]);
+  }, [isOpen, filterPerformanceId, filterPlaceId]);
 
   const handleSelectTicket = (ticket) => {
     // 티켓 정보를 프론트엔드 형식으로 변환

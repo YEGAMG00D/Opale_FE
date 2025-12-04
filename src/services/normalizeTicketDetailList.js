@@ -1,22 +1,22 @@
 /**
- * 티켓 목록 API 응답을 프론트엔드 형식으로 정제
+ * 티켓 상세 목록 API 응답을 프론트엔드 형식으로 정제
  */
 
-import { transformTicketDataFromApi } from '../utils/ticketDataTransform';
+import { normalizeTicketDetail } from './normalizeTicketDetail';
 
 /**
- * 티켓 목록 API 응답을 프론트엔드 형식으로 변환
- * @param {Object} apiResponse - API 응답 (TicketSimpleListResponseDto)
+ * 티켓 상세 목록 API 응답을 프론트엔드 형식으로 변환
+ * @param {Object} apiResponse - API 응답 (TicketDetailListResponseDto)
  * @param {number} apiResponse.totalCount - 총 티켓 수
  * @param {number} apiResponse.currentPage - 현재 페이지
  * @param {number} apiResponse.pageSize - 페이지당 티켓 수
  * @param {number} apiResponse.totalPages - 전체 페이지 수
  * @param {boolean} apiResponse.hasNext - 다음 페이지 존재 여부
  * @param {boolean} apiResponse.hasPrev - 이전 페이지 존재 여부
- * @param {Array} apiResponse.tickets - 티켓 목록 (TicketSimpleResponseDto[])
- * @returns {Object} - 정제된 티켓 목록 데이터
+ * @param {Array} apiResponse.tickets - 티켓 목록 (TicketDetailResponseDto[])
+ * @returns {Object} - 정제된 티켓 상세 목록 데이터
  */
-export const normalizeTicketList = (apiResponse) => {
+export const normalizeTicketDetailList = (apiResponse) => {
   if (!apiResponse || !apiResponse.tickets) {
     return {
       totalCount: 0,
@@ -30,33 +30,18 @@ export const normalizeTicketList = (apiResponse) => {
   }
 
   // 각 티켓을 프론트엔드 형식으로 변환
+  // TicketDetailResponseDto는 normalizeTicketDetail을 재사용
   const normalizedTickets = apiResponse.tickets.map((ticket) => {
-    // TicketSimpleResponseDto를 프론트엔드 형식으로 변환
-    // performanceDate는 LocalDateTime 형식이므로 변환 필요
-    const frontendData = transformTicketDataFromApi({
-      performanceName: ticket.performanceName,
-      performanceDate: ticket.performanceDate,
-      seatFront: ticket.seatFront,
-      seatNumber: ticket.seatNumber,
-      seatInfo: ticket.seatInfo, // 하위 호환성용
-      placeName: ticket.placeName,
-      performanceId: ticket.performanceId,
-      placeId: ticket.placeId
-    });
-
+    const normalized = normalizeTicketDetail(ticket);
+    
+    // 등록일 추가 (requestedAt이 있으면 사용, 없으면 현재 날짜)
+    const registeredDate = ticket.requestedAt 
+      ? new Date(ticket.requestedAt).toLocaleDateString('ko-KR')
+      : new Date().toLocaleDateString('ko-KR');
+    
     return {
-      id: ticket.ticketId,
-      ticketId: ticket.ticketId,
-      performanceId: ticket.performanceId || null, // 티켓의 공연 ID
-      placeId: ticket.placeId || null, // 티켓의 공연장 ID
-      performanceName: ticket.performanceName || '',
-      performanceDate: frontendData?.performanceDate || '',
-      performanceTime: frontendData?.performanceTime || '',
-      seatFront: frontendData?.seatFront || '',
-      seatNumber: frontendData?.seatNumber || '',
-      placeName: ticket.placeName || '',
-      // 등록일은 API 응답에 없으므로 현재 날짜로 설정하거나 null
-      registeredDate: new Date().toLocaleDateString('ko-KR')
+      ...normalized,
+      registeredDate
     };
   });
 

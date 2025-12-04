@@ -1771,6 +1771,7 @@ const DetailPerformancePage = () => {
         isOpen={showTicketSelectModal}
         onClose={handleCloseTicketSelectModal}
         onSelectTicket={handleSelectTicket}
+        filterPerformanceId={id} // 공연 상세 페이지에서는 해당 공연의 티켓만 표시
       />
 
       {/* 수정 모달 */}
