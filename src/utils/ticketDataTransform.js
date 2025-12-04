@@ -22,16 +22,18 @@ export const transformTicketDataForApi = (frontendData) => {
   };
 
   // performanceId가 있으면 포함 (null, undefined가 아닌 경우)
+  // 백엔드 DTO는 String 타입이므로 String으로 변환
   if (frontendData.performanceId !== null && frontendData.performanceId !== undefined) {
-    dto.performanceId = frontendData.performanceId;
+    dto.performanceId = String(frontendData.performanceId);
     console.log('✅ [transformTicketDataForApi] performanceId 포함:', dto.performanceId);
   } else {
     console.warn('⚠️ [transformTicketDataForApi] performanceId 없음:', frontendData.performanceId);
   }
 
   // placeId가 있으면 포함 (null, undefined가 아닌 경우)
+  // 백엔드 DTO는 String 타입이므로 String으로 변환
   if (frontendData.placeId !== null && frontendData.placeId !== undefined) {
-    dto.placeId = frontendData.placeId;
+    dto.placeId = String(frontendData.placeId);
     console.log('✅ [transformTicketDataForApi] placeId 포함:', dto.placeId);
   }
 

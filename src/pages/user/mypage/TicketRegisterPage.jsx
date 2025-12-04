@@ -469,6 +469,7 @@ const TicketRegisterPage = () => {
           ...prev,
           performanceName: performance.title,
           performanceId: performance.id,
+          placeId: performance.placeId || null,
           placeName: performance.venue
         }));
         setPerformanceDateRange({ startDate: null, endDate: null });
@@ -483,6 +484,7 @@ const TicketRegisterPage = () => {
         ...prev,
         performanceName: performance.title,
         performanceId: performance.id,
+        placeId: performance.placeId || null,
         placeName: performance.venue
       }));
       setPerformanceDateRange({ startDate: null, endDate: null });

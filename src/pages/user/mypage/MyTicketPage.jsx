@@ -8,10 +8,9 @@ import hanbokManPoster from '../../../assets/poster/hanbok-man.jpg';
 import deathNotePoster from '../../../assets/poster/death-note.gif';
 import rentPoster from '../../../assets/poster/rent.gif';
 import defaultTicketImage from '../../../assets/디폴트 티켓 이미지.jpg';
-import { getTicketList, deleteTicket as deleteTicketApi, getTicketReviews, getTicket } from '../../../api/reservationApi';
-import { normalizeTicketList, categorizeTickets } from '../../../services/normalizeTicketList';
+import { getTicketDetailList, deleteTicket as deleteTicketApi, getTicketReviews } from '../../../api/reservationApi';
+import { normalizeTicketDetailList, categorizeTickets } from '../../../services/normalizeTicketDetailList';
 import { normalizeTicketReviews } from '../../../services/normalizeTicketReviews';
-import { normalizeTicketDetail } from '../../../services/normalizeTicketDetail';
 import { deletePerformanceReview, deletePlaceReview } from '../../../api/reviewApi';
 import { fetchPerformanceList } from '../../../api/performanceApi';
 import { normalizePerformance } from '../../../services/normalizePerformance';
@@ -169,10 +168,10 @@ const MyTicketPage = () => {
   const loadTickets = async (pageNum = 1, append = false) => {
     try {
       setIsLoading(true);
-      const response = await getTicketList(pageNum, 50); // 한 번에 많이 가져오기
+      const response = await getTicketDetailList(pageNum, 50); // 상세 목록 조회 (performanceId, placeId 포함)
       
       // API 응답을 프론트엔드 형식으로 변환
-      const normalized = normalizeTicketList(response);
+      const normalized = normalizeTicketDetailList(response);
       
       const ticketsToSet = append ? [...allTickets, ...normalized.tickets] : normalized.tickets;
       
@@ -479,61 +478,70 @@ const MyTicketPage = () => {
                       placeId: ticket.placeId || null
                     };
                     
+                    // performanceId와 placeId가 모두 없으면 리뷰 작성 버튼을 표시하지 않음
+                    const hasPerformanceId = ticket.performanceId || reviewInfo.performanceId;
+                    const hasPlaceId = ticket.placeId || reviewInfo.placeId;
+                    
+                    // 둘 다 없으면 버튼을 표시하지 않음
+                    if (!hasPerformanceId && !hasPlaceId) {
+                      return null;
+                    }
+                    
                     return (
                       <div className={styles.reviewButtons}>
-                        <button 
-                          className={styles.reviewButton}
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (reviewInfo.hasPerformanceReview && reviewInfo.performanceId) {
-                              navigate(`/culture/${reviewInfo.performanceId}?tab=review`);
-                            } else {
-                              try {
-                                // 티켓 단일 조회로 placeId, performanceId 가져오기
-                                const ticketDetailResponse = await getTicket(ticketId);
-                                const normalizedTicketDetail = normalizeTicketDetail(ticketDetailResponse);
-                                
-                                // 공연장 리뷰 작성 여부 확인
-                                const reviewsResponse = await getTicketReviews(ticketId);
-                                const normalizedReviews = normalizeTicketReviews(reviewsResponse);
-                                
-                                navigate('/my/performanceReviews/register', {
-                                  state: {
-                                    ticketData: {
-                                      ...ticket,
-                                      ticketId: ticketId,
-                                      id: ticketId,
-                                      performanceId: normalizedTicketDetail?.performanceId || null,
-                                      placeId: normalizedTicketDetail?.placeId || null
-                                    },
-                                    performanceId: normalizedTicketDetail?.performanceId || null,
-                                    placeId: normalizedTicketDetail?.placeId || null,
-                                    // 공연장 리뷰가 없으면 공연장 리뷰 작성 페이지로 이동
-                                    nextPage: normalizedReviews.hasPlaceReview ? null : '/my/placeReviews/register'
-                                  }
-                                });
-                              } catch (err) {
-                                console.error('티켓 정보 조회 실패:', err);
-                                alert('티켓 정보를 불러오는데 실패했습니다.');
+                        {hasPerformanceId && (
+                          <button 
+                            className={styles.reviewButton}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              // getTicketDetailList를 사용하므로 ticket 객체에 이미 performanceId와 placeId가 포함됨
+                              const performanceId = ticket.performanceId || reviewInfo.performanceId;
+                              
+                              if (reviewInfo.hasPerformanceReview && performanceId) {
+                                navigate(`/culture/${performanceId}?tab=review`);
+                              } else {
+                                try {
+                                  // 공연장 리뷰 작성 여부 확인
+                                  const reviewsResponse = await getTicketReviews(ticketId);
+                                  const normalizedReviews = normalizeTicketReviews(reviewsResponse);
+                                  
+                                  navigate('/my/performanceReviews/register', {
+                                    state: {
+                                      ticketData: {
+                                        ...ticket,
+                                        ticketId: ticketId,
+                                        id: ticketId,
+                                        performanceId: ticket.performanceId || null,
+                                        placeId: ticket.placeId || null
+                                      },
+                                      performanceId: ticket.performanceId || null,
+                                      placeId: ticket.placeId || null,
+                                      // 공연장 리뷰가 없으면 공연장 리뷰 작성 페이지로 이동
+                                      nextPage: normalizedReviews.hasPlaceReview ? null : '/my/placeReviews/register'
+                                    }
+                                  });
+                                } catch (err) {
+                                  console.error('티켓 리뷰 확인 실패:', err);
+                                  alert('티켓 리뷰 정보를 불러오는데 실패했습니다.');
+                                }
                               }
-                            }
-                          }}
-                        >
-                          {reviewInfo.hasPerformanceReview ? '공연 후기로 이동' : '공연 후기 작성'}
-                        </button>
-                        <button 
-                          className={styles.reviewButton}
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (reviewInfo.hasPlaceReview && reviewInfo.placeId) {
-                              navigate(`/place/${reviewInfo.placeId}`);
-                            } else {
-                              try {
-                                // 티켓 단일 조회로 placeId, performanceId 가져오기
-                                const ticketDetailResponse = await getTicket(ticketId);
-                                const normalizedTicketDetail = normalizeTicketDetail(ticketDetailResponse);
-                                
-                                if (!normalizedTicketDetail?.placeId) {
+                            }}
+                          >
+                            {reviewInfo.hasPerformanceReview ? '공연 후기로 이동' : '공연 후기 작성'}
+                          </button>
+                        )}
+                        {hasPlaceId && (
+                          <button 
+                            className={styles.reviewButton}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              // getTicketDetailList를 사용하므로 ticket 객체에 이미 performanceId와 placeId가 포함됨
+                              const placeId = ticket.placeId || reviewInfo.placeId;
+                              
+                              if (reviewInfo.hasPlaceReview && placeId) {
+                                navigate(`/place/${placeId}`);
+                              } else {
+                                if (!placeId) {
                                   alert('공연장 정보가 없습니다. 티켓에 공연장 정보가 포함되어 있는지 확인해주세요.');
                                   return;
                                 }
@@ -544,21 +552,18 @@ const MyTicketPage = () => {
                                       ...ticket,
                                       ticketId: ticketId,
                                       id: ticketId,
-                                      performanceId: normalizedTicketDetail?.performanceId || null,
-                                      placeId: normalizedTicketDetail?.placeId || null
+                                      performanceId: ticket.performanceId || null,
+                                      placeId: ticket.placeId || null
                                     },
-                                    placeId: normalizedTicketDetail?.placeId || null
+                                    placeId: ticket.placeId || null
                                   }
                                 });
-                              } catch (err) {
-                                console.error('티켓 정보 조회 실패:', err);
-                                alert('티켓 정보를 불러오는데 실패했습니다.');
                               }
-                            }
-                          }}
-                        >
-                          {reviewInfo.hasPlaceReview ? '공연장 리뷰로 이동' : '공연장 리뷰 작성'}
-                        </button>
+                            }}
+                          >
+                            {reviewInfo.hasPlaceReview ? '공연장 리뷰로 이동' : '공연장 리뷰 작성'}
+                          </button>
+                        )}
                       </div>
                     );
                   })()}
