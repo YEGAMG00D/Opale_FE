@@ -18,6 +18,8 @@ const PerformanceReviewRegisterPage = () => {
   const performanceId = location.state?.performanceId || ticketData?.performanceId || null;
   const initialNextPage = location.state?.nextPage || null; // 공연장 리뷰 작성 페이지로 이동할 경우 ('/my/placeReviews/register')
   const fromPerformanceDetail = location.state?.fromPerformanceDetail || false; // 공연 상세 페이지에서 온 경우
+  const returnUrl = location.state?.returnUrl || null; // 이전 페이지 정보
+  const isThreeStepFlow = location.state?.isThreeStepFlow || false; // 3단계 플로우 여부
   
   // 리뷰 데이터
   const [reviewData, setReviewData] = useState({
@@ -26,11 +28,14 @@ const PerformanceReviewRegisterPage = () => {
     content: ''
   });
   
-  // 공연장 리뷰 존재 여부 확인
-  const [hasPlaceReview, setHasPlaceReview] = useState(false);
-  const [nextPage, setNextPage] = useState(initialNextPage);
+  // 티켓 선택 시 확인한 리뷰 정보 (location.state에서 전달받음)
+  const initialHasPlaceReview = location.state?.hasPlaceReview ?? null; // null이면 아직 확인 안 함
   
-  // 티켓의 공연장 리뷰 존재 여부 확인
+  // 공연장 리뷰 존재 여부 확인
+  const [hasPlaceReview, setHasPlaceReview] = useState(initialHasPlaceReview === true);
+  const [nextPage, setNextPage] = useState(initialHasPlaceReview === true ? null : initialNextPage);
+  
+  // 티켓의 공연장 리뷰 존재 여부 확인 (location.state에 정보가 없을 때만 API 호출)
   useEffect(() => {
     const checkPlaceReview = async () => {
       const ticketId = ticketData?.ticketId || ticketData?.id;
@@ -39,6 +44,14 @@ const PerformanceReviewRegisterPage = () => {
         return;
       }
       
+      // location.state에서 이미 확인한 정보가 있으면 사용
+      if (initialHasPlaceReview !== null) {
+        setHasPlaceReview(initialHasPlaceReview);
+        setNextPage(initialHasPlaceReview ? null : initialNextPage);
+        return;
+      }
+      
+      // location.state에 정보가 없을 때만 API 호출
       try {
         const reviewsResponse = await getTicketReviews(ticketId);
         const normalizedReviews = normalizeTicketReviews(reviewsResponse);
@@ -60,7 +73,7 @@ const PerformanceReviewRegisterPage = () => {
     };
     
     checkPlaceReview();
-  }, [ticketData?.ticketId, ticketData?.id, initialNextPage]);
+  }, [ticketData?.ticketId, ticketData?.id, initialNextPage, initialHasPlaceReview]);
 
   // 공연명으로 performanceId 찾기
   const findPerformanceIdByName = async (performanceName) => {
@@ -150,13 +163,17 @@ const PerformanceReviewRegisterPage = () => {
             },
             performanceId: finalPerformanceId,
             placeId: ticketData.placeId || location.state?.placeId || null,
-            fromPerformanceDetail: fromPerformanceDetail // 공연 상세 페이지에서 온 경우 전달
+            fromPerformanceDetail: fromPerformanceDetail, // 공연 상세 페이지에서 온 경우 전달
+            returnUrl: returnUrl, // 이전 페이지 정보 전달
+            isThreeStepFlow: isThreeStepFlow // 3단계 플로우 여부 전달
           } 
         });
       } else {
         // 공연장 리뷰가 이미 있거나 nextPage가 없는 경우
-        // 공연 상세 페이지에서 온 경우 공연 상세 페이지로 돌아가기
-        if (fromPerformanceDetail && finalPerformanceId) {
+        // returnUrl이 있으면 이전 페이지로, 없으면 공연 상세 페이지 또는 티켓 목록으로
+        if (returnUrl) {
+          navigate(returnUrl);
+        } else if (fromPerformanceDetail && finalPerformanceId) {
           navigate(`/culture/${finalPerformanceId}?tab=review`);
         } else if (finalPerformanceId) {
           navigate(`/culture/${finalPerformanceId}?tab=review`);

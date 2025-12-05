@@ -14,6 +14,8 @@ const PlaceReviewRegisterPage = () => {
   const placeId = location.state?.placeId || ticketData?.placeId || null;
   const performanceId = location.state?.performanceId || ticketData?.performanceId || null;
   const fromPerformanceDetail = location.state?.fromPerformanceDetail || false; // 공연 상세 페이지에서 온 경우
+  const returnUrl = location.state?.returnUrl || null; // 이전 페이지 정보
+  const isThreeStepFlow = location.state?.isThreeStepFlow || false; // 3단계 플로우 여부 (티켓 등록 -> 공연 후기 -> 공연장 리뷰)
   
   // 리뷰 데이터
   const [reviewData, setReviewData] = useState({
@@ -55,8 +57,10 @@ const PlaceReviewRegisterPage = () => {
       }
 
       // 성공 후 이동
-      // 공연 상세 페이지에서 온 경우 공연 상세 페이지로 돌아가기 (공연 후기/기대평 탭)
-      if (fromPerformanceDetail && performanceId) {
+      // returnUrl이 있으면 이전 페이지로, 없으면 공연 상세 페이지 또는 공연장 상세 페이지로
+      if (returnUrl) {
+        navigate(returnUrl);
+      } else if (fromPerformanceDetail && performanceId) {
         navigate(`/culture/${performanceId}?tab=review`);
       } else if (placeId) {
         navigate(`/place/${placeId}`);
@@ -71,7 +75,10 @@ const PlaceReviewRegisterPage = () => {
   };
 
   const handleCancel = () => {
-    if (placeId) {
+    // 3단계 플로우이고 returnUrl이 있으면 스킵으로 처리 (공연 상세 페이지로 이동)
+    if (isThreeStepFlow && returnUrl) {
+      navigate(returnUrl);
+    } else if (placeId) {
       navigate(`/place/${placeId}`);
     } else {
       navigate('/my/tickets');
@@ -142,7 +149,7 @@ const PlaceReviewRegisterPage = () => {
               className={styles.cancelButton}
               onClick={handleCancel}
             >
-              취소
+              {isThreeStepFlow ? '스킵' : '취소'}
             </button>
             <button 
               type="submit"

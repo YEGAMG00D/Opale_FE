@@ -501,10 +501,8 @@ const MyTicketPage = () => {
                                 navigate(`/culture/${performanceId}?tab=review`);
                               } else {
                                 try {
-                                  // 공연장 리뷰 작성 여부 확인
-                                  const reviewsResponse = await getTicketReviews(ticketId);
-                                  const normalizedReviews = normalizeTicketReviews(reviewsResponse);
-                                  
+                                  // 티켓 목록 페이지에서 시작한 경우는 독립적으로 공연 후기만 작성
+                                  // nextPage를 null로 설정하여 공연 후기 작성 후 끝나도록 함
                                   navigate('/my/performanceReviews/register', {
                                     state: {
                                       ticketData: {
@@ -516,13 +514,13 @@ const MyTicketPage = () => {
                                       },
                                       performanceId: ticket.performanceId || null,
                                       placeId: ticket.placeId || null,
-                                      // 공연장 리뷰가 없으면 공연장 리뷰 작성 페이지로 이동
-                                      nextPage: normalizedReviews.hasPlaceReview ? null : '/my/placeReviews/register'
+                                      nextPage: null, // 티켓 목록 페이지에서 시작한 경우는 독립적으로 작성
+                                      returnUrl: '/my/tickets' // 작성 완료 후 티켓 목록 페이지로 돌아가기
                                     }
                                   });
                                 } catch (err) {
-                                  console.error('티켓 리뷰 확인 실패:', err);
-                                  alert('티켓 리뷰 정보를 불러오는데 실패했습니다.');
+                                  console.error('티켓 정보 조회 실패:', err);
+                                  alert('티켓 정보를 불러오는데 실패했습니다.');
                                 }
                               }
                             }}
@@ -555,7 +553,8 @@ const MyTicketPage = () => {
                                       performanceId: ticket.performanceId || null,
                                       placeId: ticket.placeId || null
                                     },
-                                    placeId: ticket.placeId || null
+                                    placeId: ticket.placeId || null,
+                                    returnUrl: '/my/tickets' // 작성 완료 후 티켓 목록 페이지로 돌아가기
                                   }
                                 });
                               }

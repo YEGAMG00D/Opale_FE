@@ -1013,6 +1013,9 @@ const DetailPerformancePage = () => {
     if (type === 'review') {
       const performanceTitle = performance?.title || '';
       // 티켓 등록 페이지로 이동 (리뷰 작성을 위한 플로우)
+      // 이전 페이지 정보 저장 (복귀용)
+      const returnUrl = `/culture/${finalPerformanceId}`;
+      
       navigate('/my/tickets/register', {
         state: {
           forReview: true,
@@ -1029,7 +1032,9 @@ const DetailPerformancePage = () => {
           performanceId: performance?.performanceId || performance?.id || finalPerformanceId, // fetchPerformanceBasic로 받은 performanceId
           placeId: performance?.placeId || null, // fetchPerformanceBasic로 받은 placeId
           nextPage: '/my/placeReviews/register', // 공연 후기 작성 후 공연장 리뷰 작성 페이지로 이동
-          fromPerformanceDetail: true // 공연 상세 페이지에서 온 경우 표시
+          fromPerformanceDetail: true, // 공연 상세 페이지에서 온 경우 표시
+          returnUrl: returnUrl, // 모든 등록/작성 완료 후 돌아갈 페이지
+          isThreeStepFlow: true // 3단계 플로우 (티켓 등록 -> 공연 후기 -> 공연장 리뷰) 표시
         }
       });
     } else if (type === 'expectation') {
