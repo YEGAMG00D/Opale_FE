@@ -36,20 +36,24 @@ export const normalizeTicketList = (apiResponse) => {
     const frontendData = transformTicketDataFromApi({
       performanceName: ticket.performanceName,
       performanceDate: ticket.performanceDate,
-      seatInfo: ticket.seatInfo,
-      placeName: ticket.placeName
+      seatFront: ticket.seatFront,
+      seatNumber: ticket.seatNumber,
+      seatInfo: ticket.seatInfo, // 하위 호환성용
+      placeName: ticket.placeName,
+      performanceId: ticket.performanceId,
+      placeId: ticket.placeId
     });
 
     return {
       id: ticket.ticketId,
       ticketId: ticket.ticketId,
       performanceId: ticket.performanceId || null, // 티켓의 공연 ID
+      placeId: ticket.placeId || null, // 티켓의 공연장 ID
       performanceName: ticket.performanceName || '',
       performanceDate: frontendData?.performanceDate || '',
       performanceTime: frontendData?.performanceTime || '',
-      section: frontendData?.section || '',
-      row: frontendData?.row || '',
-      number: frontendData?.number || '',
+      seatFront: frontendData?.seatFront || '',
+      seatNumber: frontendData?.seatNumber || '',
       placeName: ticket.placeName || '',
       // 등록일은 API 응답에 없으므로 현재 날짜로 설정하거나 null
       registeredDate: new Date().toLocaleDateString('ko-KR')

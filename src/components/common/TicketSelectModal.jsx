@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getTicketList, getTicketReviews } from '../../api/reservationApi';
-import { normalizeTicketList } from '../../services/normalizeTicketList';
+import { getTicketDetailList, getTicketReviews } from '../../api/reservationApi';
+import { normalizeTicketDetailList, categorizeTickets } from '../../services/normalizeTicketDetailList';
 import { normalizeTicketReviews } from '../../services/normalizeTicketReviews';
 import styles from './TicketSelectModal.module.css';
 
-const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
+const TicketSelectModal = ({ isOpen, onClose, onSelectTicket, filterPerformanceId = null, filterPlaceId = null }) => {
   const [tickets, setTickets] = useState([]);
   const [filteredTickets, setFilteredTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,14 +19,58 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
       setError(null);
 
       try {
-        // 티켓 목록 가져오기
-        const response = await getTicketList(1, 100); // 충분히 많은 티켓 가져오기
-        const normalized = normalizeTicketList(response);
+        // 티켓 상세 목록 가져오기 (performanceId, placeId 포함)
+        const response = await getTicketDetailList(1, 100); // 충분히 많은 티켓 가져오기
+        const normalized = normalizeTicketDetailList(response);
+        
+        // 관람한 공연만 필터링
+        const { watched } = categorizeTickets(normalized.tickets);
+        
+        // performanceId 또는 placeId 필터링 적용
+        let filteredByIds = watched;
+        if (filterPerformanceId) {
+          // performanceId가 정확히 일치하는 티켓만 필터링 (null, undefined 제외)
+          const filterIdStr = String(filterPerformanceId);
+          filteredByIds = filteredByIds.filter(ticket => {
+            const ticketPerformanceId = ticket.performanceId;
+            // null, undefined, 빈 문자열 제외
+            if (!ticketPerformanceId) {
+              return false;
+            }
+            // 문자열로 변환하여 비교 (타입 불일치 방지)
+            const ticketIdStr = String(ticketPerformanceId);
+            const matches = ticketIdStr === filterIdStr;
+            
+            // 디버깅 로그 (필요시 제거)
+            if (!matches) {
+              console.log(`[TicketSelectModal] 티켓 ${ticket.ticketId} 필터링 제외: performanceId 불일치`, {
+                ticketPerformanceId: ticketIdStr,
+                filterPerformanceId: filterIdStr
+              });
+            }
+            
+            return matches;
+          });
+        }
+        if (filterPlaceId) {
+          // placeId가 정확히 일치하는 티켓만 필터링 (null, undefined 제외)
+          const filterIdStr = String(filterPlaceId);
+          filteredByIds = filteredByIds.filter(ticket => {
+            const ticketPlaceId = ticket.placeId;
+            // null, undefined, 빈 문자열 제외
+            if (!ticketPlaceId) {
+              return false;
+            }
+            // 문자열로 변환하여 비교 (타입 불일치 방지)
+            const ticketIdStr = String(ticketPlaceId);
+            return ticketIdStr === filterIdStr;
+          });
+        }
         
         // 각 티켓에 대해 리뷰 여부 확인
         const ticketsWithoutReview = [];
         
-        for (const ticket of normalized.tickets) {
+        for (const ticket of filteredByIds) {
           try {
             const ticketId = ticket.ticketId || ticket.id;
             if (!ticketId) continue;
@@ -35,23 +79,60 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
             const reviewsResponse = await getTicketReviews(ticketId);
             const normalizedReviews = normalizeTicketReviews(reviewsResponse);
             
-            // 공연 리뷰가 없으면 추가
-            if (!normalizedReviews.hasPerformanceReview) {
-              // normalizeTicketList에서 이미 변환된 데이터를 사용
+            // 필터링 조건에 따라 리뷰 존재 여부 확인
+            let shouldInclude = false;
+            
+            if (filterPerformanceId) {
+              // 공연 상세 페이지: 공연 후기가 없는 티켓만
+              shouldInclude = !normalizedReviews.hasPerformanceReview;
+            } else if (filterPlaceId) {
+              // 공연장 상세 페이지: 공연장 리뷰가 없는 티켓만
+              shouldInclude = !normalizedReviews.hasPlaceReview;
+            } else {
+              // 일반 모달: 공연 후기 또는 공연장 리뷰 중 하나라도 없는 티켓
+              shouldInclude = !normalizedReviews.hasPerformanceReview || !normalizedReviews.hasPlaceReview;
+            }
+            
+            if (shouldInclude) {
               ticketsWithoutReview.push({
                 ...ticket,
-                ticketId: ticketId
+                ticketId: ticketId,
+                performanceId: ticket.performanceId || null,
+                placeId: ticket.placeId || null
               });
             }
           } catch (err) {
             // 리뷰 조회 실패 시 (404 등) 리뷰가 없는 것으로 간주
+            // 하지만 filterPerformanceId나 filterPlaceId가 있으면 해당 필터 조건을 만족하는 경우만 추가
             console.log(`티켓 ${ticket.ticketId || ticket.id} 리뷰 확인 실패 (리뷰 없음으로 간주):`, err);
             
-            // normalizeTicketList에서 이미 변환된 데이터를 사용
-            ticketsWithoutReview.push({
-              ...ticket,
-              ticketId: ticket.ticketId || ticket.id
-            });
+            // 필터링 조건 확인
+            let shouldIncludeOnError = true;
+            
+            if (filterPerformanceId) {
+              // performanceId가 일치하고 null이 아닌 경우만
+              const ticketPerformanceId = ticket.performanceId;
+              if (!ticketPerformanceId || String(ticketPerformanceId) !== String(filterPerformanceId)) {
+                shouldIncludeOnError = false;
+              }
+            }
+            
+            if (filterPlaceId) {
+              // placeId가 일치하고 null이 아닌 경우만
+              const ticketPlaceId = ticket.placeId;
+              if (!ticketPlaceId || String(ticketPlaceId) !== String(filterPlaceId)) {
+                shouldIncludeOnError = false;
+              }
+            }
+            
+            if (shouldIncludeOnError) {
+              ticketsWithoutReview.push({
+                ...ticket,
+                ticketId: ticket.ticketId || ticket.id,
+                performanceId: ticket.performanceId || null,
+                placeId: ticket.placeId || null
+              });
+            }
           }
         }
         
@@ -67,7 +148,7 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
     };
 
     loadTicketsWithoutReview();
-  }, [isOpen]);
+  }, [isOpen, filterPerformanceId, filterPlaceId]);
 
   const handleSelectTicket = (ticket) => {
     // 티켓 정보를 프론트엔드 형식으로 변환
@@ -77,11 +158,12 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
       performanceName: ticket.performanceName || '',
       performanceDate: ticket.performanceDate || '',
       performanceTime: ticket.performanceTime || '',
-      section: ticket.section || '',
-      row: ticket.row || '',
-      number: ticket.number || '',
+      seatFront: ticket.seatFront || '',
+      seatNumber: ticket.seatNumber || '',
       placeName: ticket.placeName || '',
-      ticketImageUrl: ticket.ticketImageUrl || null
+      ticketImageUrl: ticket.ticketImageUrl || null,
+      performanceId: ticket.performanceId || null,
+      placeId: ticket.placeId || null
     };
     
     onSelectTicket(ticketData);
@@ -130,11 +212,12 @@ const TicketSelectModal = ({ isOpen, onClose, onSelectTicket }) => {
                           {ticket.performanceTime && ` ${ticket.performanceTime}`}
                         </span>
                       )}
-                      {(ticket.section || ticket.row || ticket.number) && (
+                      {(ticket.seatFront || ticket.seatNumber) && (
                         <span className={styles.detailItem}>
-                          {[ticket.section, ticket.row && `${ticket.row}열`, ticket.number && `${ticket.number}번`]
-                            .filter(Boolean)
-                            .join(' ')}
+                          {ticket.seatFront && ticket.seatNumber 
+                            ? `${ticket.seatFront}-${ticket.seatNumber}번`
+                            : ticket.seatFront || ticket.seatNumber ? `${ticket.seatFront || ''}${ticket.seatNumber ? `${ticket.seatNumber}번` : ''}`.trim()
+                            : ''}
                         </span>
                       )}
                       {ticket.placeName && (

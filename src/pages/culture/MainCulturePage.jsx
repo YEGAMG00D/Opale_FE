@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedCategory, setShowOngoingOnly } from "../../store/performanceSlice";
@@ -12,7 +12,6 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 const MainCulturePage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const searchRef = useRef(null);
 
   /** Redux 상태 */
   const selectedCategory = useSelector((state) => state.performance.selectedCategory);
@@ -20,8 +19,6 @@ const MainCulturePage = () => {
   
   /** 로컬 상태 */
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
 
   /** ⭐ 영어 → 한국어 장르명 매핑 */
@@ -41,6 +38,8 @@ const MainCulturePage = () => {
         ? null
         : categoryMapForRequest[selectedCategory],
     sortType: "인기",
+    // 검색어가 있으면 keyword로 전달
+    keyword: searchQuery.trim() || null,
   });
 
   /** 관심 공연 ID 목록 조회 */
@@ -74,21 +73,6 @@ const MainCulturePage = () => {
       console.error("관심 토글 실패:", err);
     }
   };
-
-  /** 검색 기능 */
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setShowSuggestions(false);
-      return;
-    }
-
-    const filtered = performances.filter((p) =>
-      p.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    setFilteredSuggestions(filtered.slice(0, 5));
-    setShowSuggestions(true);
-  }, [searchQuery, performances]);
 
   /** 검색 제출 */
   const handleSearchSubmit = (e) => {
@@ -126,13 +110,14 @@ const MainCulturePage = () => {
   return (
     <div className={styles.container}>
       {/* 검색창 */}
-      <div className={styles.searchSection} ref={searchRef}>
+      <div className={styles.searchSection}>
         <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
           <input
             type="text"
             className={styles.searchInput}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="공연명을 입력하세요"
           />
         </form>
       </div>

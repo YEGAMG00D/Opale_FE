@@ -57,7 +57,31 @@ export const normalizePlaceReviews = (apiData) => {
         }
       }
       
-      // seat 필드가 문자열로 있는 경우 파싱
+      // seatInfo 필드가 문자열로 있는 경우 파싱 (우선순위)
+      if (review.seatInfo) {
+        const seatStr = String(review.seatInfo).trim();
+        if (seatStr) {
+          // "-" 기준으로 분리 (하이픈이 있는 경우)
+          if (seatStr.includes('-')) {
+            const parts = seatStr.split('-');
+            // 앞부분만 반환 (N번 제외)
+            return parts[0].trim();
+          }
+          
+          // "번"이 포함된 경우, "번" 앞부분까지만 반환
+          const numberMatch = seatStr.match(/(\d+)\s*번/);
+          if (numberMatch) {
+            const numberIndex = seatStr.indexOf(numberMatch[0]);
+            // "번" 앞부분만 반환
+            return seatStr.substring(0, numberIndex).trim();
+          }
+          
+          // 패턴이 맞지 않으면 전체를 반환
+          return seatStr;
+        }
+      }
+      
+      // seat 필드가 문자열로 있는 경우 파싱 (하위 호환성)
       if (review.seat) {
         const seatStr = String(review.seat);
         // "구역 열 번호" 형태를 "구역 열"로 변환

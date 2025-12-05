@@ -8,6 +8,41 @@
   box-sizing: border-box;
 }
 
+.breadcrumb {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.breadcrumbLink {
+  color: #333;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.breadcrumbLink:hover {
+  color: #ffb6c1;
+  text-decoration: underline;
+}
+
+.breadcrumbSeparator {
+  margin: 0 8px;
+  color: #999;
+}
+
+.breadcrumbItem {
+  color: #666;
+}
+
+.breadcrumbCurrent {
+  color: #333;
+  font-weight: 500;
+}
+
 .header {
   margin-bottom: 30px;
 }
@@ -131,6 +166,36 @@
   margin-right: 8px;
 }
 
+.radioGroup {
+  display: flex;
+  gap: 20px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.radioLabel input[type="radio"] {
+  margin: 0;
+}
+
+.performanceSelectorWrapper {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.performanceSelectorWrapper > * {
+  box-shadow: none !important;
+  margin-bottom: 0 !important;
+}
+
 .imageUpload {
   display: flex;
   flex-direction: column;
@@ -149,6 +214,19 @@
   object-fit: contain;
   border-radius: 6px;
   border: 1px solid #ddd;
+}
+
+.performanceSelectorWrapper {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.performanceSelectorWrapper > * {
+  box-shadow: none !important;
+  margin-bottom: 0 !important;
 }
 
 .formActions {
@@ -269,6 +347,7 @@
 .bannerInfo {
   padding: 16px;
   flex: 1;
+  min-width: 0; /* flexbox에서 텍스트 오버플로우를 위해 필요 */
 }
 
 .bannerHeader {
@@ -284,6 +363,9 @@
   font-weight: 600;
   color: #333;
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bannerBadges {
@@ -317,6 +399,9 @@
   margin: 4px 0;
   font-size: 14px;
   color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bannerDetails strong {

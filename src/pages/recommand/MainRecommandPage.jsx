@@ -9,6 +9,8 @@ import { normalizeRecommendation } from '../../services/normalizeRecommendation'
 import { normalizePerformanceDetail } from '../../services/normalizePerformanceDetail';
 import { hasUserTickets } from '../../utils/ticketUtils';
 import { hasUserReviews } from '../../utils/reviewUtils';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import RecommendationSkeleton from '../../components/common/RecommendationSkeleton';
 import styles from './MainRecommandPage.module.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -810,9 +812,7 @@ const MainRecommandPage = () => {
 
       {/* 사용자 확인 중 로딩 */}
       {isCheckingUser ? (
-        <div style={{ padding: '40px', textAlign: 'center' }}>
-          추천 공연을 준비하는 중...
-        </div>
+        <LoadingSpinner />
       ) : (
         <>
       {/* 로그인한 사용자: 내 키워드 섹션 (기존 사용자만) */}
@@ -836,9 +836,9 @@ const MainRecommandPage = () => {
       {/* 로그인한 사용자: 개인 맞춤 추천 공연 섹션 (기존 사용자만) */}
       {isLoggedIn && !isNewUser && !isCheckingUser && (
         <section className={styles.seriesSection}>
-          <h2 className={styles.sectionTitle}>추천하는 공연</h2>
+          <h2 className={styles.sectionTitle}>{user?.nickname || '사용자'} 님을 위한 공연</h2>
           {userRecommendationsLoading ? (
-            <div style={{ padding: '20px', textAlign: 'center' }}>추천 공연을 불러오는 중...</div>
+            <RecommendationSkeleton />
           ) : userRecommendations.length > 0 ? (
           <>
             <div 
@@ -946,7 +946,7 @@ const MainRecommandPage = () => {
             {recentPerformance.title ? `'${recentPerformance.title}'과 비슷한 공연은` : '최근 본 공연과 비슷한 공연은'}
           </h2>
           {similarPerformancesLoading ? (
-            <div style={{ padding: '20px', textAlign: 'center' }}>유사 공연을 불러오는 중...</div>
+            <RecommendationSkeleton />
           ) : similarPerformances.length > 0 ? (
             <>
               <div 
@@ -1052,7 +1052,7 @@ const MainRecommandPage = () => {
         <section className={styles.seriesSection}>
           <h2 className={styles.sectionTitle}>인기 공연</h2>
           {popularPerformancesLoading ? (
-            <div style={{ padding: '20px', textAlign: 'center' }}>인기 공연을 불러오는 중...</div>
+            <RecommendationSkeleton />
           ) : popularPerformances.length > 0 ? (
             <>
               <div 
@@ -1162,7 +1162,7 @@ const MainRecommandPage = () => {
           <section key={genre} className={styles.seriesSection}>
             <h2 className={styles.sectionTitle}>{genre} 인기 공연</h2>
             {loading ? (
-              <div style={{ padding: '20px', textAlign: 'center' }}>{genre} 공연을 불러오는 중...</div>
+              <RecommendationSkeleton />
             ) : performances.length > 0 ? (
               <>
                 <div 

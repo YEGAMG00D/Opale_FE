@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './TicketRegisterPage.module.css';
-import { createTicket, updateTicket as updateTicketApi, getTicket, extractTicketByOcr } from '../../../api/reservationApi';
+import { createTicket, updateTicket as updateTicketApi, getTicket, extractTicketByOcr, getTicketReviews } from '../../../api/reservationApi';
 import { transformTicketDataForApi, transformTicketDataFromApi } from '../../../utils/ticketDataTransform';
 import logApi from '../../../api/logApi';
 import TicketSelectModal from '../../../components/common/TicketSelectModal';
 import { fetchPerformanceList } from '../../../api/performanceApi';
 import { fetchPerformanceBasic } from '../../../api/performanceApi';
 import { normalizePerformance } from '../../../services/normalizePerformance';
-import { normalizePerformanceDetail } from '../../../services/normalizePerformanceDetail';
+import { normalizePerformanceDetail, formatDateRange } from '../../../services/normalizePerformanceDetail';
 import { normalizeTicketOcr } from '../../../services/normalizeTicketOcr';
+import { normalizeTicketReviews } from '../../../services/normalizeTicketReviews';
 import OcrLoadingSpinner from '../../../components/common/OcrLoadingSpinner';
 
 const TicketRegisterPage = () => {
@@ -20,14 +21,25 @@ const TicketRegisterPage = () => {
   const ticketId = location.state?.ticketId || location.state?.ticket?.ticketId || location.state?.ticket?.id || null;
   const isEditMode = !!ticketId;
   
+  // 리뷰 작성을 위한 티켓 등록인지 확인
+  const isForReview = location.state?.forReview === true;
+  const nextReviewPage = location.state?.nextReviewPage || null; // '/my/performanceReviews/register' or '/my/placeReviews/register'
+  
+  // 공연 상세 페이지에서 전달받은 performanceId, placeId (티켓 선택 모달 필터링용)
+  const filterPerformanceId = location.state?.performanceId || null;
+  const filterPlaceId = location.state?.placeId || null;
+  
+  // 이전 페이지 정보 (복귀용)
+  const returnUrl = location.state?.returnUrl || null;
+  const isThreeStepFlow = location.state?.isThreeStepFlow || false; // 3단계 플로우 여부
+  
   const [ticketStep, setTicketStep] = useState(isEditMode ? 'manual' : 'scan'); // 'scan' or 'manual'
   const [ticketData, setTicketData] = useState({
     performanceName: '',
     performanceDate: '',
     performanceTime: '',
-    section: '',
-    row: '',
-    number: '',
+    seatFront: '',
+    seatNumber: '',
     placeName: '',
     ticketImage: null,
     performanceId: null,
@@ -66,9 +78,8 @@ const TicketRegisterPage = () => {
               performanceName: frontendData.performanceName || '',
               performanceDate: frontendData.performanceDate || '',
               performanceTime: frontendData.performanceTime || '',
-              section: frontendData.section || '',
-              row: frontendData.row || '',
-              number: frontendData.number || '',
+              seatFront: frontendData.seatFront || '',
+              seatNumber: frontendData.seatNumber || '',
               placeName: frontendData.placeName || '',
               ticketImage: null,
               performanceId: frontendData.performanceId || null,
@@ -164,20 +175,33 @@ const TicketRegisterPage = () => {
           const normalizedData = normalizeTicketOcr(ocrResponse);
           console.log('🔄 [capturePhoto] 정제된 데이터:', normalizedData);
           
+          const ocrPerformanceName = normalizedData.performanceName || '';
+          
           setTicketData(prev => {
             const newData = {
               ...prev,
-              performanceName: normalizedData.performanceName || prev.performanceName,
+              performanceName: ocrPerformanceName || prev.performanceName,
               performanceDate: normalizedData.performanceDate || prev.performanceDate,
               performanceTime: normalizedData.performanceTime || prev.performanceTime,
-              section: normalizedData.section || prev.section,
-              row: normalizedData.row || prev.row,
-              number: normalizedData.number || prev.number,
+              seatFront: normalizedData.seatFront || prev.seatFront,
+              seatNumber: normalizedData.seatNumber || prev.seatNumber,
               placeName: normalizedData.placeName || prev.placeName,
             };
             console.log('📝 [capturePhoto] ticketData 업데이트:', newData);
             return newData;
           });
+          
+          // OCR로 공연명이 추출되었으면 자동완성 검색 실행
+          if (ocrPerformanceName && ocrPerformanceName.trim().length > 0) {
+            // 기존 타이머 취소
+            if (searchTimeoutRef.current) {
+              clearTimeout(searchTimeoutRef.current);
+            }
+            // 300ms 후 검색 실행 (자동완성과 동일한 로직)
+            searchTimeoutRef.current = setTimeout(() => {
+              searchPerformances(ocrPerformanceName);
+            }, 300);
+          }
           
           setTicketStep('manual');
           console.log('✅ [capturePhoto] OCR 처리 완료, manual 단계로 이동');
@@ -228,20 +252,33 @@ const TicketRegisterPage = () => {
           const normalizedData = normalizeTicketOcr(ocrResponse);
           console.log('🔄 [handleFileSelect] 정제된 데이터:', normalizedData);
           
+          const ocrPerformanceName = normalizedData.performanceName || '';
+          
           setTicketData(prev => {
             const newData = {
               ...prev,
-              performanceName: normalizedData.performanceName || prev.performanceName,
+              performanceName: ocrPerformanceName || prev.performanceName,
               performanceDate: normalizedData.performanceDate || prev.performanceDate,
               performanceTime: normalizedData.performanceTime || prev.performanceTime,
-              section: normalizedData.section || prev.section,
-              row: normalizedData.row || prev.row,
-              number: normalizedData.number || prev.number,
+              seatFront: normalizedData.seatFront || prev.seatFront,
+              seatNumber: normalizedData.seatNumber || prev.seatNumber,
               placeName: normalizedData.placeName || prev.placeName,
             };
             console.log('📝 [handleFileSelect] ticketData 업데이트:', newData);
             return newData;
           });
+          
+          // OCR로 공연명이 추출되었으면 자동완성 검색 실행
+          if (ocrPerformanceName && ocrPerformanceName.trim().length > 0) {
+            // 기존 타이머 취소
+            if (searchTimeoutRef.current) {
+              clearTimeout(searchTimeoutRef.current);
+            }
+            // 300ms 후 검색 실행 (자동완성과 동일한 로직)
+            searchTimeoutRef.current = setTimeout(() => {
+              searchPerformances(ocrPerformanceName);
+            }, 300);
+          }
           
           setTicketStep('manual');
           console.log('✅ [handleFileSelect] OCR 처리 완료, manual 단계로 이동');
@@ -290,15 +327,19 @@ const TicketRegisterPage = () => {
   };
 
   // 티켓 선택 시 처리
-  const handleSelectTicket = (selectedTicket) => {
+  const handleSelectTicket = async (selectedTicket) => {
+    const ticketId = selectedTicket.ticketId || selectedTicket.id;
+    const isExistingTicket = !!ticketId;
+    
     // 선택한 티켓 정보를 폼에 채우기
     setTicketData({
+      id: ticketId || null,
+      ticketId: ticketId || null,
       performanceName: selectedTicket.performanceName || '',
       performanceDate: selectedTicket.performanceDate || '',
       performanceTime: selectedTicket.performanceTime || '',
-      section: selectedTicket.section || '',
-      row: selectedTicket.row || '',
-      number: selectedTicket.number || '',
+      seatFront: selectedTicket.seatFront || '',
+      seatNumber: selectedTicket.seatNumber || '',
       placeName: selectedTicket.placeName || '',
       ticketImage: null,
       performanceId: selectedTicket.performanceId || null,
@@ -309,6 +350,56 @@ const TicketRegisterPage = () => {
     if (selectedTicket.ticketImageUrl) {
       setTicketImageUrl(selectedTicket.ticketImageUrl);
       setCapturedImage(selectedTicket.ticketImageUrl);
+    }
+
+    // 리뷰 작성을 위한 티켓 등록이고 이미 등록된 티켓이면 바로 리뷰 작성 페이지로 이동
+    if (isForReview && isExistingTicket && nextReviewPage) {
+      // 공연 후기 작성 페이지로 이동하는 경우, 공연장 리뷰 작성 여부 확인
+      let finalNextPage = location.state?.nextPage || null;
+      
+      // 티켓의 리뷰 작성 여부 확인 (공연 후기/공연장 리뷰)
+      let hasPlaceReview = false;
+      let hasPerformanceReview = false;
+      
+      if (nextReviewPage === '/my/performanceReviews/register') {
+        // 티켓의 공연장 리뷰 작성 여부 확인
+        try {
+          const reviewsResponse = await getTicketReviews(ticketId);
+          const normalizedReviews = normalizeTicketReviews(reviewsResponse);
+          
+          hasPlaceReview = normalizedReviews.hasPlaceReview;
+          hasPerformanceReview = normalizedReviews.hasPerformanceReview;
+          
+          // 공연장 리뷰가 이미 작성되어 있으면 nextPage를 null로 설정
+          if (normalizedReviews.hasPlaceReview) {
+            finalNextPage = null;
+          }
+        } catch (err) {
+          console.error('티켓 리뷰 확인 실패:', err);
+          // 확인 실패 시 기본값 사용
+        }
+      }
+      
+      navigate(nextReviewPage, {
+        state: {
+          ticketData: {
+            ...selectedTicket,
+            ticketId: ticketId,
+            id: ticketId,
+            performanceId: selectedTicket.performanceId || null,
+            placeId: selectedTicket.placeId || null
+          },
+          performanceId: location.state?.performanceId || selectedTicket.performanceId || null,
+          placeId: location.state?.placeId || selectedTicket.placeId || null,
+          nextPage: finalNextPage,
+          fromPerformanceDetail: location.state?.fromPerformanceDetail || false, // 공연 상세 페이지에서 온 경우 전달
+          hasPlaceReview: hasPlaceReview, // 티켓 선택 시 확인한 공연장 리뷰 존재 여부
+          hasPerformanceReview: hasPerformanceReview, // 티켓 선택 시 확인한 공연 후기 존재 여부
+          returnUrl: returnUrl, // 이전 페이지 정보 전달
+          isThreeStepFlow: isThreeStepFlow // 3단계 플로우 여부 전달
+        }
+      });
+      return;
     }
 
     // 티켓 정보 입력 단계로 이동
@@ -398,6 +489,7 @@ const TicketRegisterPage = () => {
           ...prev,
           performanceName: performance.title,
           performanceId: performance.id,
+          placeId: performance.placeId || null,
           placeName: performance.venue
         }));
         setPerformanceDateRange({ startDate: null, endDate: null });
@@ -412,6 +504,7 @@ const TicketRegisterPage = () => {
         ...prev,
         performanceName: performance.title,
         performanceId: performance.id,
+        placeId: performance.placeId || null,
         placeName: performance.venue
       }));
       setPerformanceDateRange({ startDate: null, endDate: null });
@@ -465,13 +558,15 @@ const TicketRegisterPage = () => {
       // 프론트엔드 데이터를 백엔드 API 형식으로 변환
       const apiDto = transformTicketDataForApi(ticketData);
 
+      let ticketResponse = null; // 응답을 저장할 변수 선언
+
       if (isEditMode && ticketId) {
         // 수정 모드: API 호출
-        await updateTicketApi(ticketId, apiDto);
+        ticketResponse = await updateTicketApi(ticketId, apiDto);
         alert('티켓이 수정되었습니다.');
       } else {
         // 등록 모드: API 호출
-        const ticketResponse = await createTicket(apiDto);
+        ticketResponse = await createTicket(apiDto);
         alert('티켓이 등록되었습니다.');
         
         // 티켓 인증 완료 시 BOOKED 로그 기록
@@ -496,6 +591,69 @@ const TicketRegisterPage = () => {
       }
       
       stopCamera();
+      
+      // 리뷰 작성을 위한 티켓 등록인 경우 다음 페이지로 이동
+      if (isForReview && nextReviewPage && ticketResponse) {
+        const responseTicketId = ticketResponse?.ticketId || ticketResponse?.id;
+        const responsePerformanceId = ticketResponse?.performanceId || ticketResponse?.performance?.performanceId || ticketData.performanceId;
+        const responsePlaceId = ticketResponse?.placeId || ticketResponse?.place?.placeId || ticketData.placeId;
+        
+        // 공연 후기 작성 페이지로 이동하는 경우, 공연장 리뷰 작성 여부 확인
+        let finalNextPage = location.state?.nextPage || null;
+        
+        if (nextReviewPage === '/my/performanceReviews/register' && responseTicketId) {
+          // 티켓의 공연장 리뷰 작성 여부 확인
+          try {
+            const reviewsResponse = await getTicketReviews(responseTicketId);
+            const normalizedReviews = normalizeTicketReviews(reviewsResponse);
+            
+            // 공연장 리뷰가 이미 작성되어 있으면 nextPage를 null로 설정
+            if (normalizedReviews.hasPlaceReview) {
+              finalNextPage = null;
+            }
+          } catch (err) {
+            console.error('티켓 리뷰 확인 실패:', err);
+            // 확인 실패 시 기본값 사용
+          }
+        }
+        
+        // 티켓의 리뷰 작성 여부 확인
+        let hasPlaceReview = false;
+        let hasPerformanceReview = false;
+        
+        if (nextReviewPage === '/my/performanceReviews/register' && responseTicketId) {
+          try {
+            const reviewsResponse = await getTicketReviews(responseTicketId);
+            const normalizedReviews = normalizeTicketReviews(reviewsResponse);
+            
+            hasPlaceReview = normalizedReviews.hasPlaceReview;
+            hasPerformanceReview = normalizedReviews.hasPerformanceReview;
+          } catch (err) {
+            console.error('티켓 리뷰 확인 실패:', err);
+          }
+        }
+        
+        navigate(nextReviewPage, { 
+          state: { 
+            ticketData: {
+              ...ticketData,
+              ticketId: responseTicketId,
+              id: responseTicketId,
+              performanceId: responsePerformanceId,
+              placeId: responsePlaceId
+            },
+            performanceId: location.state?.performanceId || responsePerformanceId,
+            placeId: location.state?.placeId || responsePlaceId,
+            nextPage: finalNextPage,
+            fromPerformanceDetail: location.state?.fromPerformanceDetail || false, // 공연 상세 페이지에서 온 경우 전달
+            hasPlaceReview: hasPlaceReview, // 티켓 등록 시 확인한 공연장 리뷰 존재 여부
+            hasPerformanceReview: hasPerformanceReview, // 티켓 등록 시 확인한 공연 후기 존재 여부
+            returnUrl: returnUrl, // 이전 페이지 정보 전달
+            isThreeStepFlow: isThreeStepFlow // 3단계 플로우 여부 전달
+          } 
+        });
+        return;
+      }
       
       // 티켓 목록 새로고침을 위한 이벤트 발생
       window.dispatchEvent(new Event('ticketUpdated'));
@@ -680,6 +838,11 @@ const TicketRegisterPage = () => {
                       >
                         <div className={styles.searchResultTitle}>{performance.title}</div>
                         <div className={styles.searchResultVenue}>{performance.venue}</div>
+                        {performance.startDate && performance.endDate && (
+                          <div className={styles.searchResultDate}>
+                            {formatDateRange(performance.startDate, performance.endDate)}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -713,23 +876,16 @@ const TicketRegisterPage = () => {
                 <div className={styles.seatInputs}>
                   <input
                     type="text"
-                    value={ticketData.section}
-                    onChange={(e) => handleTicketInputChange('section', e.target.value)}
-                    placeholder="구역"
+                    value={ticketData.seatFront}
+                    onChange={(e) => handleTicketInputChange('seatFront', e.target.value)}
+                    placeholder="앞부분 (예: 다 11열, 1층 A구역 3열)"
                     className={styles.seatInput}
                   />
                   <input
                     type="text"
-                    value={ticketData.row}
-                    onChange={(e) => handleTicketInputChange('row', e.target.value)}
-                    placeholder="열"
-                    className={styles.seatInput}
-                  />
-                  <input
-                    type="text"
-                    value={ticketData.number}
-                    onChange={(e) => handleTicketInputChange('number', e.target.value)}
-                    placeholder="번"
+                    value={ticketData.seatNumber}
+                    onChange={(e) => handleTicketInputChange('seatNumber', e.target.value)}
+                    placeholder="번호 (예: 4)"
                     className={styles.seatInput}
                   />
                 </div>
@@ -755,7 +911,7 @@ const TicketRegisterPage = () => {
                 className={styles.primaryButton}
                 onClick={handleTicketRegister}
               >
-                {isEditMode ? '수정 완료' : '티켓 등록'}
+                {isEditMode ? '수정 완료' : (isForReview ? '다음' : '티켓 등록')}
               </button>
             </div>
           </>
@@ -767,6 +923,8 @@ const TicketRegisterPage = () => {
         isOpen={showTicketSelectModal}
         onClose={handleCloseTicketSelectModal}
         onSelectTicket={handleSelectTicket}
+        filterPerformanceId={filterPerformanceId} // 공연 상세 페이지에서 전달받은 performanceId로 필터링
+        filterPlaceId={filterPlaceId} // 공연장 상세 페이지에서 전달받은 placeId로 필터링
       />
     </div>
   );

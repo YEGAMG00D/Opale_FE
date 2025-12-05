@@ -12,6 +12,7 @@ import { fetchPlaceReviewsByPlace, createPlaceReview } from '../../api/reviewApi
 import { normalizePlaceReviews } from '../../services/normalizePlaceReview';
 import { normalizePlaceReviewRequest } from '../../services/normalizePlaceReviewRequest';
 import logApi from '../../api/logApi';
+import PlaceDetailSkeleton from '../../components/common/PlaceDetailSkeleton';
 
 const DetailPlacePage = () => {
   const { id } = useParams();
@@ -72,13 +73,7 @@ const DetailPlacePage = () => {
   }, [id, currentUserId]);
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>
-          <p>공연장 정보를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <PlaceDetailSkeleton />;
   }
 
   if (error || !place) {
@@ -86,7 +81,7 @@ const DetailPlacePage = () => {
       <div className={styles.container}>
         <div className={styles.error}>
           <p>{error || '공연장 정보를 찾을 수 없습니다.'}</p>
-          <button onClick={() => navigate('/place')} className={styles.backBtn}>
+          <button onClick={() => navigate('/place', { state: { fromDetailPlace: true } })} className={styles.backBtn}>
             목록으로 돌아가기
           </button>
         </div>
@@ -235,7 +230,26 @@ const DetailPlacePage = () => {
         <div className={styles.writeButtonContainer}>
           <button 
             className={styles.writeButton}
-            onClick={() => setShowWriteModal(true)}
+            onClick={() => {
+              // 티켓 등록 → 공연장 리뷰 작성 순으로 이동
+              navigate('/my/tickets/register', {
+                state: {
+                  forReview: true,
+                  nextReviewPage: '/my/placeReviews/register',
+                  ticketData: {
+                    performanceName: '',
+                    performanceDate: '',
+                    performanceTime: '',
+                    section: '',
+                    row: '',
+                    number: '',
+                    placeId: id
+                  },
+                  placeId: id,
+                  returnUrl: `/place/${id}` // 공연장 리뷰 작성 완료 후 공연장 상세 페이지로 복귀
+                }
+              });
+            }}
           >
             후기 작성하기
           </button>

@@ -1,0 +1,77 @@
+.container {
+  width: 100%;
+  padding: 0;
+}
+
+.sliderContainer {
+  position: relative;
+  overflow: hidden;
+  margin: 0 -24px;
+  padding: 0 24px;
+  box-sizing: border-box;
+  width: calc(100% + 48px);
+  margin-bottom: 16px;
+}
+
+.sliderTrack {
+  display: flex;
+  gap: 16px;
+  width: fit-content;
+}
+
+.slideCard {
+  flex: 0 0 calc(100% / 2.5 - 13px);
+  min-width: 0;
+  max-width: calc(100% / 2.5 - 13px);
+  display: flex;
+  flex-direction: column;
+}
+
+.poster {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.cardInfo {
+  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.title {
+  margin-bottom: 2px;
+  height: 16px;
+}
+
+.subtitle {
+  margin-bottom: 6px;
+  height: 14px;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 0;
+}
+
+.indicators {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 0 24px;
+}
+
+.indicator {
+  flex-shrink: 0;
+}
+

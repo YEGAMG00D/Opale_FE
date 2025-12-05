@@ -1,7 +1,8 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import ContentsLayout from '../layouts/ContentsLayout';
+import ScrollToTop from '../components/common/ScrollToTop';
 
 // 홈 페이지
 import MainHomePage from '../pages/home/MainHomePage';
@@ -24,12 +25,14 @@ import BookingPerformancePage from '../pages/user/mypage/BookingPerformancePage'
 import BookingPerformanceRegistrationPage from '../pages/user/mypage/BookingPerformanceRegistrationPage';
 import MyPageTicketPage from '../pages/user/mypage/MyTicketPage';
 import TicketRegisterPage from '../pages/user/mypage/TicketRegisterPage';
+import PerformanceReviewRegisterPage from '../pages/user/mypage/PerformanceReviewRegisterPage';
+import PlaceReviewRegisterPage from '../pages/user/mypage/PlaceReviewRegisterPage';
+import ExpectationReviewRegisterPage from '../pages/user/mypage/ExpectationReviewRegisterPage';
 
 // 공연 관련
 import MainCulturePage from '../pages/culture/MainCulturePage';
 import SearchCulturePage from '../pages/culture/SearchCulturePage';
 import DetailPerformancePage from '../pages/culture/DetailPerformancePage';
-import PerformanceReviewWritingPage from '../pages/culture/PerformanceReviewWritingPage';
 
 // 공연장 관련
 import MainPlacePage from '../pages/place/MainPlacePage';
@@ -44,15 +47,14 @@ import RoomPage from '../pages/chat/RoomPage';
 // 추천
 import MainRecommandPage from '../pages/recommand/MainRecommandPage';
 import PerformanceSignalPage from '../pages/recommand/PerformanceSignalPage';
-import TicketRegistrationPage from '../pages/recommand/TicketRegistrationPage';
-import ReviewWritingPage from '../pages/recommand/ReviewWritingPage';
-import MyTicketPage from '../pages/recommand/MyTicketPage';
 import KeywordPerformancePage from '../pages/recommand/KeywordPerformancePage';
 
 // 관리자
 import MainAdminPage from '../pages/admin/MainAdminPage';
 import PerformanceAdminPage from '../pages/admin/PerformanceAdminPage';
 import HomeBannerAdminPage from '../pages/admin/HomeBannerAdminPage';
+import PerformanceBannerAdminPage from '../pages/admin/PerformanceBannerAdminPage';
+import ContentBannerAdminPage from '../pages/admin/ContentBannerAdminPage';
 
 // 예외 페이지 (레이아웃 없음)
 import LaunchingPage from '../pages/exception/LaunchingPage';
@@ -61,6 +63,7 @@ import ErrorPage from '../pages/exception/ErrorPage';
 const AppRouter = () => {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* 레이아웃이 없는 독립 페이지들 */}
         <Route path="/launching" element={<LaunchingPage />} />
@@ -87,12 +90,14 @@ const AppRouter = () => {
           <Route path="my/tickets" element={<MyPageTicketPage />} />
           <Route path="my/tickets/register" element={<TicketRegisterPage />} />
           <Route path="my/tickets/edit" element={<TicketRegisterPage />} />
+          <Route path="my/performanceReviews/register" element={<PerformanceReviewRegisterPage />} />
+          <Route path="my/placeReviews/register" element={<PlaceReviewRegisterPage />} />
+          <Route path="my/expectationReviews/register" element={<ExpectationReviewRegisterPage />} />
 
           {/* 공연 관련 */}
           <Route path="culture" element={<MainCulturePage />} />
           <Route path="culture/search" element={<SearchCulturePage />} />
           {/* <Route path="culture/:id" element={<DetailPerformancePage />} /> */}
-          {/* <Route path="culture/review" element={<PerformanceReviewWritingPage />} /> */}
 
           {/* 공연장 관련 */}
           <Route path="place" element={<MainPlacePage />} />
@@ -107,20 +112,21 @@ const AppRouter = () => {
           {/* 추천 */}
           <Route path="recommend" element={<MainRecommandPage />} />
           <Route path="recommend/signal" element={<PerformanceSignalPage />} />
-          <Route path="recommend/ticket" element={<TicketRegistrationPage />} />
-          <Route path="recommend/review" element={<ReviewWritingPage />} />
-          <Route path="recommend/my-ticket" element={<MyTicketPage />} />
+          <Route path="recommend/ticket" element={<Navigate to="/my/tickets/register" replace />} />
+          <Route path="recommend/review" element={<Navigate to="/my/tickets/register" replace />} />
+          <Route path="recommend/my-ticket" element={<Navigate to="/my/tickets" replace />} />
           <Route path="recommend/keyword" element={<KeywordPerformancePage />} />
 
           {/* 관리자 */}
           <Route path="admin" element={<MainAdminPage />} />
           <Route path="admin/performance" element={<PerformanceAdminPage />} />
           <Route path="admin/banner/home" element={<HomeBannerAdminPage />} />
+          <Route path="admin/banner/performance" element={<PerformanceBannerAdminPage />} />
+          <Route path="admin/banner/content" element={<ContentBannerAdminPage />} />
         </Route>
 
         {/* 콘텐츠 레이아웃이 적용되는 라우트들 (푸터 없음) */}
         <Route path="/culture/:id" element={<ContentsLayout><DetailPerformancePage /></ContentsLayout>} />
-        <Route path="/culture/review" element={<ContentsLayout><PerformanceReviewWritingPage /></ContentsLayout>} />
         <Route path="/place/:id" element={<ContentsLayout><DetailPlacePage /></ContentsLayout>} />
         <Route path="/chat/:id" element={<ContentsLayout><RoomPage /></ContentsLayout>} />
 

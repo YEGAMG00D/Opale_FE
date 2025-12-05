@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './ReviewWritingPage.module.css';
 import { createTicket } from '../../api/reservationApi';
-import { createPerformanceReview } from '../../api/reviewApi';
+import { createPerformanceReview, createPlaceReview } from '../../api/reviewApi';
 import { normalizePerformanceReviewRequest } from '../../services/normalizePerformanceReviewRequest';
+import { normalizePlaceReviewRequest } from '../../services/normalizePlaceReviewRequest';
 import { fetchPerformanceList } from '../../api/performanceApi';
 import { normalizePerformance } from '../../services/normalizePerformance';
 import { transformTicketDataForApi } from '../../utils/ticketDataTransform';
@@ -76,26 +77,14 @@ const ReviewWritingPage = () => {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
+        video: { facingMode: 'environment' }
       });
       setCameraStream(stream);
-      // video 요소가 준비될 때까지 약간의 지연
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          // video 재생 강제
-          videoRef.current.play().catch(err => {
-            console.error('비디오 재생 실패:', err);
-          });
-        }
-      }, 100);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
     } catch (err) {
       console.error('카메라 접근 실패:', err);
-      setIsScanning(false);
       alert('카메라 접근에 실패했습니다. 파일에서 선택해주세요.');
     }
   };
@@ -247,7 +236,12 @@ const ReviewWritingPage = () => {
     
     if (isExistingTicket) {
       // 이미 등록된 티켓이면 티켓 등록 API를 호출하지 않고 바로 후기 작성 단계로 이동
-      setStep('performanceReview');
+      // placeId가 있으면 공연장 후기 작성 단계로 바로 이동, 없으면 공연 후기 작성 단계로 이동
+      if (location.state?.placeId) {
+        setStep('venueReview');
+      } else {
+        setStep('performanceReview');
+      }
       return;
     }
 
@@ -288,8 +282,12 @@ const ReviewWritingPage = () => {
         console.warn('티켓 등록 응답에 performanceId가 없습니다. handleRegister에서 처리합니다.');
       }
 
-      // 공연 후기 작성 단계로 이동
-      setStep('performanceReview');
+      // placeId가 있으면 공연장 후기 작성 단계로 바로 이동, 없으면 공연 후기 작성 단계로 이동
+      if (location.state?.placeId) {
+        setStep('venueReview');
+      } else {
+        setStep('performanceReview');
+      }
     } catch (err) {
       console.error('티켓 등록 실패:', err);
       const errorMessage = err.response?.data?.message || err.message || '티켓 등록에 실패했습니다.';
@@ -352,6 +350,48 @@ const ReviewWritingPage = () => {
   // 리뷰 등록
   const handleRegister = async () => {
     try {
+      const placeId = location.state?.placeId;
+      
+      // 공연장 후기 작성인 경우 (placeId가 있는 경우)
+      if (placeId) {
+        if (!reviewData.venueTitle || !reviewData.venueReview) {
+          alert('제목과 내용을 입력해주세요.');
+          return;
+        }
+
+        // ticketId 가져오기 (ticketData에서)
+        const ticketId = ticketData?.ticketId || ticketData?.id || null;
+        
+        // 공연장 후기 등록
+        const requestDto = normalizePlaceReviewRequest(
+          {
+            title: reviewData.venueTitle,
+            content: reviewData.venueReview,
+            rating: reviewData.venueRating
+          },
+          placeId,
+          ticketId
+        );
+        
+        await createPlaceReview(requestDto);
+        
+        // 공연장 리뷰 작성 완료 시 REVIEW_WRITE 로그 기록
+        try {
+          await logApi.createLog({
+            eventType: "REVIEW_WRITE",
+            targetType: "PLACE",
+            targetId: String(placeId)
+          });
+        } catch (logErr) {
+          console.error('로그 기록 실패:', logErr);
+        }
+
+        // 성공 후 공연장 상세 페이지로 이동
+        navigate(`/place/${placeId}`);
+        return;
+      }
+
+      // 공연 후기 작성인 경우 (기존 로직)
       // performanceId 찾기
       let performanceId = location.state?.performanceId || ticketData?.performanceId;
       
@@ -422,14 +462,8 @@ const ReviewWritingPage = () => {
     }
   };
 
-  // 카메라 스트림이 변경될 때 video 요소 업데이트
+  // 컴포넌트 언마운트 시 카메라 정리
   useEffect(() => {
-    if (cameraStream && videoRef.current) {
-      videoRef.current.srcObject = cameraStream;
-      videoRef.current.play().catch(err => {
-        console.error('비디오 재생 실패:', err);
-      });
-    }
     return () => {
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
@@ -459,15 +493,7 @@ const ReviewWritingPage = () => {
                 ref={videoRef}
                 autoPlay
                 playsInline
-                muted
                 className={styles.videoPreview}
-                onLoadedMetadata={() => {
-                  if (videoRef.current) {
-                    videoRef.current.play().catch(err => {
-                      console.error('비디오 재생 실패:', err);
-                    });
-                  }
-                }}
               />
               <div className={styles.cameraControls}>
                 <button
@@ -767,8 +793,12 @@ const ReviewWritingPage = () => {
   // 공연장 후기 작성 단계
   if (step === 'venueReview') {
     const performanceId = location.state?.performanceId;
+    const placeId = location.state?.placeId;
     const handleCancel = () => {
-      if (performanceId) {
+      if (placeId) {
+        // 공연장 상세 페이지로 이동
+        navigate(`/place/${placeId}`);
+      } else if (performanceId) {
         navigate(`/culture/${performanceId}`);
       } else {
         navigate('/my/tickets');
@@ -827,20 +857,43 @@ const ReviewWritingPage = () => {
           </div>
 
           <div className={styles.formActions}>
-            <button 
-              type="button"
-              className={styles.skipButton}
-              onClick={handleSkipVenueReview}
-            >
-              건너뛰기
-            </button>
-            <button 
-              type="button"
-              className={styles.submitButton}
-              onClick={handleRegister}
-            >
-              작성하기
-            </button>
+            {placeId ? (
+              // placeId가 있으면 취소 버튼 표시
+              <>
+                <button 
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={handleCancel}
+                >
+                  취소
+                </button>
+                <button 
+                  type="button"
+                  className={styles.submitButton}
+                  onClick={handleRegister}
+                >
+                  작성하기
+                </button>
+              </>
+            ) : (
+              // placeId가 없으면 건너뛰기 버튼 표시 (기존 로직)
+              <>
+                <button 
+                  type="button"
+                  className={styles.skipButton}
+                  onClick={handleSkipVenueReview}
+                >
+                  건너뛰기
+                </button>
+                <button 
+                  type="button"
+                  className={styles.submitButton}
+                  onClick={handleRegister}
+                >
+                  작성하기
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

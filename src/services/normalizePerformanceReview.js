@@ -67,27 +67,21 @@ export const normalizePerformanceReviews = (apiData) => {
       if (review.seatInfo) {
         const seatStr = String(review.seatInfo).trim();
         if (seatStr) {
-          // "구역 열 번호" 형태를 파싱
-          // 예: "나 구역 15열 23번" -> "나 구역 15열 23번" 또는 "나 구역 15열"
-          const rowMatch = seatStr.match(/(\d+)\s*열/);
-          const numberMatch = seatStr.match(/(\d+)\s*번/);
-          
-          if (rowMatch && numberMatch) {
-            // 열과 번이 모두 있는 경우
-            const rowIndex = seatStr.indexOf(rowMatch[0]);
-            const section = seatStr.substring(0, rowIndex).trim();
-            return `${section} ${rowMatch[1]}열 ${numberMatch[1]}번`;
-          } else if (rowMatch) {
-            // 열만 있는 경우
-            const rowIndex = seatStr.indexOf(rowMatch[0]);
-            const section = seatStr.substring(0, rowIndex).trim();
-            return `${section} ${rowMatch[1]}열`;
-          } else if (numberMatch) {
-            // 번만 있는 경우
-            const numberIndex = seatStr.indexOf(numberMatch[0]);
-            const section = seatStr.substring(0, numberIndex).trim();
-            return `${section} ${numberMatch[1]}번`;
+          // "-" 기준으로 분리 (하이픈이 있는 경우)
+          if (seatStr.includes('-')) {
+            const parts = seatStr.split('-');
+            // 앞부분만 반환 (N번 제외)
+            return parts[0].trim();
           }
+          
+          // "번"이 포함된 경우, "번" 앞부분까지만 반환
+          const numberMatch = seatStr.match(/(\d+)\s*번/);
+          if (numberMatch) {
+            const numberIndex = seatStr.indexOf(numberMatch[0]);
+            // "번" 앞부분만 반환
+            return seatStr.substring(0, numberIndex).trim();
+          }
+          
           // 패턴이 맞지 않으면 전체를 반환
           return seatStr;
         }
@@ -113,6 +107,44 @@ export const normalizePerformanceReviews = (apiData) => {
       return '';
     };
 
+    // reviewType 처리: 백엔드에서 오는 값 그대로 사용 (AFTER, EXPECTATION)
+    // null/undefined인 경우에만 기본값 사용
+    let reviewType = 'AFTER';
+    
+    // 디버깅: 원본 reviewType 값 확인
+    console.log(`🔍 [정규화] 리뷰 ${review.performanceReviewId} 원본 reviewType:`, {
+      reviewType: review.reviewType,
+      type: typeof review.reviewType,
+      isNull: review.reviewType === null,
+      isUndefined: review.reviewType === undefined,
+      stringValue: String(review.reviewType)
+    });
+    
+    if (review.reviewType !== null && review.reviewType !== undefined) {
+      let typeValue = review.reviewType;
+      
+      // enum 객체인 경우 처리 (예: { name: "EXPECTATION", description: "기대평" })
+      if (typeof typeValue === 'object' && typeValue !== null) {
+        // enum 객체에서 name 필드 추출
+        typeValue = typeValue.name || typeValue.toString();
+        console.log(`🔍 [정규화] 리뷰 ${review.performanceReviewId} enum 객체 처리 후:`, typeValue);
+      }
+      
+      // 문자열로 변환하여 대소문자 구분 없이 처리
+      const typeStr = String(typeValue).toUpperCase();
+      console.log(`🔍 [정규화] 리뷰 ${review.performanceReviewId} 최종 typeStr:`, typeStr);
+      
+      if (typeStr === 'AFTER' || typeStr === 'EXPECTATION') {
+        reviewType = typeStr;
+        console.log(`✅ [정규화] 리뷰 ${review.performanceReviewId} reviewType 설정:`, reviewType);
+      } else {
+        // 디버깅: 예상치 못한 값
+        console.warn(`⚠️ [정규화] 리뷰 ${review.performanceReviewId} 예상치 못한 reviewType 값:`, review.reviewType, '->', typeStr);
+      }
+    } else {
+      console.warn(`⚠️ [정규화] 리뷰 ${review.performanceReviewId} reviewType이 null/undefined, 기본값 'AFTER' 사용`);
+    }
+
     return {
       id: review.performanceReviewId,
       performanceReviewId: review.performanceReviewId,
@@ -121,7 +153,7 @@ export const normalizePerformanceReviews = (apiData) => {
       title: review.title || '',
       content: review.contents || '',
       rating: review.rating || 0,
-      reviewType: review.reviewType || 'AFTER',
+      reviewType: reviewType,
       author: review.nickname || '익명',
       date: formatDate(review.createdAt || review.updatedAt),
       createdAt: review.createdAt,
