@@ -221,9 +221,9 @@ const MainRecommandPage = () => {
     checkNewUser();
   }, [isLoggedIn, user]);
 
-  // 로그인한 사용자: 관심 공연 기반 키워드 추출 (기존 사용자만)
+  // 로그인한 사용자: 관심 공연 기반 키워드 추출
   useEffect(() => {
-    if (!isLoggedIn || isNewUser || isCheckingUser) return;
+    if (!isLoggedIn || isCheckingUser) return;
     
     const extractMyKeywords = async () => {
       try {
@@ -260,9 +260,9 @@ const MainRecommandPage = () => {
     extractMyKeywords();
   }, [isLoggedIn, isNewUser, isCheckingUser]);
 
-  // 로그인한 사용자: 개인 맞춤 추천 공연 목록 조회 (기존 사용자만)
+  // 로그인한 사용자: 개인 맞춤 추천 공연 목록 조회
   useEffect(() => {
-    if (!isLoggedIn || isNewUser || isCheckingUser) return;
+    if (!isLoggedIn || isCheckingUser) return;
     
     const loadUserRecommendations = async () => {
       try {
@@ -281,9 +281,9 @@ const MainRecommandPage = () => {
     loadUserRecommendations();
   }, [isLoggedIn, isNewUser, isCheckingUser]);
 
-  // 로그인한 사용자: 최근 본 공연 조회 및 유사 공연 추천 (기존 사용자만)
+  // 로그인한 사용자: 최근 본 공연 조회 및 유사 공연 추천
   useEffect(() => {
-    if (!isLoggedIn || isNewUser || isCheckingUser) return;
+    if (!isLoggedIn || isCheckingUser) return;
     
     const loadRecentAndSimilar = async () => {
       try {
@@ -339,9 +339,9 @@ const MainRecommandPage = () => {
     loadRecentAndSimilar();
   }, [isLoggedIn, isNewUser, isCheckingUser]);
 
-  // 로그인하지 않은 사용자 또는 새 사용자: 인기 공연 추천 조회
+  // 로그인하지 않은 사용자: 인기 공연 추천 조회
   useEffect(() => {
-    if (isLoggedIn && !isNewUser && !isCheckingUser) return;
+    if (isLoggedIn && !isCheckingUser) return;
     
     const loadPopularRecommendations = async () => {
       try {
@@ -360,9 +360,9 @@ const MainRecommandPage = () => {
     loadPopularRecommendations();
   }, [isLoggedIn, isNewUser, isCheckingUser]);
 
-  // 로그인하지 않은 사용자 또는 새 사용자: 장르 랜덤 선택 및 장르별 추천 조회
+  // 로그인하지 않은 사용자: 장르 랜덤 선택 및 장르별 추천 조회
   useEffect(() => {
-    if (isLoggedIn && !isNewUser && !isCheckingUser) return;
+    if (isLoggedIn && !isCheckingUser) return;
     
     const genres = ['뮤지컬', '연극', '대중음악', '서양음악(클래식)', '한국음악(국악)'];
     
@@ -815,8 +815,8 @@ const MainRecommandPage = () => {
         <LoadingSpinner />
       ) : (
         <>
-      {/* 로그인한 사용자: 내 키워드 섹션 (기존 사용자만) */}
-      {isLoggedIn && !isNewUser && myKeywords.length > 0 && (
+      {/* 로그인한 사용자: 내 키워드 섹션 */}
+      {isLoggedIn && !isCheckingUser && myKeywords.length > 0 && (
         <section className={styles.myKeywordsSection}>
           <h2 className={styles.sectionTitle}>내 키워드</h2>
           <div className={styles.keywordsContainer}>
@@ -833,8 +833,8 @@ const MainRecommandPage = () => {
         </section>
       )}
 
-      {/* 로그인한 사용자: 개인 맞춤 추천 공연 섹션 (기존 사용자만) */}
-      {isLoggedIn && !isNewUser && !isCheckingUser && (
+      {/* 로그인한 사용자: 개인 맞춤 추천 공연 섹션 */}
+      {isLoggedIn && !isCheckingUser && (
         <section className={styles.seriesSection}>
           <h2 className={styles.sectionTitle}>{user?.nickname || '사용자'} 님을 위한 공연</h2>
           {userRecommendationsLoading ? (
@@ -939,8 +939,8 @@ const MainRecommandPage = () => {
         </section>
       )}
 
-      {/* 로그인한 사용자: 최근 본 공연과 유사한 공연 섹션 (기존 사용자만) */}
-      {isLoggedIn && !isNewUser && !isCheckingUser && recentPerformance && (
+      {/* 로그인한 사용자: 최근 본 공연과 유사한 공연 섹션 */}
+      {isLoggedIn && !isCheckingUser && recentPerformance && (
         <section className={styles.seriesSection}>
           <h2 className={styles.sectionTitle}>
             {recentPerformance.title ? `'${recentPerformance.title}'과 비슷한 공연은` : '최근 본 공연과 비슷한 공연은'}
@@ -1047,8 +1047,8 @@ const MainRecommandPage = () => {
         </section>
       )}
 
-      {/* 로그인하지 않은 사용자 또는 새 사용자: 인기 공연 추천 섹션 */}
-      {(!isLoggedIn || (isLoggedIn && isNewUser && !isCheckingUser)) && (
+      {/* 로그인하지 않은 사용자: 인기 공연 추천 섹션 */}
+      {!isLoggedIn && !isCheckingUser && (
         <section className={styles.seriesSection}>
           <h2 className={styles.sectionTitle}>인기 공연</h2>
           {popularPerformancesLoading ? (
@@ -1152,8 +1152,8 @@ const MainRecommandPage = () => {
         </section>
       )}
 
-      {/* 로그인하지 않은 사용자 또는 새 사용자: 장르별 추천 섹션 */}
-      {(!isLoggedIn || (isLoggedIn && isNewUser && !isCheckingUser)) && selectedGenres.map((genre) => {
+      {/* 로그인하지 않은 사용자: 장르별 추천 섹션 */}
+      {!isLoggedIn && !isCheckingUser && selectedGenres.map((genre) => {
         const performances = genreRecommendations[genre] || [];
         const loading = genreRecommendationsLoading[genre] || false;
         const state = genreSliderStates[genre] || { currentIndex: 0, displayIndex: 0, isTransitioning: true };
