@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { loginSuccess } from "../../../store/userSlice";
 import styles from "./LoginPage.module.css";
@@ -14,8 +14,12 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { isLoggedIn } = useSelector((state) => state.user);
+  
+  // 로그인이 필요한 페이지에서 리다이렉트된 경우 returnUrl 가져오기
+  const returnUrl = location.state?.returnUrl || null;
 
   /** 이미 로그인 상태라면 접근 차단 */
   useEffect(() => {
@@ -59,7 +63,8 @@ const LoginPage = () => {
           initializeUserTickets(userId);
         }
 
-        navigate("/");
+        // returnUrl이 있으면 그곳으로, 없으면 홈으로 이동
+        navigate(returnUrl || "/");
       } else {
         setError(result.message || "로그인 실패");
       }
@@ -82,7 +87,17 @@ const LoginPage = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={() => navigate(-1)}>
+        <button 
+          className={styles.backButton} 
+          onClick={() => {
+            // returnUrl이 있으면 그곳으로, 없으면 홈으로 이동
+            if (returnUrl) {
+              navigate(returnUrl);
+            } else {
+              navigate("/");
+            }
+          }}
+        >
           ←
         </button>
         <h1 className={styles.headerTitle}>로그인</h1>

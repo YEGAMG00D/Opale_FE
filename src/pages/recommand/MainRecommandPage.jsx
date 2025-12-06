@@ -803,7 +803,13 @@ const MainRecommandPage = () => {
         <div className={styles.headerButtons}>
           <button 
             className={styles.ticketButton}
-            onClick={() => navigate('/my/tickets')}
+            onClick={() => {
+              if (isLoggedIn) {
+                navigate('/my/tickets');
+              } else {
+                navigate('/login', { state: { returnUrl: '/recommend' } });
+              }
+            }}
           >
             MY 티켓
           </button>

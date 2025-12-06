@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import styles from './TicketRegisterPage.module.css';
 import { createTicket, updateTicket as updateTicketApi, getTicket, extractTicketByOcr, getTicketReviews } from '../../../api/reservationApi';
 import { transformTicketDataForApi, transformTicketDataFromApi } from '../../../utils/ticketDataTransform';
@@ -16,6 +17,7 @@ import OcrLoadingSpinner from '../../../components/common/OcrLoadingSpinner';
 const TicketRegisterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isLoggedIn } = useSelector((state) => state.user);
   
   // 수정 모드 확인: ticketId 또는 ticket 객체가 있으면 수정 모드
   const ticketId = location.state?.ticketId || location.state?.ticket?.ticketId || location.state?.ticket?.id || null;
@@ -62,8 +64,19 @@ const TicketRegisterPage = () => {
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // 로그인 체크
+  useEffect(() => {
+    if (!isLoggedIn) {
+      // location.state에서 returnUrl을 가져오거나, 없으면 현재 경로 사용
+      const returnUrl = location.state?.returnUrl || window.location.pathname;
+      navigate('/login', { state: { returnUrl } });
+    }
+  }, [isLoggedIn, navigate, location.state]);
+
   // 수정 모드일 때 티켓 데이터 가져오기
   useEffect(() => {
+    if (!isLoggedIn) return;
+    
     const loadTicketData = async () => {
       if (isEditMode && ticketId) {
         try {
@@ -103,7 +116,7 @@ const TicketRegisterPage = () => {
     };
 
     loadTicketData();
-  }, [isEditMode, ticketId, navigate]);
+  }, [isEditMode, ticketId, navigate, isLoggedIn]);
 
   // 카메라 시작
   const startCamera = async () => {

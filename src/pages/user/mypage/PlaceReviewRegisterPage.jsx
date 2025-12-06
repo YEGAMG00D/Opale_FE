@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { createPlaceReview } from '../../../api/reviewApi';
 import { normalizePlaceReviewRequest } from '../../../services/normalizePlaceReviewRequest';
 import logApi from '../../../api/logApi';
@@ -8,6 +9,7 @@ import styles from './PlaceReviewRegisterPage.module.css';
 const PlaceReviewRegisterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isLoggedIn } = useSelector((state) => state.user);
   
   // 티켓 데이터 및 공연장 정보 (location.state에서 전달받음)
   const ticketData = location.state?.ticketData || {};
@@ -23,6 +25,15 @@ const PlaceReviewRegisterPage = () => {
     rating: 5,
     content: ''
   });
+
+  // 로그인 체크
+  useEffect(() => {
+    if (!isLoggedIn) {
+      // location.state에서 returnUrl을 가져오거나, 없으면 현재 경로 사용
+      const returnUrl = location.state?.returnUrl || window.location.pathname;
+      navigate('/login', { state: { returnUrl } });
+    }
+  }, [isLoggedIn, navigate, location.state]);
 
   // 공연장 리뷰 작성 완료
   const handleSubmit = async (e) => {

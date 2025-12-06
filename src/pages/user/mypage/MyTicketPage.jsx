@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import styles from './MyTicketPage.module.css';
 import wickedPoster from '../../../assets/poster/wicked.gif';
 import moulinRougePoster from '../../../assets/poster/moulin-rouge.gif';
@@ -37,6 +38,7 @@ const getImageUrl = (imageUrl) => {
 
 const MyTicketPage = () => {
   const navigate = useNavigate();
+  const { isLoggedIn } = useSelector((state) => state.user);
   const [allTickets, setAllTickets] = useState([]); // API에서 받은 전체 티켓 목록
   const [flippedTickets, setFlippedTickets] = useState({});
   const [activeTab, setActiveTab] = useState('booked'); // 'booked' (예매한 공연) or 'watched' (관람한 공연)
@@ -203,10 +205,19 @@ const MyTicketPage = () => {
     }
   };
 
+  // 로그인 체크
+  useEffect(() => {
+    if (!isLoggedIn) {
+      navigate('/login', { state: { returnUrl: window.location.pathname } });
+    }
+  }, [isLoggedIn, navigate]);
+
   // 초기 로드
   useEffect(() => {
-    loadTickets(1, false);
-  }, []);
+    if (isLoggedIn) {
+      loadTickets(1, false);
+    }
+  }, [isLoggedIn]);
 
   // 티켓 목록 업데이트를 위한 이벤트 리스너
   useEffect(() => {
