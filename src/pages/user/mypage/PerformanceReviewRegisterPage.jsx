@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { createPerformanceReview } from '../../../api/reviewApi';
 import { normalizePerformanceReviewRequest } from '../../../services/normalizePerformanceReviewRequest';
 import { fetchPerformanceList } from '../../../api/performanceApi';
@@ -12,6 +13,7 @@ import styles from './PerformanceReviewRegisterPage.module.css';
 const PerformanceReviewRegisterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isLoggedIn } = useSelector((state) => state.user);
   
   // 티켓 데이터 (location.state에서 전달받음)
   const ticketData = location.state?.ticketData || {};
@@ -35,8 +37,19 @@ const PerformanceReviewRegisterPage = () => {
   const [hasPlaceReview, setHasPlaceReview] = useState(initialHasPlaceReview === true);
   const [nextPage, setNextPage] = useState(initialHasPlaceReview === true ? null : initialNextPage);
   
+  // 로그인 체크
+  useEffect(() => {
+    if (!isLoggedIn) {
+      // location.state에서 returnUrl을 가져오거나, 없으면 현재 경로 사용
+      const returnUrl = location.state?.returnUrl || window.location.pathname;
+      navigate('/login', { state: { returnUrl } });
+    }
+  }, [isLoggedIn, navigate, location.state]);
+
   // 티켓의 공연장 리뷰 존재 여부 확인 (location.state에 정보가 없을 때만 API 호출)
   useEffect(() => {
+    if (!isLoggedIn) return;
+    
     const checkPlaceReview = async () => {
       const ticketId = ticketData?.ticketId || ticketData?.id;
       if (!ticketId || !initialNextPage) {
