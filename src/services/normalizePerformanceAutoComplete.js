@@ -14,6 +14,9 @@ export const normalizePerformanceAutoComplete = (data) => {
     return {
       performanceId: item.performanceId || item.id || null,
       title: item.title || "",
+      placeName: item.placeName || "",
+      startDate: item.startDate || null,
+      endDate: item.endDate || null,
     };
   });
 };
