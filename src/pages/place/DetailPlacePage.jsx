@@ -245,7 +245,8 @@ const DetailPlacePage = () => {
                     number: '',
                     placeId: id
                   },
-                  placeId: id
+                  placeId: id,
+                  returnUrl: `/place/${id}` // 공연장 리뷰 작성 완료 후 공연장 상세 페이지로 복귀
                 }
               });
             }}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import styles from './TicketRegisterPage.module.css';
 import { createTicket, updateTicket as updateTicketApi, getTicket, extractTicketByOcr, getTicketReviews } from '../../../api/reservationApi';
 import { transformTicketDataForApi, transformTicketDataFromApi } from '../../../utils/ticketDataTransform';
@@ -8,7 +9,7 @@ import TicketSelectModal from '../../../components/common/TicketSelectModal';
 import { fetchPerformanceList } from '../../../api/performanceApi';
 import { fetchPerformanceBasic } from '../../../api/performanceApi';
 import { normalizePerformance } from '../../../services/normalizePerformance';
-import { normalizePerformanceDetail } from '../../../services/normalizePerformanceDetail';
+import { normalizePerformanceDetail, formatDateRange } from '../../../services/normalizePerformanceDetail';
 import { normalizeTicketOcr } from '../../../services/normalizeTicketOcr';
 import { normalizeTicketReviews } from '../../../services/normalizeTicketReviews';
 import OcrLoadingSpinner from '../../../components/common/OcrLoadingSpinner';
@@ -16,6 +17,7 @@ import OcrLoadingSpinner from '../../../components/common/OcrLoadingSpinner';
 const TicketRegisterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isLoggedIn } = useSelector((state) => state.user);
   
   // 수정 모드 확인: ticketId 또는 ticket 객체가 있으면 수정 모드
   const ticketId = location.state?.ticketId || location.state?.ticket?.ticketId || location.state?.ticket?.id || null;
@@ -28,6 +30,10 @@ const TicketRegisterPage = () => {
   // 공연 상세 페이지에서 전달받은 performanceId, placeId (티켓 선택 모달 필터링용)
   const filterPerformanceId = location.state?.performanceId || null;
   const filterPlaceId = location.state?.placeId || null;
+  
+  // 이전 페이지 정보 (복귀용)
+  const returnUrl = location.state?.returnUrl || null;
+  const isThreeStepFlow = location.state?.isThreeStepFlow || false; // 3단계 플로우 여부
   
   const [ticketStep, setTicketStep] = useState(isEditMode ? 'manual' : 'scan'); // 'scan' or 'manual'
   const [ticketData, setTicketData] = useState({
@@ -58,8 +64,19 @@ const TicketRegisterPage = () => {
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // 로그인 체크
+  useEffect(() => {
+    if (!isLoggedIn) {
+      // location.state에서 returnUrl을 가져오거나, 없으면 현재 경로 사용
+      const returnUrl = location.state?.returnUrl || window.location.pathname;
+      navigate('/login', { state: { returnUrl } });
+    }
+  }, [isLoggedIn, navigate, location.state]);
+
   // 수정 모드일 때 티켓 데이터 가져오기
   useEffect(() => {
+    if (!isLoggedIn) return;
+    
     const loadTicketData = async () => {
       if (isEditMode && ticketId) {
         try {
@@ -99,7 +116,7 @@ const TicketRegisterPage = () => {
     };
 
     loadTicketData();
-  }, [isEditMode, ticketId, navigate]);
+  }, [isEditMode, ticketId, navigate, isLoggedIn]);
 
   // 카메라 시작
   const startCamera = async () => {
@@ -353,11 +370,18 @@ const TicketRegisterPage = () => {
       // 공연 후기 작성 페이지로 이동하는 경우, 공연장 리뷰 작성 여부 확인
       let finalNextPage = location.state?.nextPage || null;
       
+      // 티켓의 리뷰 작성 여부 확인 (공연 후기/공연장 리뷰)
+      let hasPlaceReview = false;
+      let hasPerformanceReview = false;
+      
       if (nextReviewPage === '/my/performanceReviews/register') {
         // 티켓의 공연장 리뷰 작성 여부 확인
         try {
           const reviewsResponse = await getTicketReviews(ticketId);
           const normalizedReviews = normalizeTicketReviews(reviewsResponse);
+          
+          hasPlaceReview = normalizedReviews.hasPlaceReview;
+          hasPerformanceReview = normalizedReviews.hasPerformanceReview;
           
           // 공연장 리뷰가 이미 작성되어 있으면 nextPage를 null로 설정
           if (normalizedReviews.hasPlaceReview) {
@@ -381,7 +405,11 @@ const TicketRegisterPage = () => {
           performanceId: location.state?.performanceId || selectedTicket.performanceId || null,
           placeId: location.state?.placeId || selectedTicket.placeId || null,
           nextPage: finalNextPage,
-          fromPerformanceDetail: location.state?.fromPerformanceDetail || false // 공연 상세 페이지에서 온 경우 전달
+          fromPerformanceDetail: location.state?.fromPerformanceDetail || false, // 공연 상세 페이지에서 온 경우 전달
+          hasPlaceReview: hasPlaceReview, // 티켓 선택 시 확인한 공연장 리뷰 존재 여부
+          hasPerformanceReview: hasPerformanceReview, // 티켓 선택 시 확인한 공연 후기 존재 여부
+          returnUrl: returnUrl, // 이전 페이지 정보 전달
+          isThreeStepFlow: isThreeStepFlow // 3단계 플로우 여부 전달
         }
       });
       return;
@@ -602,6 +630,22 @@ const TicketRegisterPage = () => {
           }
         }
         
+        // 티켓의 리뷰 작성 여부 확인
+        let hasPlaceReview = false;
+        let hasPerformanceReview = false;
+        
+        if (nextReviewPage === '/my/performanceReviews/register' && responseTicketId) {
+          try {
+            const reviewsResponse = await getTicketReviews(responseTicketId);
+            const normalizedReviews = normalizeTicketReviews(reviewsResponse);
+            
+            hasPlaceReview = normalizedReviews.hasPlaceReview;
+            hasPerformanceReview = normalizedReviews.hasPerformanceReview;
+          } catch (err) {
+            console.error('티켓 리뷰 확인 실패:', err);
+          }
+        }
+        
         navigate(nextReviewPage, { 
           state: { 
             ticketData: {
@@ -614,7 +658,11 @@ const TicketRegisterPage = () => {
             performanceId: location.state?.performanceId || responsePerformanceId,
             placeId: location.state?.placeId || responsePlaceId,
             nextPage: finalNextPage,
-            fromPerformanceDetail: location.state?.fromPerformanceDetail || false // 공연 상세 페이지에서 온 경우 전달
+            fromPerformanceDetail: location.state?.fromPerformanceDetail || false, // 공연 상세 페이지에서 온 경우 전달
+            hasPlaceReview: hasPlaceReview, // 티켓 등록 시 확인한 공연장 리뷰 존재 여부
+            hasPerformanceReview: hasPerformanceReview, // 티켓 등록 시 확인한 공연 후기 존재 여부
+            returnUrl: returnUrl, // 이전 페이지 정보 전달
+            isThreeStepFlow: isThreeStepFlow // 3단계 플로우 여부 전달
           } 
         });
         return;
@@ -803,6 +851,11 @@ const TicketRegisterPage = () => {
                       >
                         <div className={styles.searchResultTitle}>{performance.title}</div>
                         <div className={styles.searchResultVenue}>{performance.venue}</div>
+                        {performance.startDate && performance.endDate && (
+                          <div className={styles.searchResultDate}>
+                            {formatDateRange(performance.startDate, performance.endDate)}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
