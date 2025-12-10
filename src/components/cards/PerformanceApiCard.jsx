@@ -7,6 +7,7 @@ const PerformanceApiCard = ({
   id,
   image,
   title,
+  highlightedTitle,
   venue,
   startDate,
   endDate,
@@ -66,7 +67,9 @@ const PerformanceApiCard = ({
 
       {/* 정보 */}
       <div className={styles.info}>
-        <div className={styles.title}>{title}</div>
+        <div className={styles.title}>
+          {highlightedTitle ?? title}
+        </div>
         <div className={styles.venue}>{venue}</div>
 
         <div className={styles.date}>

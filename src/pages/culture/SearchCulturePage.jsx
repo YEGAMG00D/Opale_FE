@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedCategory, setShowOngoingOnly, setSearchQuery as setSearchQueryAction } from "../../store/performanceSlice";
@@ -104,9 +104,47 @@ const SearchCulturePage = () => {
   };
 
   /** 🔥 진행중 필터만 로컬에서 적용 (장르는 백엔드에서 처리됨) */
-  const finalList = showOngoingOnly
-    ? performances.filter((p) => isOngoing(p))
-    : performances;
+  const finalList = useMemo(
+    () => (showOngoingOnly ? performances.filter((p) => isOngoing(p)) : performances),
+    [performances, showOngoingOnly]
+  );
+
+  /** 검색어 포함 여부 및 하이라이트 처리 */
+  const effectiveKeyword = useMemo(
+    () => (searchQuery || keywordFromUrl || "").trim(),
+    [searchQuery, keywordFromUrl]
+  );
+
+  const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const renderHighlightedTitle = (title) => {
+    if (!effectiveKeyword) return title;
+    const pattern = new RegExp(`(${escapeRegExp(effectiveKeyword)})`, "ig");
+    const parts = title?.split(pattern) || [title];
+    return parts.map((part, idx) =>
+      idx % 2 === 1 ? (
+        <span key={idx} style={{ fontWeight: 700 }}>{part}</span>
+      ) : (
+        <span key={idx}>{part}</span>
+      )
+    );
+  };
+
+  const { matchedList, similarList } = useMemo(() => {
+    if (!effectiveKeyword) return { matchedList: finalList, similarList: [] };
+    const lower = effectiveKeyword.toLowerCase();
+    const exact = [];
+    const others = [];
+    finalList.forEach((item) => {
+      const title = item.title || "";
+      if (title.toLowerCase().includes(lower)) {
+        exact.push(item);
+      } else {
+        others.push(item);
+      }
+    });
+    return { matchedList: exact, similarList: others };
+  }, [effectiveKeyword, finalList]);
 
   /** 카테고리 UI */
   const categories = [
@@ -170,18 +208,55 @@ const SearchCulturePage = () => {
       </div>
 
       {/* 카드 리스트 */}
-      <div className={styles.performanceGrid}>
-        {finalList.map((p, index) => {
-          return (
+      <div style={{ padding: "0 24px" }}>
+        {effectiveKeyword && (
+          <div style={{ marginBottom: "16px", color: "#4b5563", fontSize: "14px" }}>
+            검색어가 포함된 결과와 유사 결과를 분리해 보여줘요.
+          </div>
+        )}
+
+        {/* 포함된 검색 결과 */}
+        <div style={{ marginBottom: "12px", fontWeight: 700, fontSize: "16px", color: "#111827" }}>
+          포함된 검색 결과 {matchedList.length ? `(${matchedList.length}건)` : "(없음)"}
+        </div>
+        <div className={styles.performanceGrid}>
+          {matchedList.map((p, index) => (
             <PerformanceApiCard
-              key={p.id + "_" + index}
+              key={`match_${p.id}_${index}`}
               {...p}
+              highlightedTitle={renderHighlightedTitle(p.title)}
               isFavorite={favoriteIds.has(p.id)}
               onFavoriteToggle={handleFavoriteToggle}
               onClick={() => navigate(`/culture/${p.id}`)}
             />
-          );
-        })}
+          ))}
+        </div>
+
+        {/* 구분선 */}
+        {similarList.length > 0 && (
+          <div style={{ borderBottom: "1px solid #e5e7eb", margin: "24px 0 16px" }} />
+        )}
+
+        {/* 유사한 검색 결과 */}
+        {similarList.length > 0 && (
+          <>
+            <div style={{ marginBottom: "12px", fontWeight: 700, fontSize: "16px", color: "#111827" }}>
+              유사한 검색 결과 ({similarList.length}건)
+            </div>
+            <div className={styles.performanceGrid}>
+              {similarList.map((p, index) => (
+                <PerformanceApiCard
+                  key={`similar_${p.id}_${index}`}
+                  {...p}
+                  highlightedTitle={renderHighlightedTitle(p.title)}
+                  isFavorite={favoriteIds.has(p.id)}
+                  onFavoriteToggle={handleFavoriteToggle}
+                  onClick={() => navigate(`/culture/${p.id}`)}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div ref={sentinelRef} style={{ height: 40 }} />
